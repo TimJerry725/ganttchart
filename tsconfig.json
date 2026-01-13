@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "incremental": true,
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@gantt/core": ["./packages/gantt-core/src"],
+      "@gantt/core/*": ["./packages/gantt-core/src/*"],
+      "@gantt/renderer": ["./packages/gantt-renderer/src"],
+      "@gantt/renderer/*": ["./packages/gantt-renderer/src/*"],
+      "@gantt/react": ["./packages/gantt-react/src"],
+      "@gantt/react/*": ["./packages/gantt-react/src/*"],
+      "@gantt/compat-svar": ["./packages/gantt-compat-svar/src"],
+      "@gantt/compat-svar/*": ["./packages/gantt-compat-svar/src/*"],
+      "@gantt/antd": ["./packages/gantt-antd/src"],
+      "@gantt/antd/*": ["./packages/gantt-antd/src/*"]
+    }
+  },
+  "include": ["packages/**/*", "apps/**/*"],
+  "exclude": ["node_modules", "dist", "build", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"]
+}
