@@ -3,7 +3,7 @@
  */
 
 export { IrisGantt } from './IrisGantt';
-export type { IrisGanttProps } from './IrisGantt';
+export type { IrisGanttProps } from './types';
 export * from './types';
 export * from './model';
 export * from './engine';
