@@ -60,7 +60,6 @@ const defaultColumns: Column[] = [
   { name: 'text', label: 'Task Name', width: 300, align: 'left', resize: true },
   { name: 'start', label: 'Start Date', width: 120, align: 'center' },
   { name: 'duration', label: 'Duration', width: 100, align: 'center' },
-  { name: 'progress', label: 'Progress', width: 100, align: 'center' },
 ];
 
 const defaultScales: Scale[] = [
