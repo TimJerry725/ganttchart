@@ -59,7 +59,6 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
             value={filters.searchText}
             onChange={(e) => handleFilterChange({ searchText: e.target.value })}
             allowClear
-            prefix={<SearchOutlined />}
             className="gantt-search-antd"
             style={{ width: 250 }}
           />
