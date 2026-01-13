@@ -12,7 +12,6 @@ export interface TimelineRendererProps {
   timeScale: TimeScale;
   viewport: { x: number; y: number; width: number; height: number };
   criticalPath?: Set<TaskId>;
-  onBarClick?: (taskId: TaskId) => void;
 }
 
 export const TimelineRenderer: React.FC<TimelineRendererProps> = ({

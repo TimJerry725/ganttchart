@@ -7,7 +7,6 @@ import { Scheduler } from './engine/scheduler';
 import { LayoutEngine } from './render/layout';
 import { GridRenderer } from './render/grid-renderer';
 import { TimelineRenderer } from './render/timeline-renderer';
-import { VirtualizationManager } from './virtual/virtualization';
 import type { IrisGanttProps, TaskId } from './types';
 import type { GridColumn } from './render/grid-renderer';
 
@@ -25,10 +24,7 @@ export const IrisGantt: React.FC<IrisGanttProps> = (props) => {
     links = [],
     selection = [],
     viewState: viewStateProp,
-    onTasksChange,
-    onLinksChange,
     onSelectionChange,
-    onViewStateChange,
     width = '100%',
     height = 600,
     className,
@@ -151,7 +147,6 @@ export const IrisGantt: React.FC<IrisGanttProps> = (props) => {
             timeScale={timeScale}
             viewport={{ ...viewport, width: timelineWidth }}
             criticalPath={criticalPath}
-            onBarClick={handleTaskClick}
           />
         </div>
       </div>
