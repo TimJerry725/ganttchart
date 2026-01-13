@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Task, Link, GanttConfig, Column, Scale, Marker } from '../types';
+import { Task, Link, GanttConfig, Column, Scale, Marker, Baseline } from '../types';
 import { Grid } from './Grid';
 import { Timeline } from './Timeline';
 import { TaskCreator } from './TaskCreator';
@@ -67,7 +67,8 @@ export const GanttPro: React.FC<GanttProProps> = ({
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
-  const [baselines, setBaselines] = useState<Map<string, any>>(new Map());
+  const [baselines, setBaselines] = useState<Map<string, Baseline>>(new Map());
+  const [showBaselines, setShowBaselines] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     searchText: '',
     status: 'all',
@@ -90,7 +91,7 @@ export const GanttPro: React.FC<GanttProProps> = ({
     minColumnWidth: 40,
     autoSchedule: false,
     criticalPath: false,
-    baselines: false,
+    baselines: showBaselines,
     weekends: true,
     holidays: [],
     theme: 'light',
@@ -208,6 +209,16 @@ export const GanttPro: React.FC<GanttProProps> = ({
   const handleCreateBaseline = () => {
     const newBaselines = createBaseline(tasks);
     setBaselines(newBaselines);
+    setShowBaselines(true);
+  };
+
+  const handleToggleBaselines = () => {
+    if (!showBaselines && baselines.size === 0) {
+      // Create baseline if none exists
+      handleCreateBaseline();
+    } else {
+      setShowBaselines(!showBaselines);
+    }
   };
 
   // Keyboard shortcuts
@@ -262,6 +273,7 @@ export const GanttPro: React.FC<GanttProProps> = ({
           onScroll={handleTimelineScroll}
           onTaskUpdate={handleUpdateTask}
           zoomLevel={zoomLevel}
+          baselines={baselines}
         />
       </div>
 
@@ -282,7 +294,13 @@ export const GanttPro: React.FC<GanttProProps> = ({
           >
             🎯 Critical Path
           </button>
-          <button onClick={handleCreateBaseline} title="Create baseline">📍 Set Baseline</button>
+          <button 
+            onClick={handleToggleBaselines} 
+            className={showBaselines ? 'active' : ''}
+            title={baselines.size > 0 ? "Toggle baseline visibility" : "Create and show baseline"}
+          >
+            📍 {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
+          </button>
         </div>
 
         <div className="gantt-toolbar-right">

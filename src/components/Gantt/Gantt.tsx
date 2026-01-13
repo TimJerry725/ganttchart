@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Task, Link, GanttConfig, Column, Scale } from '../types';
+import { Task, Link, GanttConfig, Column, Scale, Baseline } from '../types';
 import { Grid } from './Grid';
 import { Timeline } from './Timeline';
 import { TaskBar } from './TaskBar';
@@ -10,6 +10,7 @@ interface GanttProps {
   tasks: Task[];
   links?: Link[];
   config?: Partial<GanttConfig>;
+  baselines?: Map<string, Baseline>;
   onTaskUpdate?: (task: Task) => void;
   onTaskCreate?: (task: Task) => void;
   onTaskDelete?: (taskId: string) => void;
@@ -33,6 +34,7 @@ export const Gantt: React.FC<GanttProps> = ({
   tasks,
   links = [],
   config = {},
+  baselines,
   onTaskUpdate,
   onTaskCreate,
   onTaskDelete,
@@ -143,6 +145,7 @@ export const Gantt: React.FC<GanttProps> = ({
           onScroll={handleTimelineScroll}
           onTaskUpdate={onTaskUpdate}
           zoomLevel={zoomLevel}
+          baselines={baselines}
         />
       </div>
       <div className="gantt-toolbar">

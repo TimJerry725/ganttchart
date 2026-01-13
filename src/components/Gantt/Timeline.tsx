@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useCallback } from 'react';
-import { Task, Link, Scale, GanttConfig } from '../types';
+import { Task, Link, Scale, GanttConfig, Baseline } from '../types';
 import { TaskBar } from './TaskBar';
 import { LinkRenderer } from './LinkRenderer';
 import { useDragDrop } from './DragDrop';
@@ -19,6 +19,7 @@ interface TimelineProps {
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   onTaskUpdate?: (task: Task) => void;
   zoomLevel: number;
+  baselines?: Map<string, Baseline>;
 }
 
 export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
@@ -39,6 +40,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
   }, ref) => {
     const [localTasks, setLocalTasks] = useState(tasks);
     const columnWidth = (config.columnWidth || 60) * zoomLevel;
+    const showBaselines = config.baselines && baselines && baselines.size > 0;
 
     const { dragState, handleDragStart, handleDrag, handleDragEnd } = useDragDrop(
       localTasks,
@@ -76,6 +78,17 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       return {
         left: (startDay / totalDays) * 100,
         width: (taskDays / totalDays) * 100,
+      };
+    };
+
+    const getBaselinePosition = (baseline: Baseline) => {
+      const totalDays = (range.end.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
+      const startDay = (baseline.start.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
+      const baselineDays = (baseline.end.getTime() - baseline.start.getTime()) / (1000 * 60 * 60 * 24);
+
+      return {
+        left: (startDay / totalDays) * 100,
+        width: (baselineDays / totalDays) * 100,
       };
     };
 
@@ -188,6 +201,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
           <div className="gantt-timeline-tasks">
             {localTasks.map((task, index) => {
               const position = getTaskPosition(task);
+              const baseline = showBaselines ? baselines?.get(task.id) : undefined;
+              const baselinePosition = baseline ? getBaselinePosition(baseline) : undefined;
               
               return (
                 <div
@@ -198,6 +213,19 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                     top: index * (config.rowHeight || 44),
                   }}
                 >
+                  {/* Baseline bar (shown below task bar) */}
+                  {baseline && baselinePosition && task.type !== 'milestone' && (
+                    <div
+                      className="gantt-baseline-bar"
+                      style={{
+                        left: `${baselinePosition.left}%`,
+                        width: `${baselinePosition.width}%`,
+                      }}
+                      title={`Baseline: ${baseline.start.toLocaleDateString()} - ${baseline.end.toLocaleDateString()}`}
+                    />
+                  )}
+
+                  {/* Main task bar */}
                   <TaskBar
                     task={task}
                     position={position}
