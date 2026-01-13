@@ -51,6 +51,14 @@ View all examples and features in Storybook:
 npm run storybook
 ```
 
+Or use the convenience script:
+
+```bash
+./run-storybook.sh
+```
+
+**Note:** Make sure to use `npm run storybook` (not `npm run .storybook`)
+
 ## License
 
 MIT
