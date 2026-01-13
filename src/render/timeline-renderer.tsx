@@ -51,10 +51,10 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
     ctx.font = '12px sans-serif';
 
     // Draw time markers
-    const step = this.getTimeStep(timeScale);
+    const step = getTimeStep(timeScale);
     let currentDate = new Date(timeScale.startDate);
     while (currentDate <= timeScale.endDate) {
-      const x = this.dateToX(currentDate, timeScale) - viewport.x;
+      const x = dateToX(currentDate, timeScale) - viewport.x;
       if (x >= 0 && x <= viewport.width) {
         ctx.beginPath();
         ctx.moveTo(x, 0);

@@ -10,7 +10,7 @@ import { LayoutEngine } from './render/layout';
 import { GridRenderer } from './render/grid-renderer';
 import { TimelineRenderer } from './render/timeline-renderer';
 import { VirtualizationManager } from './virtual/virtualization';
-import type { IrisGanttProps, TaskId, ViewState } from './types';
+import type { IrisGanttProps, TaskId } from './types';
 import type { GridColumn } from './render/grid-renderer';
 
 const DEFAULT_COLUMNS: GridColumn[] = [
