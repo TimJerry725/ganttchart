@@ -71,6 +71,7 @@ export const Gantt: React.FC<GanttProps> = ({
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [baselines, setBaselines] = useState<Map<string, Baseline>>(new Map());
   const [showBaselines, setShowBaselines] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>((config.theme as 'light' | 'dark') || 'light');
   const [filters, setFilters] = useState<FilterOptions>({
     searchText: '',
     status: 'all',
@@ -96,7 +97,7 @@ export const Gantt: React.FC<GanttProps> = ({
     baselines: showBaselines,
     weekends: true,
     holidays: [],
-    theme: 'light',
+    theme: currentTheme,
     locale: 'en',
     ...config,
   };
@@ -240,9 +241,44 @@ export const Gantt: React.FC<GanttProps> = ({
   }, [undo, redo]);
 
   return (
-    <div className={`gantt-container theme-${ganttConfig.theme}`}>
-      {/* Enhanced Toolbar - Always at top */}
-      <div className="gantt-toolbar">
+    <div className={`gantt-page-wrapper theme-${currentTheme}`}>
+      {/* Page Header */}
+      <div className="gantt-page-header">
+        <div className="gantt-page-header-left">
+          <h1 className="gantt-page-title">React Gantt</h1>
+        </div>
+        <div className="gantt-page-header-right">
+          <div className="gantt-theme-selector">
+            <button
+              className={currentTheme === 'light' ? 'active' : ''}
+              onClick={() => setCurrentTheme('light')}
+              title="Light Theme"
+            >
+              Willow
+            </button>
+            <button
+              className={currentTheme === 'dark' ? 'active' : ''}
+              onClick={() => setCurrentTheme('dark')}
+              title="Dark Theme"
+            >
+              Dark
+            </button>
+          </div>
+          <a
+            href="https://github.com/TimJerry725/ganttchart"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="gantt-github-link"
+          >
+            See code on GitHub
+          </a>
+        </div>
+      </div>
+
+      {/* Main Gantt Container */}
+      <div className={`gantt-container theme-${ganttConfig.theme}`}>
+        {/* Enhanced Toolbar - Always at top */}
+        <div className="gantt-toolbar">
         <div className="gantt-toolbar-left">
           {!ganttConfig.readonly && (
             <>
@@ -359,6 +395,7 @@ export const Gantt: React.FC<GanttProps> = ({
           onClose={() => setEditingTask(null)}
         />
       )}
+      </div>
     </div>
   );
 };

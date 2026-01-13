@@ -1,16 +1,152 @@
+/* Page Wrapper */
+.gantt-page-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Page Header */
+.gantt-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+}
+
+.gantt-page-header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gantt-page-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gantt-page-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.gantt-theme-selector {
+  display: flex;
+  gap: 4px;
+  background-color: #f5f5f5;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.gantt-theme-selector button {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.gantt-theme-selector button:hover {
+  background-color: #e8e8e8;
+  color: #333;
+}
+
+.gantt-theme-selector button.active {
+  background-color: #ffffff;
+  color: #333;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.gantt-github-link {
+  padding: 6px 12px;
+  background-color: #f5f5f5;
+  color: #333;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s;
+  border: 1px solid #e0e0e0;
+}
+
+.gantt-github-link:hover {
+  background-color: #e8e8e8;
+  border-color: #d0d0d0;
+}
+
 /* Main Container */
 .gantt-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  flex: 1;
+  overflow: hidden;
   background-color: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .gantt-container.theme-dark {
   background-color: #1e1e1e;
   color: #ffffff;
+}
+
+.gantt-page-wrapper.theme-dark {
+  background-color: #1e1e1e;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-page-header {
+  background-color: #2d2d2d;
+  border-bottom-color: #444;
+  color: #ffffff;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-page-title {
+  color: #ffffff;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-theme-selector {
+  background-color: #3a3a3a;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-theme-selector button {
+  color: #ccc;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-theme-selector button:hover {
+  background-color: #4a4a4a;
+  color: #fff;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-theme-selector button.active {
+  background-color: #1e1e1e;
+  color: #fff;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-github-link {
+  background-color: #3a3a3a;
+  color: #ccc;
+  border-color: #555;
+}
+
+.gantt-page-wrapper.theme-dark .gantt-github-link:hover {
+  background-color: #4a4a4a;
+  border-color: #666;
+  color: #fff;
 }
 
 .gantt-layout {
