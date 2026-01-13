@@ -202,7 +202,10 @@
   padding: 12px 16px;
   font-weight: 600;
   font-size: 13px;
+  font-family: var(--font-heading);
   border-right: 1px solid #e0e0e0;
+  color: #333;
+  background-color: #f8f9fa;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -210,6 +213,8 @@
 
 .theme-dark .gantt-grid-header-cell {
   border-right-color: #444;
+  background-color: #2a2a2a;
+  color: #e0e0e0;
 }
 
 .gantt-grid-body {
