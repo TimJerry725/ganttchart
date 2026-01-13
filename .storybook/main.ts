@@ -23,13 +23,14 @@ const config: StorybookConfig = {
   viteFinal: async (config) => {
     // Ensure proper path resolution
     if (config.resolve) {
+      const path = await import('path');
       config.resolve.alias = {
         ...config.resolve.alias,
-        '@gantt/core': new URL('../packages/gantt-core/src', import.meta.url).pathname,
-        '@gantt/renderer': new URL('../packages/gantt-renderer/src', import.meta.url).pathname,
-        '@gantt/react': new URL('../packages/gantt-react/src', import.meta.url).pathname,
-        '@gantt/compat-svar': new URL('../packages/gantt-compat-svar/src', import.meta.url).pathname,
-        '@gantt/antd': new URL('../packages/gantt-antd/src', import.meta.url).pathname,
+        '@gantt/core': path.resolve(__dirname, '../packages/gantt-core/src'),
+        '@gantt/renderer': path.resolve(__dirname, '../packages/gantt-renderer/src'),
+        '@gantt/react': path.resolve(__dirname, '../packages/gantt-react/src'),
+        '@gantt/compat-svar': path.resolve(__dirname, '../packages/gantt-compat-svar/src'),
+        '@gantt/antd': path.resolve(__dirname, '../packages/gantt-antd/src'),
       };
     }
     return config;
