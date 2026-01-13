@@ -22,8 +22,6 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
     owner: '',
   });
 
-  const [isExpanded, setIsExpanded] = useState(false);
-
   const handleFilterChange = (newFilters: Partial<FilterOptions>) => {
     const updated = { ...filters, ...newFilters };
     setFilters(updated);
@@ -49,7 +47,8 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
 
   return (
     <div className="gantt-filter-container">
-      <div className="gantt-filter-main">
+      <div className="gantt-filter-inline">
+        {/* Search input */}
         <input
           type="text"
           placeholder="Search tasks..."
@@ -58,63 +57,49 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
           className="gantt-search-input"
         />
         
-        <button
-          className="gantt-filter-toggle"
-          onClick={() => setIsExpanded(!isExpanded)}
+        {/* Status filter */}
+        <select
+          value={filters.status}
+          onChange={(e) => handleFilterChange({ status: e.target.value as any })}
+          className="gantt-filter-select"
         >
-          {isExpanded ? '▲ Filters' : '▼ Filters'}
-          {hasActiveFilters && <span className="gantt-filter-badge">•</span>}
-        </button>
+          <option value="all">All Status</option>
+          <option value="not-started">Not Started</option>
+          <option value="in-progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
 
+        {/* Priority filter */}
+        <select
+          value={filters.priority}
+          onChange={(e) => handleFilterChange({ priority: e.target.value as any })}
+          className="gantt-filter-select"
+        >
+          <option value="all">All Priority</option>
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+
+        {/* Owner filter */}
+        <select
+          value={filters.owner}
+          onChange={(e) => handleFilterChange({ owner: e.target.value })}
+          className="gantt-filter-select"
+        >
+          <option value="">All Owners</option>
+          {owners.map(owner => (
+            <option key={owner} value={owner}>{owner}</option>
+          ))}
+        </select>
+
+        {/* Clear button */}
         {hasActiveFilters && (
           <button className="gantt-filter-clear" onClick={clearFilters}>
             Clear
           </button>
         )}
       </div>
-
-      {isExpanded && (
-        <div className="gantt-filter-panel">
-          <div className="gantt-filter-group">
-            <label>Status</label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange({ status: e.target.value as any })}
-            >
-              <option value="all">All</option>
-              <option value="not-started">Not Started</option>
-              <option value="in-progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
-          <div className="gantt-filter-group">
-            <label>Priority</label>
-            <select
-              value={filters.priority}
-              onChange={(e) => handleFilterChange({ priority: e.target.value as any })}
-            >
-              <option value="all">All</option>
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-
-          <div className="gantt-filter-group">
-            <label>Owner</label>
-            <select
-              value={filters.owner}
-              onChange={(e) => handleFilterChange({ owner: e.target.value })}
-            >
-              <option value="">All</option>
-              {owners.map(owner => (
-                <option key={owner} value={owner}>{owner}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
