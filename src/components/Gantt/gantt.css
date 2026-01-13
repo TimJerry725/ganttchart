@@ -4,156 +4,37 @@
   --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* Page Wrapper */
-.gantt-page-wrapper {
+/* Gantt Wrapper - SVAR Style (Simple, Clean) */
+.gantt-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   width: 100%;
-  background-color: #f5f5f5;
+  height: 100%;
+  background-color: #ffffff;
   font-family: var(--font-body);
-}
-
-/* Page Header */
-.gantt-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  z-index: 1000;
-}
-
-.gantt-page-header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.gantt-page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  font-family: var(--font-heading);
-  color: #333;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  letter-spacing: 0.5px;
-}
-
-.gantt-page-header-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.gantt-theme-selector {
-  display: flex;
-  gap: 4px;
-  background-color: #f5f5f5;
-  border-radius: 6px;
-  padding: 2px;
-}
-
-.gantt-theme-selector button {
-  padding: 6px 12px;
-  border: none;
-  background: transparent;
-  color: #666;
-  font-size: 13px;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.2s;
-}
-
-.gantt-theme-selector button:hover {
-  background-color: #e8e8e8;
-  color: #333;
-}
-
-.gantt-theme-selector button.active {
-  background-color: #ffffff;
-  color: #333;
-  font-weight: 500;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.gantt-github-link {
-  padding: 6px 12px;
-  background-color: #f5f5f5;
-  color: #333;
-  text-decoration: none;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.2s;
   border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
 }
 
-.gantt-github-link:hover {
-  background-color: #e8e8e8;
-  border-color: #d0d0d0;
+.gantt-wrapper.theme-dark {
+  background-color: #1e1e1e;
+  border-color: #444;
 }
 
-/* Main Container */
+/* Main Container - SVAR Style */
 .gantt-container {
   display: flex;
   flex-direction: column;
   flex: 1;
   overflow: hidden;
   background-color: #ffffff;
+  min-height: 400px;
 }
 
 .gantt-container.theme-dark {
   background-color: #1e1e1e;
   color: #ffffff;
-}
-
-.gantt-page-wrapper.theme-dark {
-  background-color: #1e1e1e;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-page-header {
-  background-color: #2d2d2d;
-  border-bottom-color: #444;
-  color: #ffffff;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-page-title {
-  color: #ffffff;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-theme-selector {
-  background-color: #3a3a3a;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-theme-selector button {
-  color: #ccc;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-theme-selector button:hover {
-  background-color: #4a4a4a;
-  color: #fff;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-theme-selector button.active {
-  background-color: #1e1e1e;
-  color: #fff;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-github-link {
-  background-color: #3a3a3a;
-  color: #ccc;
-  border-color: #555;
-}
-
-.gantt-page-wrapper.theme-dark .gantt-github-link:hover {
-  background-color: #4a4a4a;
-  border-color: #666;
-  color: #fff;
 }
 
 .gantt-layout {
@@ -1443,6 +1324,53 @@ h1, h2, h3, h4, h5, h6,
   font-family: var(--font-body);
 }
 
+/* Context Menu - SVAR Style */
+.gantt-context-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: transparent;
+}
+
+.gantt-context-menu {
+  font-family: var(--font-body);
+}
+
+.gantt-context-menu .ant-menu {
+  font-family: var(--font-body);
+  min-width: 180px;
+}
+
+.gantt-context-menu .ant-menu-item {
+  font-family: var(--font-body);
+  font-size: 13px;
+  padding: 8px 16px;
+  height: auto;
+  line-height: 1.5;
+}
+
+.gantt-context-menu .ant-menu-item-icon {
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+.theme-dark .gantt-context-menu .ant-menu {
+  background-color: #2d2d2d;
+  border-color: #444;
+}
+
+.theme-dark .gantt-context-menu .ant-menu-item {
+  color: #e0e0e0;
+}
+
+.theme-dark .gantt-context-menu .ant-menu-item:hover {
+  background-color: #3a3a3a;
+  color: #ffffff;
+}
+
 /* ============================================
    RESPONSIVE DESIGN
    ============================================ */
@@ -1475,21 +1403,11 @@ h1, h2, h3, h4, h5, h6,
     margin-right: 4px;
   }
 
-  .gantt-page-header {
-    flex-wrap: wrap;
-    padding: 12px 16px;
-  }
-
-  .gantt-page-header-right {
-    margin-top: 8px;
-    width: 100%;
-    justify-content: flex-start;
-  }
 }
 
 /* Mobile landscape and small tablets (max-width: 768px) */
 @media (max-width: 768px) {
-  .gantt-page-wrapper {
+  .gantt-wrapper {
     height: 100vh;
     overflow: auto;
   }
@@ -1560,22 +1478,6 @@ h1, h2, h3, h4, h5, h6,
     content: '';
   }
 
-  .gantt-page-header {
-    padding: 10px 12px;
-  }
-
-  .gantt-page-title {
-    font-size: 16px;
-  }
-
-  .gantt-theme-selector {
-    font-size: 12px;
-  }
-
-  .gantt-github-link {
-    font-size: 11px;
-    padding: 6px 10px;
-  }
 
   /* Filter and search adjustments */
   .gantt-filter-container {
@@ -1597,25 +1499,9 @@ h1, h2, h3, h4, h5, h6,
 
 /* Mobile portrait (max-width: 480px) */
 @media (max-width: 480px) {
-  .gantt-page-wrapper {
+  .gantt-wrapper {
     height: 100vh;
     overflow: auto;
-  }
-
-  .gantt-page-header {
-    padding: 8px 10px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .gantt-page-header-left,
-  .gantt-page-header-right {
-    width: 100%;
-  }
-
-  .gantt-page-title {
-    font-size: 14px;
   }
 
   .gantt-toolbar {
@@ -1753,7 +1639,6 @@ h1, h2, h3, h4, h5, h6,
 
 /* Print styles */
 @media print {
-  .gantt-page-header,
   .gantt-toolbar,
   .gantt-filter-container {
     display: none;
@@ -1806,7 +1691,7 @@ h1, h2, h3, h4, h5, h6,
 }
 
 /* Ensure proper viewport handling */
-.gantt-page-wrapper {
+.gantt-wrapper {
   position: relative;
   width: 100%;
   max-width: 100vw;

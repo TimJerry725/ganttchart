@@ -8,12 +8,13 @@ interface GridProps {
   rowHeight: number;
   selectedTask: string | null;
   onTaskClick: (taskId: string) => void;
+  onTaskContextMenu?: (e: React.MouseEvent, taskId: string) => void;
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   onTaskUpdate?: (task: Task) => void;
 }
 
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
-  ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onScroll, onTaskUpdate }, ref) => {
+  ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onTaskContextMenu, onScroll, onTaskUpdate }, ref) => {
     
     const getCellValue = (task: Task, column: Column): React.ReactNode => {
       if (column.template) {
@@ -76,6 +77,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
               className={`gantt-grid-row ${selectedTask === task.id ? 'selected' : ''}`}
               style={{ height: rowHeight }}
               onClick={() => onTaskClick(task.id)}
+              onContextMenu={(e) => onTaskContextMenu?.(e, task.id)}
             >
               {columns.map((column) => (
                 <div

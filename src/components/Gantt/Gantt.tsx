@@ -6,6 +6,7 @@ import { Timeline } from './Timeline';
 import { TaskCreator } from './TaskCreator';
 import { TaskEditor } from './TaskEditor';
 import { DependencyEditor } from './DependencyEditor';
+import { ContextMenu } from './ContextMenu';
 import { FilterSearch, applyFilters } from './FilterSearch';
 import { useUndoRedo } from './UndoRedo';
 import { calculateCriticalPath } from './CriticalPath';
@@ -100,6 +101,7 @@ export const Gantt: React.FC<GanttProps> = ({
   const [showDependencyEditor, setShowDependencyEditor] = useState(false);
   const [dependencyEditTask, setDependencyEditTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [baselines, setBaselines] = useState<Map<string, Baseline>>(new Map());
@@ -192,6 +194,44 @@ export const Gantt: React.FC<GanttProps> = ({
     const task = tasks.find(t => t.id === taskId);
     if (task && !ganttConfig.readonly) {
       setEditingTask(task);
+    }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent, taskId: string) => {
+    if (ganttConfig.readonly) return;
+    e.preventDefault();
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        task,
+      });
+    }
+  };
+
+  const handleCopyTask = () => {
+    if (!contextMenu?.task) return;
+    const task = contextMenu.task;
+    const newTask: Task = {
+      ...task,
+      id: `task-${Date.now()}`,
+      text: `${task.text} (Copy)`,
+      start: addToDate(task.start, 7, 'day'),
+      end: addToDate(task.end, 7, 'day'),
+    };
+    createTaskWithHistory(newTask);
+    if (onTaskCreate) {
+      onTaskCreate(newTask);
+    }
+  };
+
+  const handleConvertTaskType = (newType: 'task' | 'milestone' | 'project') => {
+    if (!contextMenu?.task) return;
+    const updatedTask = { ...contextMenu.task, type: newType };
+    updateTask(updatedTask);
+    if (onTaskUpdate) {
+      onTaskUpdate(updatedTask);
     }
   };
 
@@ -306,41 +346,8 @@ export const Gantt: React.FC<GanttProps> = ({
   }, [undo, redo]);
 
   return (
-    <div className={`gantt-page-wrapper theme-${currentTheme}`}>
-      {/* Page Header */}
-      <div className="gantt-page-header">
-        <div className="gantt-page-header-left">
-          <h1 className="gantt-page-title">React Gantt</h1>
-        </div>
-        <div className="gantt-page-header-right">
-          <div className="gantt-theme-selector">
-            <button
-              className={currentTheme === 'light' ? 'active' : ''}
-              onClick={() => setCurrentTheme('light')}
-              title="Light Theme"
-            >
-              Willow
-            </button>
-            <button
-              className={currentTheme === 'dark' ? 'active' : ''}
-              onClick={() => setCurrentTheme('dark')}
-              title="Dark Theme"
-            >
-              Dark
-            </button>
-          </div>
-          <a
-            href="https://github.com/TimJerry725/ganttchart"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="gantt-github-link"
-          >
-            See code on GitHub
-          </a>
-        </div>
-      </div>
-
-      {/* Main Gantt Container */}
+    <div className={`gantt-wrapper theme-${ganttConfig.theme}`}>
+      {/* Main Gantt Container - SVAR Style */}
       <div className={`gantt-container theme-${ganttConfig.theme}`}>
         {/* Enhanced Toolbar - Always at top */}
         <div className="gantt-toolbar">
@@ -430,6 +437,7 @@ export const Gantt: React.FC<GanttProps> = ({
           rowHeight={ganttConfig.rowHeight!}
           selectedTask={selectedTask}
           onTaskClick={handleTaskClick}
+          onTaskContextMenu={handleContextMenu}
           onScroll={handleGridScroll}
           onTaskUpdate={handleUpdateTask}
         />
@@ -483,6 +491,46 @@ export const Gantt: React.FC<GanttProps> = ({
             setDependencyEditTask(null);
           }}
         />
+      )}
+
+      {/* Context Menu */}
+      {contextMenu && (
+        <>
+          <div
+            className="gantt-context-menu-overlay"
+            onClick={() => setContextMenu(null)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setContextMenu(null);
+            }}
+          />
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            task={contextMenu.task}
+            onEdit={() => {
+              if (contextMenu.task) {
+                setEditingTask(contextMenu.task);
+              }
+            }}
+            onDelete={() => {
+              if (contextMenu.task) {
+                handleDeleteTask(contextMenu.task.id);
+              }
+            }}
+            onCopy={handleCopyTask}
+            onDependencies={() => {
+              if (contextMenu.task) {
+                setDependencyEditTask(contextMenu.task);
+                setShowDependencyEditor(true);
+              }
+            }}
+            onConvertToMilestone={() => handleConvertTaskType('milestone')}
+            onConvertToTask={() => handleConvertTaskType('task')}
+            onConvertToProject={() => handleConvertTaskType('project')}
+            onClose={() => setContextMenu(null)}
+          />
+        </>
       )}
       </div>
     </div>
