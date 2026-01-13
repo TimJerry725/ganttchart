@@ -428,29 +428,52 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 0;
+  z-index: 1;
+  overflow: visible;
 }
 
 .gantt-link {
   pointer-events: all;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .gantt-link-line {
-  transition: stroke-width 0.2s;
+  transition: all 0.2s ease;
+  stroke: #4A90E2;
+  stroke-width: 2;
+}
+
+.theme-dark .gantt-link-line {
+  stroke: #64B5F6;
 }
 
 .gantt-link:hover .gantt-link-line {
   stroke-width: 3;
   stroke: #2196F3;
+  filter: drop-shadow(0 2px 4px rgba(33, 150, 243, 0.4));
+}
+
+.theme-dark .gantt-link:hover .gantt-link-line {
+  stroke: #90CAF9;
+}
+
+.gantt-link-arrow {
+  transition: all 0.2s ease;
+  fill: #4A90E2;
+}
+
+.theme-dark .gantt-link-arrow {
+  fill: #64B5F6;
 }
 
 .gantt-link:hover .gantt-link-arrow {
   fill: #2196F3;
+  filter: drop-shadow(0 2px 4px rgba(33, 150, 243, 0.4));
 }
 
-.gantt-link-arrow {
-  transition: fill 0.2s;
+.theme-dark .gantt-link:hover .gantt-link-arrow {
+  fill: #90CAF9;
 }
 
 .gantt-timeline-row {
