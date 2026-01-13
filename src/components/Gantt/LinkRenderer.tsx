@@ -12,208 +12,157 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     return tasks.find(t => t.id === id);
   };
 
-  const calculateLinkPath = (link: Link): string => {
-    const sourceTask = getTaskById(link.source);
-    const targetTask = getTaskById(link.target);
+  const createPath = (link: Link): string => {
+    const source = getTaskById(link.source);
+    const target = getTaskById(link.target);
 
-    if (!sourceTask || !targetTask) return '';
+    if (!source || !target) return '';
 
-    const sourcePos = getTaskPosition(sourceTask);
-    const targetPos = getTaskPosition(targetTask);
-
-    const taskBarHeight = sourcePos.height;
-    const centerOffset = taskBarHeight / 2;
-    const radius = 8; // Corner radius for rounded paths
-    const gap = 15; // Horizontal/vertical gap from task bars
-
-    let x1 = 0, y1 = 0, x2 = 0, y2 = 0;
-
-    // Set start and end points based on dependency type
+    const sPos = getTaskPosition(source);
+    const tPos = getTaskPosition(target);
+    
+    // Center Y position of task bars
+    const sY = sPos.top + sPos.height / 2;
+    const tY = tPos.top + sPos.height / 2;
+    
+    let sX = 0, tX = 0;
+    
+    // Determine start and end X positions based on link type
     switch (link.type) {
-      case 'e2s': // Finish-to-Start
-        x1 = sourcePos.left + sourcePos.width;
-        y1 = sourcePos.top + centerOffset;
-        x2 = targetPos.left;
-        y2 = targetPos.top + centerOffset;
+      case 'e2s': // End to Start
+        sX = sPos.left + sPos.width;
+        tX = tPos.left;
         break;
-      
-      case 's2s': // Start-to-Start
-        x1 = sourcePos.left;
-        y1 = sourcePos.top + centerOffset;
-        x2 = targetPos.left;
-        y2 = targetPos.top + centerOffset;
+      case 's2s': // Start to Start
+        sX = sPos.left;
+        tX = tPos.left;
         break;
-      
-      case 'e2e': // End-to-End
-        x1 = sourcePos.left + sourcePos.width;
-        y1 = sourcePos.top + centerOffset;
-        x2 = targetPos.left + targetPos.width;
-        y2 = targetPos.top + centerOffset;
+      case 'e2e': // End to End
+        sX = sPos.left + sPos.width;
+        tX = tPos.left + tPos.width;
         break;
-      
-      case 's2e': // Start-to-Finish
-        x1 = sourcePos.left;
-        y1 = sourcePos.top + centerOffset;
-        x2 = targetPos.left + targetPos.width;
-        y2 = targetPos.top + centerOffset;
+      case 's2e': // Start to End
+        sX = sPos.left;
+        tX = tPos.left + tPos.width;
         break;
     }
 
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    
-    // Helper function to create rounded corner
-    const corner = (x: number, y: number, toX: number, toY: number) => {
-      return `Q ${x} ${y} ${toX} ${toY}`;
-    };
+    const dx = tX - sX;
+    const dy = tY - sY;
+    const gap = 20;
 
-    // FINISH-TO-START (e2s) - Most common
+    // Build the path
     if (link.type === 'e2s') {
-      if (dx > 2 * gap) {
-        // Simple path when target is to the right
-        const midX = x1 + dx / 2;
+      // Finish to Start
+      if (dx > gap) {
+        // Target is to the right - simple curve
         if (Math.abs(dy) < 5) {
-          // Straight horizontal line
-          return `M ${x1} ${y1} L ${x2} ${y2}`;
-        } else {
-          // S-curve for vertical offset
-          return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+          return `M ${sX},${sY} L ${tX},${tY}`;
         }
+        const mx = sX + dx / 2;
+        return `M ${sX},${sY} C ${mx},${sY} ${mx},${tY} ${tX},${tY}`;
       } else {
-        // Rectangular path when target is to the left or nearby
-        const yDir = dy >= 0 ? 1 : -1;
-        const yMid = y1 + yDir * (Math.abs(dy) / 2 + gap);
-        
-        let path = `M ${x1} ${y1}`;
-        path += ` L ${x1 + gap} ${y1}`;
-        path += ` ${corner(x1 + gap, y1 + yDir * radius, x1 + gap, y1 + yDir * radius)}`;
-        path += ` L ${x1 + gap} ${yMid - yDir * radius}`;
-        path += ` ${corner(x1 + gap, yMid, x1 + gap - radius, yMid)}`;
-        path += ` L ${x2 - gap + radius} ${yMid}`;
-        path += ` ${corner(x2 - gap, yMid, x2 - gap, yMid + yDir * radius)}`;
-        path += ` L ${x2 - gap} ${y2 - yDir * radius}`;
-        path += ` ${corner(x2 - gap, y2, x2 - gap + radius, y2)}`;
-        path += ` L ${x2} ${y2}`;
-        return path;
+        // Target is to the left - go around
+        const my = sY + (dy >= 0 ? 1 : -1) * Math.max(Math.abs(dy) / 2 + gap, gap);
+        return `M ${sX},${sY} 
+                L ${sX + gap},${sY} 
+                L ${sX + gap},${my} 
+                L ${tX - gap},${my} 
+                L ${tX - gap},${tY} 
+                L ${tX},${tY}`;
       }
     }
     
-    // START-TO-START (s2s)
     else if (link.type === 's2s') {
-      const yDir = dy >= 0 ? 1 : -1;
-      const leftX = Math.min(x1, x2) - gap;
-      
-      let path = `M ${x1} ${y1}`;
-      path += ` L ${leftX + radius} ${y1}`;
-      path += ` ${corner(leftX, y1, leftX, y1 + yDir * radius)}`;
-      path += ` L ${leftX} ${y2 - yDir * radius}`;
-      path += ` ${corner(leftX, y2, leftX + radius, y2)}`;
-      path += ` L ${x2} ${y2}`;
-      return path;
+      // Start to Start - go left then curve to target
+      const leftX = Math.min(sX, tX) - gap;
+      return `M ${sX},${sY} 
+              L ${leftX},${sY} 
+              L ${leftX},${tY} 
+              L ${tX},${tY}`;
     }
     
-    // END-TO-END (e2e)
     else if (link.type === 'e2e') {
-      const yDir = dy >= 0 ? 1 : -1;
-      const rightX = Math.max(x1, x2) + gap;
-      
-      let path = `M ${x1} ${y1}`;
-      path += ` L ${rightX - radius} ${y1}`;
-      path += ` ${corner(rightX, y1, rightX, y1 + yDir * radius)}`;
-      path += ` L ${rightX} ${y2 - yDir * radius}`;
-      path += ` ${corner(rightX, y2, rightX - radius, y2)}`;
-      path += ` L ${x2} ${y2}`;
-      return path;
+      // End to End - go right then curve to target
+      const rightX = Math.max(sX, tX) + gap;
+      return `M ${sX},${sY} 
+              L ${rightX},${sY} 
+              L ${rightX},${tY} 
+              L ${tX},${tY}`;
     }
     
-    // START-TO-FINISH (s2e)
     else if (link.type === 's2e') {
-      if (dx < -2 * gap) {
-        // Simple path when target is to the left
-        const midX = x1 + dx / 2;
+      // Start to Finish
+      if (dx < -gap) {
+        // Target is to the left - simple curve
         if (Math.abs(dy) < 5) {
-          return `M ${x1} ${y1} L ${x2} ${y2}`;
-        } else {
-          return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+          return `M ${sX},${sY} L ${tX},${tY}`;
         }
+        const mx = sX + dx / 2;
+        return `M ${sX},${sY} C ${mx},${sY} ${mx},${tY} ${tX},${tY}`;
       } else {
-        // Path when target is to the right
-        const yDir = dy >= 0 ? 1 : -1;
-        const leftX = x1 - gap;
-        
-        let path = `M ${x1} ${y1}`;
-        path += ` L ${leftX + radius} ${y1}`;
-        path += ` ${corner(leftX, y1, leftX, y1 + yDir * radius)}`;
-        path += ` L ${leftX} ${y2 - yDir * radius}`;
-        path += ` ${corner(leftX, y2, leftX + radius, y2)}`;
-        path += ` L ${x2} ${y2}`;
-        return path;
+        // Target is to the right - go around
+        const leftX = sX - gap;
+        return `M ${sX},${sY} 
+                L ${leftX},${sY} 
+                L ${leftX},${tY} 
+                L ${tX},${tY}`;
       }
     }
 
     return '';
   };
 
-  const getArrowhead = (link: Link): string => {
-    const targetTask = getTaskById(link.target);
-    if (!targetTask) return '';
+  const createArrow = (link: Link): string => {
+    const target = getTaskById(link.target);
+    if (!target) return '';
 
-    const targetPos = getTaskPosition(targetTask);
-    const centerOffset = targetPos.height / 2;
+    const tPos = getTaskPosition(target);
+    const cy = tPos.top + tPos.height / 2;
     const size = 7;
-    const width = 5;
+    
+    let x = 0;
+    let pointRight = true;
 
-    let x = 0, y = 0, pointsRight = true;
-
-    switch (link.type) {
-      case 'e2s': // Arrow points right into target start
-      case 's2s':
-        x = targetPos.left;
-        y = targetPos.top + centerOffset;
-        pointsRight = true;
-        break;
-      
-      case 'e2e': // Arrow points left into target end
-      case 's2e':
-        x = targetPos.left + targetPos.width;
-        y = targetPos.top + centerOffset;
-        pointsRight = false;
-        break;
+    // Determine arrow position and direction
+    if (link.type === 'e2s' || link.type === 's2s') {
+      x = tPos.left;
+      pointRight = true;
+    } else {
+      x = tPos.left + tPos.width;
+      pointRight = false;
     }
 
-    if (pointsRight) {
-      // Right-pointing triangle
-      return `M ${x} ${y} L ${x - size} ${y - width} L ${x - size} ${y + width} Z`;
+    // Create triangle
+    if (pointRight) {
+      return `M ${x},${cy} L ${x - size},${cy - size} L ${x - size},${cy + size} Z`;
     } else {
-      // Left-pointing triangle
-      return `M ${x} ${y} L ${x + size} ${y - width} L ${x + size} ${y + width} Z`;
+      return `M ${x},${cy} L ${x + size},${cy - size} L ${x + size},${cy + size} Z`;
     }
   };
 
   return (
-    <svg className="gantt-links-layer">
+    <svg className="gantt-links-layer" style={{ overflow: 'visible' }}>
       {links.map((link) => {
-        const sourceTask = getTaskById(link.source);
-        const targetTask = getTaskById(link.target);
+        const source = getTaskById(link.source);
+        const target = getTaskById(link.target);
         
-        if (!sourceTask || !targetTask) return null;
+        if (!source || !target) return null;
 
-        const path = calculateLinkPath(link);
-        const arrowhead = getArrowhead(link);
+        const pathD = createPath(link);
+        const arrowD = createArrow(link);
         
         return (
           <g key={link.id} className="gantt-link">
             <path
-              d={path}
+              d={pathD}
               fill="none"
               stroke="#4A90E2"
               strokeWidth="2"
               className="gantt-link-line"
-              strokeLinecap="round"
-              strokeLinejoin="round"
             />
             <path
-              d={arrowhead}
+              d={arrowD}
               fill="#4A90E2"
               className="gantt-link-arrow"
             />
