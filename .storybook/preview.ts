@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/react-vite';
+import React from 'react';
 
 // Ant Design CSS
 import 'antd/dist/reset.css';
