@@ -120,9 +120,9 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
                     {isNameColumn && hasChildren && (
                       <button
                         type="button"
-                        className="iris-gantt-expand-button absolute left-2"
+                        className="iris-gantt-expand-button absolute"
                         onClick={(e) => handleExpandClick(e, row.taskId)}
-                        style={{ left: `${indent + 4}px` }}
+                        style={{ left: `${indent + 8}px` }}
                       >
                         {task.expanded !== false ? '−' : '+'}
                       </button>

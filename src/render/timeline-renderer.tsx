@@ -54,7 +54,7 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
 
     // Draw weekend backgrounds
     if (showWeekends) {
-      ctx.fillStyle = '#f9fafb';
+      ctx.fillStyle = '#f3f4f6';
       let currentDate = new Date(timeScale.startDate);
       while (currentDate <= timeScale.endDate) {
         const dayOfWeek = currentDate.getDay();
@@ -76,15 +76,42 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
         currentDate.setDate(currentDate.getDate() + 1);
       }
     }
-
-    // Draw time scale header
-    ctx.fillStyle = '#f9fafb';
-    ctx.fillRect(0, 0, viewport.width, headerHeight);
-
+    
+    // Draw vertical grid lines
     ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
-    ctx.fillStyle = '#374151';
-    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    let gridDate = new Date(timeScale.startDate);
+    gridDate.setHours(0, 0, 0, 0);
+    while (gridDate <= timeScale.endDate) {
+      const x = dateToX(gridDate, timeScale) - viewport.x;
+      if (x >= 0 && x <= viewport.width) {
+        ctx.beginPath();
+        ctx.moveTo(x, headerHeight);
+        ctx.lineTo(x, viewport.height);
+        ctx.stroke();
+      }
+      gridDate.setDate(gridDate.getDate() + 1);
+    }
+
+    // Draw time scale header with gradient
+    const headerGradient = ctx.createLinearGradient(0, 0, 0, headerHeight);
+    headerGradient.addColorStop(0, '#f9fafb');
+    headerGradient.addColorStop(1, '#f3f4f6');
+    ctx.fillStyle = headerGradient;
+    ctx.fillRect(0, 0, viewport.width, headerHeight);
+
+    // Draw header border
+    ctx.strokeStyle = '#d1d5db';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, headerHeight);
+    ctx.lineTo(viewport.width, headerHeight);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#d1d5db';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
     // Draw time markers with better spacing
     const step = getTimeStep(timeScale);
@@ -117,21 +144,32 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
       if (today >= timeScale.startDate && today <= timeScale.endDate) {
         const todayX = dateToX(today, timeScale) - viewport.x;
         if (todayX >= 0 && todayX <= viewport.width) {
+          // Draw marker line
           ctx.strokeStyle = '#f59e0b';
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 3;
+          ctx.setLineDash([]);
           ctx.beginPath();
           ctx.moveTo(todayX, headerHeight);
           ctx.lineTo(todayX, viewport.height);
           ctx.stroke();
+          
+          // Draw marker triangle at top
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.moveTo(todayX, headerHeight);
+          ctx.lineTo(todayX - 6, headerHeight - 8);
+          ctx.lineTo(todayX + 6, headerHeight - 8);
+          ctx.closePath();
+          ctx.fill();
         }
       }
     }
 
     // Draw links
     if (links.length > 0) {
-      ctx.strokeStyle = '#6b7280';
-      ctx.lineWidth = 2;
-      ctx.fillStyle = '#6b7280';
+      ctx.strokeStyle = '#4b5563';
+      ctx.lineWidth = 2.5;
+      ctx.fillStyle = '#4b5563';
       
       for (const link of links) {
         const sourceX = link.sourceX - viewport.x;

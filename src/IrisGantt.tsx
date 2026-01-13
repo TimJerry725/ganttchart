@@ -69,14 +69,14 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
     align: 'center',
     sortable: true,
     render: (task) => (
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div className="flex items-center gap-2 w-full">
+        <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
           <div 
-            className="h-full bg-blue-500 transition-all"
+            className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all rounded-full"
             style={{ width: `${task.progress || 0}%` }}
           />
         </div>
-        <span className="text-xs text-gray-600 w-8 text-right">
+        <span className="text-xs font-semibold text-gray-700 w-10 text-right">
           {task.progress || 0}%
         </span>
       </div>
