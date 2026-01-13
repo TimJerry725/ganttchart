@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
-import type { Task } from '../types';
+import React from 'react';
+import type { Task, TaskSegment } from '../types';
+import { Tooltip } from 'antd';
+import { formatDate } from '../utils/dateUtils';
 
 interface TaskBarProps {
   task: Task;
@@ -7,9 +9,9 @@ interface TaskBarProps {
   selected: boolean;
   dragging: boolean;
   onClick: () => void;
-  onDragStart: (type: 'move' | 'resize-left' | 'resize-right') => void;
-  onDragEnd: () => void;
-  onUpdate?: (task: Task) => void;
+  onDragStart: (clientX: number, clientY: number, type: 'move' | 'resize-left' | 'resize-right') => void;
+  dragDeltaX?: number;
+  dragType?: 'move' | 'resize-left' | 'resize-right' | 'reorder' | null;
   readonly?: boolean;
 }
 
@@ -20,45 +22,54 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   dragging,
   onClick,
   onDragStart,
-  onDragEnd,
-  onUpdate,
+  dragDeltaX = 0,
+  dragType = null,
   readonly = false,
 }) => {
   const handleMouseDown = (e: React.MouseEvent, type: 'move' | 'resize-left' | 'resize-right') => {
     if (readonly) return;
     e.preventDefault();
     e.stopPropagation();
-    onDragStart(type);
+    onDragStart(e.clientX, e.clientY, type);
   };
 
   const getTaskBarClass = () => {
     const classes = ['gantt-task-bar'];
-    
+
     if (task.type === 'milestone') classes.push('milestone');
     if (task.type === 'project') classes.push('project');
     if (selected) classes.push('selected');
     if (dragging) classes.push('dragging');
-    
+
     return classes.join(' ');
   };
 
   const getTaskBarStyle = (): React.CSSProperties => {
+    let left = position.left;
+    let width = position.width;
+
+    if (dragging && dragType) {
+      if (dragType === 'move') {
+        left += dragDeltaX;
+      } else if (dragType === 'resize-left') {
+        left += dragDeltaX;
+        width -= dragDeltaX;
+      } else if (dragType === 'resize-right') {
+        width += dragDeltaX;
+      }
+    }
+
     return {
-      left: `${position.left}px`,
-      width: `${position.width}px`,
-      backgroundColor: task.color || '#5A9FD4',
+      left: `${left}px`,
+      width: `${Math.max(width, 0)}px`,
+      backgroundColor: task.color || (task.type === 'project' ? '#78909C' : '#5A9FD4'),
     };
   };
 
-  return (
-    <div
-      className={getTaskBarClass()}
-      style={getTaskBarStyle()}
-      onClick={onClick}
-      onMouseDown={(e) => handleMouseDown(e, 'move')}
-    >
+  const renderTaskBarContent = (isSegment = false) => (
+    <>
       {/* Resize handle - left */}
-      {!readonly && task.type !== 'milestone' && (
+      {!readonly && task.type !== 'milestone' && !isSegment && (
         <div
           className="gantt-task-resize-handle gantt-task-resize-left"
           onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
@@ -66,27 +77,76 @@ export const TaskBar: React.FC<TaskBarProps> = ({
       )}
 
       {/* Progress bar */}
-      <div
-        className="gantt-task-progress"
-        style={{ width: `${task.progress}%` }}
-      />
+      {!isSegment && (
+        <div
+          className="gantt-task-progress"
+          style={{ width: `${task.progress}%` }}
+        />
+      )}
 
       {/* Task content */}
       <div className="gantt-task-content">
         {task.type === 'milestone' ? (
-          <div className="gantt-milestone-marker">◆</div>
+          <div className="gantt-milestone-marker" />
         ) : (
-          <span className="gantt-task-text">{task.text}</span>
+          !isSegment && <span className="gantt-task-text">{task.text}</span>
         )}
       </div>
 
       {/* Resize handle - right */}
-      {!readonly && task.type !== 'milestone' && (
+      {!readonly && task.type !== 'milestone' && !isSegment && (
         <div
           className="gantt-task-resize-handle gantt-task-resize-right"
           onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
         />
       )}
+    </>
+  );
+
+  const tooltipContent = (
+    <div className="gantt-tooltip">
+      <div className="gantt-tooltip-title">{task.text}</div>
+      <div className="gantt-tooltip-dates">
+        {formatDate(task.start, 'MMM D')} - {formatDate(task.end, 'MMM D')}
+      </div>
+      <div className="gantt-tooltip-progress">Progress: {task.progress}%</div>
+      {task.owner && <div className="gantt-tooltip-owner">Owner: {task.owner}</div>}
     </div>
+  );
+
+  if (task.segments && task.segments.length > 0) {
+    return (
+      <div className="gantt-task-group">
+        {task.segments.map((seg: TaskSegment, i) => (
+          <Tooltip key={i} title={tooltipContent} mouseEnterDelay={0.5}>
+            <div
+              className={getTaskBarClass() + ' segment'}
+              style={{
+                left: `${position.left + (seg.start.getTime() - task.start.getTime()) / (task.end.getTime() - task.start.getTime()) * position.width}px`,
+                width: `${(seg.end.getTime() - seg.start.getTime()) / (task.end.getTime() - task.start.getTime()) * position.width}px`,
+                backgroundColor: task.color || '#5A9FD4',
+              }}
+              onClick={onClick}
+              onMouseDown={(e) => handleMouseDown(e, 'move')}
+            >
+              {renderTaskBarContent(true)}
+            </div>
+          </Tooltip>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <Tooltip title={tooltipContent} mouseEnterDelay={0.5}>
+      <div
+        className={getTaskBarClass()}
+        style={getTaskBarStyle()}
+        onClick={onClick}
+        onMouseDown={(e) => handleMouseDown(e, 'move')}
+      >
+        {renderTaskBarContent()}
+      </div>
+    </Tooltip>
   );
 };

@@ -138,7 +138,7 @@ export const Default: Story = {
       },
     ];
 
-    if (secondaryUnit && secondaryUnit !== 'none') {
+    if (secondaryUnit && (secondaryUnit as string) !== 'none') {
       scales.push({
         unit: secondaryUnit as Scale['unit'],
         step: secondaryStep,

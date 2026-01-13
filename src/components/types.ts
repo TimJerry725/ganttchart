@@ -13,6 +13,13 @@ export interface Task {
   owner?: string;
   priority?: 'low' | 'medium' | 'high';
   dependencies?: string[]; // Array of task IDs this task depends on
+  segments?: TaskSegment[]; // For split tasks
+}
+
+export interface TaskSegment {
+  start: Date;
+  end: Date;
+  duration: number;
 }
 
 export interface Link {

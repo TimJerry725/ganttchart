@@ -24,7 +24,7 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const end = new Date(formData.start);
     end.setDate(end.getDate() + formData.duration);
 
@@ -59,7 +59,7 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
           <h3>Edit Task</h3>
           <button className="gantt-modal-close" onClick={onClose}>✕</button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="gantt-modal-body">
           <div className="gantt-form-row">
             <label>Task Name *</label>
@@ -76,7 +76,7 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
               <label>Type</label>
               <select
                 value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as Task['type'] })}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
               >
                 <option value="task">Task</option>
                 <option value="milestone">Milestone</option>
@@ -88,7 +88,7 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
               <label>Priority</label>
               <select
                 value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value as Task['priority'] })}
+                onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>

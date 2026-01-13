@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Input, Select, Button } from 'antd';
-import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { CloseCircleOutlined } from '@ant-design/icons';
 import type { Task } from '../types';
 
 const { Search } = Input;
@@ -43,7 +43,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
     onFilterChange(cleared);
   };
 
-  const hasActiveFilters = 
+  const hasActiveFilters =
     filters.searchText !== '' ||
     filters.status !== 'all' ||
     filters.priority !== 'all' ||
@@ -63,7 +63,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
             style={{ width: 250 }}
           />
         </div>
-        
+
         {/* Right side - Filters */}
         <div className="gantt-filter-right">
           {/* Status filter */}
@@ -135,7 +135,7 @@ export const applyFilters = (tasks: Task[], filters: FilterOptions): Task[] => {
       const matchesText = task.text.toLowerCase().includes(searchLower);
       const matchesOwner = task.owner?.toLowerCase().includes(searchLower);
       const matchesDetails = task.details?.toLowerCase().includes(searchLower);
-      
+
       if (!matchesText && !matchesOwner && !matchesDetails) {
         return false;
       }
@@ -143,11 +143,11 @@ export const applyFilters = (tasks: Task[], filters: FilterOptions): Task[] => {
 
     // Status filter
     if (filters.status !== 'all') {
-      const status = 
+      const status =
         task.progress === 0 ? 'not-started' :
-        task.progress === 100 ? 'completed' :
-        'in-progress';
-      
+          task.progress === 100 ? 'completed' :
+            'in-progress';
+
       if (status !== filters.status) {
         return false;
       }
@@ -168,7 +168,7 @@ export const applyFilters = (tasks: Task[], filters: FilterOptions): Task[] => {
       const taskStart = task.start.getTime();
       const rangeStart = filters.dateRange.start.getTime();
       const rangeEnd = filters.dateRange.end.getTime();
-      
+
       if (taskStart < rangeStart || taskStart > rangeEnd) {
         return false;
       }

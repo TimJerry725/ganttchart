@@ -14,7 +14,7 @@ interface TimelineProps {
   selectedTask: string | null;
   draggedTask: string | null;
   onTaskClick: (taskId: string) => void;
-  onTaskDragStart: (taskId: string) => void;
+  onTaskDragStart: (taskId: string, clientX: number, clientY: number) => void;
   onTaskDragEnd: () => void;
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   onTaskUpdate?: (task: Task) => void;
@@ -30,13 +30,13 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     scales,
     config,
     selectedTask,
-    draggedTask,
     onTaskClick,
     onTaskDragStart,
     onTaskDragEnd,
     onScroll,
     onTaskUpdate,
     zoomLevel,
+    baselines,
   }, ref) => {
     const [localTasks, setLocalTasks] = useState(tasks);
     const columnWidth = (config.columnWidth || 60) * zoomLevel;
@@ -46,7 +46,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       localTasks,
       onTaskUpdate,
       columnWidth,
-      range.start
+      scales[1].unit,
+      scales[1].step
     );
 
     // Update local tasks when props change
@@ -75,7 +76,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       const startMs = range.start.getTime();
       const dateMs = date.getTime();
       const diffMs = dateMs - startMs;
-      
+
       const unitMsMap: Record<string, number> = {
         'hour': 3600000,
         'day': 86400000,
@@ -84,7 +85,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         'quarter': 7776000000,
         'year': 31536000000
       };
-      
+
       const unitMs = unitMsMap[scale.unit] || 86400000;
       return (diffMs / (unitMs * scale.step)) * columnWidth;
     };
@@ -92,7 +93,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     const getTaskPosition = (task: Task) => {
       const left = getPixelPosition(task.start);
       const right = getPixelPosition(task.end);
-      
+
       return {
         left,
         width: Math.max(right - left, 0),
@@ -126,9 +127,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
       if (dragState.taskId && dragState.type) {
-        const updatedTask = handleDrag(e.clientX);
+        const updatedTask = handleDrag(e.clientX, e.clientY);
         if (updatedTask) {
-          setLocalTasks(prev => 
+          setLocalTasks(prev =>
             prev.map(t => t.id === updatedTask.id ? updatedTask : t)
           );
         }
@@ -139,8 +140,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       if (dragState.taskId) {
         const updatedTask = localTasks.find(t => t.id === dragState.taskId);
         handleDragEnd(updatedTask || null);
+        onTaskDragEnd();
       }
-    }, [dragState, localTasks, handleDragEnd]);
+    }, [dragState, localTasks, handleDragEnd, onTaskDragEnd]);
 
     const primaryScale = scales[0];
     const secondaryScale = scales[1];
@@ -150,9 +152,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     const totalWidth = secondaryCells.length * columnWidth;
 
     return (
-      <div 
-        className="gantt-timeline-container" 
-        ref={ref} 
+      <div
+        className="gantt-timeline-container"
+        ref={ref}
         onScroll={onScroll}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -175,7 +177,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
             {secondaryCells.map((cell, index) => {
               const isWeekendDay = config.weekends && isWeekend(cell.date);
               const isHolidayDay = config.holidays && isHoliday(cell.date, config.holidays);
-              
+
               return (
                 <div
                   key={index}
@@ -188,14 +190,14 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
             })}
           </div>
         </div>
-        
+
         <div className="gantt-timeline-body" style={{ width: totalWidth, height: localTasks.length * (config.rowHeight || 44) }}>
           {/* Grid lines */}
           <div className="gantt-timeline-grid">
             {secondaryCells.map((cell, index) => {
               const isWeekendDay = config.weekends && isWeekend(cell.date);
               const isHolidayDay = config.holidays && isHoliday(cell.date, config.holidays);
-              
+
               return (
                 <div
                   key={index}
@@ -221,12 +223,12 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
               const position = getTaskPosition(task);
               const baseline = showBaselines ? baselines?.get(task.id) : undefined;
               const baselinePosition = baseline ? getBaselinePosition(baseline) : undefined;
-              
+
               return (
                 <div
                   key={task.id}
                   className="gantt-timeline-row"
-                  style={{ 
+                  style={{
                     height: config.rowHeight,
                     top: index * (config.rowHeight || 44),
                     width: '100%'
@@ -250,15 +252,13 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                     position={position}
                     selected={selectedTask === task.id}
                     dragging={dragState.taskId === task.id}
+                    dragDeltaX={dragState.dragDeltaX}
+                    dragType={dragState.type}
                     onClick={() => onTaskClick(task.id)}
-                    onDragStart={(type) => {
-                      const rect = document.querySelector('.gantt-timeline-container')?.getBoundingClientRect();
-                      if (rect) {
-                        handleDragStart(task.id, rect.left, type);
-                      }
+                    onDragStart={(clientX, clientY, type) => {
+                      handleDragStart(task.id, clientX, clientY, type);
+                      onTaskDragStart(task.id, clientX, clientY);
                     }}
-                    onDragEnd={handleMouseUp}
-                    onUpdate={onTaskUpdate}
                     readonly={config.readonly}
                   />
                 </div>

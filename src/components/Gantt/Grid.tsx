@@ -11,11 +11,12 @@ interface GridProps {
   onTaskContextMenu?: (e: React.MouseEvent, taskId: string) => void;
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   onTaskUpdate?: (task: Task) => void;
+  onTaskDragStart?: (taskId: string, clientX: number, clientY: number, type: 'reorder') => void;
 }
 
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
-  ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onTaskContextMenu, onScroll, onTaskUpdate }, ref) => {
-    
+  ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onTaskContextMenu, onScroll, onTaskUpdate, onTaskDragStart }, ref) => {
+
     const getCellValue = (task: Task, column: Column): React.ReactNode => {
       if (column.template) {
         return column.template(task);
@@ -25,8 +26,19 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
         case 'text':
           return (
             <div className="gantt-grid-cell-text">
+              <div
+                className="gantt-row-drag-handle"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onTaskDragStart?.(task.id, e.clientX, e.clientY, 'reorder');
+                }}
+              >
+                ⣿
+              </div>
               {task.type === 'project' && (
-                <span className="gantt-tree-icon">{task.open ? '▼' : '▶'}</span>
+                <span className="gantt-tree-icon" onClick={() => onTaskUpdate?.({ ...task, open: !task.open })}>
+                  {task.open ? '▼' : '▶'}
+                </span>
               )}
               <span>{task.text}</span>
             </div>
@@ -41,8 +53,8 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
           return (
             <div className="gantt-progress-cell">
               <div className="gantt-progress-bar-bg">
-                <div 
-                  className="gantt-progress-bar-fill" 
+                <div
+                  className="gantt-progress-bar-fill"
                   style={{ width: `${task.progress}%` }}
                 />
               </div>

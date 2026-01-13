@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Gantt } from '../components/Gantt';
-import type { Task, Link, Baseline } from '../components/types';
+import type { Task } from '../components/types';
 import '../components/Gantt/gantt.css';
 
 const meta = {
@@ -46,11 +46,12 @@ const tasks: Task[] = [
   },
 ];
 
-const baselines = new Map<string, Baseline>([
-  ['1', { taskId: '1', start: new Date(2024, 2, 1), end: new Date(2024, 2, 10) }],
-  ['2', { taskId: '2', start: new Date(2024, 2, 5), end: new Date(2024, 2, 15) }],
-  ['3', { taskId: '3', start: new Date(2024, 2, 18), end: new Date(2024, 2, 28) }],
-]);
+// Baselines are now managed internally when config.baselines is true
+// const baselines = new Map<string, Baseline>([
+//   ['1', { taskId: '1', start: new Date(2024, 2, 1), end: new Date(2024, 2, 10) }],
+//   ['2', { taskId: '2', start: new Date(2024, 2, 5), end: new Date(2024, 2, 15) }],
+//   ['3', { taskId: '3', start: new Date(2024, 2, 18), end: new Date(2024, 2, 28) }],
+// ]);
 
 /**
  * Baselines - Track Variance

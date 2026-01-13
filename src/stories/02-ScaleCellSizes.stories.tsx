@@ -16,7 +16,7 @@ const meta = {
       description: 'Width of timeline columns in pixels',
       table: {
         category: 'Scale Settings',
-        defaultValue: { summary: 60 },
+        defaultValue: { summary: '60' },
       },
     },
     cellHeight: {
@@ -24,7 +24,7 @@ const meta = {
       description: 'Height of task bars in pixels',
       table: {
         category: 'Scale Settings',
-        defaultValue: { summary: 32 },
+        defaultValue: { summary: '32' },
       },
     },
     scaleHeight: {
@@ -32,7 +32,7 @@ const meta = {
       description: 'Height of timeline header scales',
       table: {
         category: 'Scale Settings',
-        defaultValue: { summary: 40 },
+        defaultValue: { summary: '40' },
       },
     },
   },

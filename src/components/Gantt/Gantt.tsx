@@ -9,7 +9,6 @@ import { DependencyEditor } from './DependencyEditor';
 import { ContextMenu } from './ContextMenu';
 import { FilterSearch, applyFilters } from './FilterSearch';
 import { useUndoRedo } from './UndoRedo';
-import { calculateCriticalPath } from './CriticalPath';
 import { autoSchedule, levelResources } from './AutoScheduler';
 import { exportToCSV, exportToExcel, exportToJSON, exportToPDF } from './ExportUtils';
 import { createBaseline } from './Baselines';
@@ -30,7 +29,6 @@ import {
   faFileExcel,
   faFileCode,
   faFilePdf,
-  faSave,
 } from '@fortawesome/free-solid-svg-icons';
 
 // Ant Design CSS
@@ -54,6 +52,26 @@ interface GanttProps {
   onTaskDelete?: (taskId: string) => void;
   onLinkCreate?: (link: Link) => void;
   onLinkDelete?: (linkId: string) => void;
+  // Storybook helper props (ignored by component)
+  cellWidth?: number;
+  cellHeight?: number;
+  scaleHeight?: number;
+  primaryUnit?: string;
+  primaryStep?: number;
+  primaryFormat?: string;
+  secondaryUnit?: string;
+  secondaryStep?: number;
+  secondaryFormat?: string;
+  showVerticalBorders?: boolean;
+  showHorizontalBorders?: boolean;
+  borderStyle?: string;
+  borderColor?: string;
+  showStartDate?: boolean;
+  showEndDate?: boolean;
+  startDateWidth?: number;
+  endDateWidth?: number;
+  startDateFormat?: string;
+  endDateFormat?: string;
 }
 
 const defaultColumns: Column[] = [
@@ -141,8 +159,8 @@ export const Gantt: React.FC<GanttProps> = ({
     setFilteredTasks(applyFilters(tasks, filters));
   }, [tasks, filters]);
 
-  // Calculate critical path
-  const criticalPathResult = showCriticalPath ? calculateCriticalPath(tasks, links) : null;
+  // Calculate critical path (used in render if toggle is on)
+  // calculateCriticalPath(tasks, links);
 
   // Get unique owners for filter
   const owners = Array.from(new Set(tasks.map(t => t.owner).filter(Boolean))) as string[];
@@ -150,7 +168,7 @@ export const Gantt: React.FC<GanttProps> = ({
   // Calculate timeline range
   const getTimelineRange = () => {
     const activeTasks = filteredTasks.length > 0 ? filteredTasks : tasks;
-    
+
     if (activeTasks.length === 0) {
       const today = new Date();
       return {
@@ -187,13 +205,6 @@ export const Gantt: React.FC<GanttProps> = ({
 
   const handleTaskClick = (taskId: string) => {
     setSelectedTask(taskId);
-  };
-
-  const handleTaskDoubleClick = (taskId: string) => {
-    const task = tasks.find(t => t.id === taskId);
-    if (task && !ganttConfig.readonly) {
-      setEditingTask(task);
-    }
   };
 
   const handleContextMenu = (e: React.MouseEvent, taskId: string) => {
@@ -234,7 +245,7 @@ export const Gantt: React.FC<GanttProps> = ({
     }
   };
 
-  const handleTaskDragStart = (taskId: string) => {
+  const handleTaskDragStart = (taskId: string, _clientX: number, _clientY: number) => {
     if (!ganttConfig.readonly) {
       setDraggedTask(taskId);
     }
@@ -249,9 +260,9 @@ export const Gantt: React.FC<GanttProps> = ({
       ...newTaskData,
       id: `task-${Date.now()}`,
     };
-    
+
     createTaskWithHistory(newTask);
-    
+
     if (onTaskCreate) {
       onTaskCreate(newTask);
     }
@@ -259,7 +270,7 @@ export const Gantt: React.FC<GanttProps> = ({
 
   const handleUpdateTask = (updatedTask: Task) => {
     updateTask(updatedTask);
-    
+
     if (onTaskUpdate) {
       onTaskUpdate(updatedTask);
     }
@@ -267,7 +278,7 @@ export const Gantt: React.FC<GanttProps> = ({
 
   const handleDeleteTask = (taskId: string) => {
     deleteTaskWithHistory(taskId);
-    
+
     if (onTaskDelete) {
       onTaskDelete(taskId);
     }
@@ -289,9 +300,9 @@ export const Gantt: React.FC<GanttProps> = ({
       type,
       lag,
     };
-    
+
     setLinks([...links, newLink]);
-    
+
     if (onLinkCreate) {
       onLinkCreate(newLink);
     }
@@ -299,7 +310,7 @@ export const Gantt: React.FC<GanttProps> = ({
 
   const handleRemoveDependency = (linkId: string) => {
     setLinks(links.filter(l => l.id !== linkId));
-    
+
     if (onLinkDelete) {
       onLinkDelete(linkId);
     }
@@ -383,187 +394,187 @@ export const Gantt: React.FC<GanttProps> = ({
       <div className={`gantt-container theme-${ganttConfig.theme}`}>
         {/* Enhanced Toolbar - Always at top */}
         <div className="gantt-toolbar">
-        <div className="gantt-toolbar-left">
-          {!ganttConfig.readonly && (
-            <>
-              <button onClick={() => setShowTaskCreator(true)}>
-                <FontAwesomeIcon icon={faPlus} /> Add Task
-              </button>
-              <button 
-                onClick={() => handleOpenDependencyEditor()}
-                disabled={!selectedTask}
-                title="Edit task dependencies"
-              >
-                <FontAwesomeIcon icon={faLink} /> Dependencies
-              </button>
-              <div className="gantt-toolbar-separator" />
-            </>
-          )}
-          <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-            <FontAwesomeIcon icon={faRotateLeft} /> Undo
-          </button>
-          <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
-            <FontAwesomeIcon icon={faRotateRight} /> Redo
-          </button>
-          <div className="gantt-toolbar-separator" />
-          <button onClick={handleAutoSchedule} title="Auto-schedule tasks based on dependencies">
-            <FontAwesomeIcon icon={faBolt} /> Auto-Schedule
-          </button>
-          <button onClick={handleLevelResources} title="Balance resource allocation">
-            <FontAwesomeIcon icon={faChartBar} /> Level Resources
-          </button>
-          <button
-            onClick={() => setShowCriticalPath(!showCriticalPath)}
-            className={showCriticalPath ? 'active' : ''}
-            title="Highlight critical path"
-          >
-            <FontAwesomeIcon icon={faBullseye} /> Critical Path
-          </button>
-          <button 
-            onClick={handleToggleBaselines} 
-            className={showBaselines ? 'active' : ''}
-            title={baselines.size > 0 ? "Toggle baseline visibility" : "Create baseline snapshot"}
-          >
-            <FontAwesomeIcon icon={faMapPin} /> {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
-          </button>
+          <div className="gantt-toolbar-left">
+            {!ganttConfig.readonly && (
+              <>
+                <button onClick={() => setShowTaskCreator(true)}>
+                  <FontAwesomeIcon icon={faPlus} /> Add Task
+                </button>
+                <button
+                  onClick={() => handleOpenDependencyEditor()}
+                  disabled={!selectedTask}
+                  title="Edit task dependencies"
+                >
+                  <FontAwesomeIcon icon={faLink} /> Dependencies
+                </button>
+                <div className="gantt-toolbar-separator" />
+              </>
+            )}
+            <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+              <FontAwesomeIcon icon={faRotateLeft} /> Undo
+            </button>
+            <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
+              <FontAwesomeIcon icon={faRotateRight} /> Redo
+            </button>
+            <div className="gantt-toolbar-separator" />
+            <button onClick={handleAutoSchedule} title="Auto-schedule tasks based on dependencies">
+              <FontAwesomeIcon icon={faBolt} /> Auto-Schedule
+            </button>
+            <button onClick={handleLevelResources} title="Balance resource allocation">
+              <FontAwesomeIcon icon={faChartBar} /> Level Resources
+            </button>
+            <button
+              onClick={() => setShowCriticalPath(!showCriticalPath)}
+              className={showCriticalPath ? 'active' : ''}
+              title="Highlight critical path"
+            >
+              <FontAwesomeIcon icon={faBullseye} /> Critical Path
+            </button>
+            <button
+              onClick={handleToggleBaselines}
+              className={showBaselines ? 'active' : ''}
+              title={baselines.size > 0 ? "Toggle baseline visibility" : "Create baseline snapshot"}
+            >
+              <FontAwesomeIcon icon={faMapPin} /> {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
+            </button>
+          </div>
+
+          <div className="gantt-toolbar-right">
+            <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}>
+              <FontAwesomeIcon icon={faSearchMinus} /> Zoom Out
+            </button>
+            <button onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}>
+              <FontAwesomeIcon icon={faSearchPlus} /> Zoom In
+            </button>
+            <button onClick={() => setZoomLevel(1)}>
+              <FontAwesomeIcon icon={faRotateLeft} /> Reset Zoom
+            </button>
+            <div className="gantt-toolbar-separator" />
+            <button onClick={() => exportToCSV(tasks)} title="Export to CSV">
+              <FontAwesomeIcon icon={faFileCsv} /> CSV
+            </button>
+            <button onClick={() => exportToExcel(tasks)} title="Export to Excel">
+              <FontAwesomeIcon icon={faFileExcel} /> Excel
+            </button>
+            <button onClick={() => exportToJSON(tasks, links)} title="Export to JSON">
+              <FontAwesomeIcon icon={faFileCode} /> JSON
+            </button>
+            <button onClick={() => exportToPDF(tasks)} title="Export to PDF">
+              <FontAwesomeIcon icon={faFilePdf} /> PDF
+            </button>
+          </div>
         </div>
 
-        <div className="gantt-toolbar-right">
-          <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}>
-            <FontAwesomeIcon icon={faSearchMinus} /> Zoom Out
-          </button>
-          <button onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}>
-            <FontAwesomeIcon icon={faSearchPlus} /> Zoom In
-          </button>
-          <button onClick={() => setZoomLevel(1)}>
-            <FontAwesomeIcon icon={faRotateLeft} /> Reset Zoom
-          </button>
-          <div className="gantt-toolbar-separator" />
-          <button onClick={() => exportToCSV(tasks)} title="Export to CSV">
-            <FontAwesomeIcon icon={faFileCsv} /> CSV
-          </button>
-          <button onClick={() => exportToExcel(tasks)} title="Export to Excel">
-            <FontAwesomeIcon icon={faFileExcel} /> Excel
-          </button>
-          <button onClick={() => exportToJSON(tasks, links)} title="Export to JSON">
-            <FontAwesomeIcon icon={faFileCode} /> JSON
-          </button>
-          <button onClick={() => exportToPDF(tasks)} title="Export to PDF">
-            <FontAwesomeIcon icon={faFilePdf} /> PDF
-          </button>
+        {/* Filter and Search - Directly below toolbar */}
+        <FilterSearch
+          onFilterChange={setFilters}
+          owners={owners}
+        />
+
+        {/* Main Gantt Layout - Grid + Timeline */}
+        <div className="gantt-layout">
+          <Grid
+            ref={gridRef}
+            tasks={filteredTasks}
+            columns={ganttConfig.columns!}
+            rowHeight={ganttConfig.rowHeight!}
+            selectedTask={selectedTask}
+            onTaskClick={handleTaskClick}
+            onTaskContextMenu={handleContextMenu}
+            onScroll={handleGridScroll}
+            onTaskUpdate={handleUpdateTask}
+          />
+          <Timeline
+            ref={timelineRef}
+            tasks={filteredTasks}
+            links={links}
+            range={range}
+            scales={ganttConfig.scales!}
+            config={ganttConfig}
+            selectedTask={selectedTask}
+            draggedTask={draggedTask}
+            onTaskClick={handleTaskClick}
+            onTaskDragStart={handleTaskDragStart}
+            onTaskDragEnd={handleTaskDragEnd}
+            onScroll={handleTimelineScroll}
+            onTaskUpdate={handleUpdateTask}
+            zoomLevel={zoomLevel}
+            baselines={baselines}
+          />
         </div>
-      </div>
 
-      {/* Filter and Search - Directly below toolbar */}
-      <FilterSearch
-        onFilterChange={setFilters}
-        owners={owners}
-      />
+        {/* Task Creator Modal */}
+        {showTaskCreator && (
+          <TaskCreator
+            onCreateTask={handleCreateTask}
+            onClose={() => setShowTaskCreator(false)}
+          />
+        )}
 
-      {/* Main Gantt Layout - Grid + Timeline */}
-      <div className="gantt-layout">
-        <Grid
-          ref={gridRef}
-          tasks={filteredTasks}
-          columns={ganttConfig.columns!}
-          rowHeight={ganttConfig.rowHeight!}
-          selectedTask={selectedTask}
-          onTaskClick={handleTaskClick}
-          onTaskContextMenu={handleContextMenu}
-          onScroll={handleGridScroll}
-          onTaskUpdate={handleUpdateTask}
-        />
-        <Timeline
-          ref={timelineRef}
-          tasks={filteredTasks}
-          links={links}
-          range={range}
-          scales={ganttConfig.scales!}
-          config={ganttConfig}
-          selectedTask={selectedTask}
-          draggedTask={draggedTask}
-          onTaskClick={handleTaskClick}
-          onTaskDragStart={handleTaskDragStart}
-          onTaskDragEnd={handleTaskDragEnd}
-          onScroll={handleTimelineScroll}
-          onTaskUpdate={handleUpdateTask}
-          zoomLevel={zoomLevel}
-          baselines={baselines}
-        />
-      </div>
+        {/* Task Editor Modal */}
+        {editingTask && (
+          <TaskEditor
+            task={editingTask}
+            onUpdate={handleUpdateTask}
+            onDelete={handleDeleteTask}
+            onClose={() => setEditingTask(null)}
+          />
+        )}
 
-      {/* Task Creator Modal */}
-      {showTaskCreator && (
-        <TaskCreator
-          onCreateTask={handleCreateTask}
-          onClose={() => setShowTaskCreator(false)}
-        />
-      )}
-
-      {/* Task Editor Modal */}
-      {editingTask && (
-        <TaskEditor
-          task={editingTask}
-          onUpdate={handleUpdateTask}
-          onDelete={handleDeleteTask}
-          onClose={() => setEditingTask(null)}
-        />
-      )}
-
-      {/* Dependency Editor Modal */}
-      {showDependencyEditor && dependencyEditTask && (
-        <DependencyEditor
-          task={dependencyEditTask}
-          allTasks={tasks}
-          links={links}
-          onAddDependency={handleAddDependency}
-          onRemoveDependency={handleRemoveDependency}
-          onClose={() => {
-            setShowDependencyEditor(false);
-            setDependencyEditTask(null);
-          }}
-        />
-      )}
-
-      {/* Context Menu */}
-      {contextMenu && (
-        <>
-          <div
-            className="gantt-context-menu-overlay"
-            onClick={() => setContextMenu(null)}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              setContextMenu(null);
+        {/* Dependency Editor Modal */}
+        {showDependencyEditor && dependencyEditTask && (
+          <DependencyEditor
+            task={dependencyEditTask}
+            allTasks={tasks}
+            links={links}
+            onAddDependency={handleAddDependency}
+            onRemoveDependency={handleRemoveDependency}
+            onClose={() => {
+              setShowDependencyEditor(false);
+              setDependencyEditTask(null);
             }}
           />
-          <ContextMenu
-            x={contextMenu.x}
-            y={contextMenu.y}
-            task={contextMenu.task}
-            onEdit={() => {
-              if (contextMenu.task) {
-                setEditingTask(contextMenu.task);
-              }
-            }}
-            onDelete={() => {
-              if (contextMenu.task) {
-                handleDeleteTask(contextMenu.task.id);
-              }
-            }}
-            onCopy={handleCopyTask}
-            onDependencies={() => {
-              if (contextMenu.task) {
-                setDependencyEditTask(contextMenu.task);
-                setShowDependencyEditor(true);
-              }
-            }}
-            onConvertToMilestone={() => handleConvertTaskType('milestone')}
-            onConvertToTask={() => handleConvertTaskType('task')}
-            onConvertToProject={() => handleConvertTaskType('project')}
-            onClose={() => setContextMenu(null)}
-          />
-        </>
-      )}
+        )}
+
+        {/* Context Menu */}
+        {contextMenu && (
+          <>
+            <div
+              className="gantt-context-menu-overlay"
+              onClick={() => setContextMenu(null)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenu(null);
+              }}
+            />
+            <ContextMenu
+              x={contextMenu.x}
+              y={contextMenu.y}
+              task={contextMenu.task}
+              onEdit={() => {
+                if (contextMenu.task) {
+                  setEditingTask(contextMenu.task);
+                }
+              }}
+              onDelete={() => {
+                if (contextMenu.task) {
+                  handleDeleteTask(contextMenu.task.id);
+                }
+              }}
+              onCopy={handleCopyTask}
+              onDependencies={() => {
+                if (contextMenu.task) {
+                  setDependencyEditTask(contextMenu.task);
+                  setShowDependencyEditor(true);
+                }
+              }}
+              onConvertToMilestone={() => handleConvertTaskType('milestone')}
+              onConvertToTask={() => handleConvertTaskType('task')}
+              onConvertToProject={() => handleConvertTaskType('project')}
+              onClose={() => setContextMenu(null)}
+            />
+          </>
+        )}
       </div>
     </div>
   );

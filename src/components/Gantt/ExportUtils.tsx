@@ -80,12 +80,12 @@ ${i + 1}. ${task.text}
   `.trim();
 
   downloadFile(content, 'gantt-report.txt', 'text/plain');
-  
+
   alert('PDF export is a simplified text version. For full PDF with charts, a PDF library would be needed.');
 };
 
 // Image Export (PNG/SVG)
-export const exportToImage = (elementId: string, filename: string, format: 'png' | 'svg' = 'png'): void => {
+export const exportToImage = (elementId: string, _filename: string, format: 'png' | 'svg' = 'png'): void => {
   const element = document.getElementById(elementId);
   if (!element) {
     alert('Could not find Gantt chart element to export');
@@ -100,7 +100,7 @@ export const exportToImage = (elementId: string, filename: string, format: 'png'
 
   // For PNG, use html2canvas (would need to be installed)
   alert('Image export requires html2canvas library. Install with: npm install html2canvas');
-  
+
   // Example implementation:
   // import html2canvas from 'html2canvas';
   // html2canvas(element).then(canvas => {
@@ -130,25 +130,25 @@ const downloadFileFromURL = (url: string, filename: string): void => {
 export const importFromJSON = (file: File): Promise<{ tasks: Task[], links: Link[] }> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
         const data = JSON.parse(content);
-        
+
         // Convert date strings back to Date objects
         const tasks = data.tasks.map((task: any) => ({
           ...task,
           start: new Date(task.start),
           end: new Date(task.end),
         }));
-        
+
         resolve({ tasks, links: data.links || [] });
       } catch (error) {
         reject(new Error('Invalid JSON file'));
       }
     };
-    
+
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsText(file);
   });

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Modal, Select, InputNumber, Button, List, Tag, Typography, Space, Divider, Alert, Card } from 'antd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faLink, 
-  faTrash, 
-  faPlus, 
-  faInfoCircle, 
-  faArrowDown, 
-  faArrowUp 
+import {
+  faLink,
+  faTrash,
+  faPlus,
+  faInfoCircle,
+  faArrowDown,
+  faArrowUp
 } from '@fortawesome/free-solid-svg-icons';
 import type { Task, Link } from '../types';
 
@@ -78,7 +78,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
 
   const renderDependencyItem = (link: Link, sourceOrTarget: 'source' | 'target') => {
     const relatedTask = allTasks.find(t => t.id === (sourceOrTarget === 'source' ? link.source : link.target));
-    
+
     return (
       <List.Item
         actions={[
@@ -144,7 +144,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
             {task.text}
           </Text>
           <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '13px' }}>
-            {task.start.toLocaleDateString()} → {task.end.toLocaleDateString()} 
+            {task.start.toLocaleDateString()} → {task.end.toLocaleDateString()}
             {task.owner && ` • Owner: ${task.owner}`}
             {task.priority && ` • Priority: ${task.priority}`}
           </Text>
@@ -153,10 +153,10 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
 
       {/* Predecessors Section */}
       <div style={{ marginBottom: 32 }}>
-        <Title 
-          level={5} 
-          style={{ 
-            fontFamily: 'IBM Plex Mono, monospace', 
+        <Title
+          level={5}
+          style={{
+            fontFamily: 'IBM Plex Mono, monospace',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
             fontSize: '13px',
@@ -186,9 +186,9 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
 
       {/* Successors Section */}
       <div style={{ marginBottom: 32 }}>
-        <Title 
+        <Title
           level={5}
-          style={{ 
+          style={{
             fontFamily: 'IBM Plex Mono, monospace',
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
@@ -222,9 +222,9 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
       {/* Add New Dependency Section */}
       <Card
         title={
-          <Title 
+          <Title
             level={5}
-            style={{ 
+            style={{
               margin: 0,
               fontFamily: 'IBM Plex Mono, monospace',
               fontSize: '14px'
@@ -249,7 +249,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
               size="large"
               showSearch
               filterOption={(input, option) =>
-                (option?.children as string).toLowerCase().includes(input.toLowerCase())
+                String(option?.children || '').toLowerCase().includes(input.toLowerCase())
               }
             >
               {availableTasks.map(t => (

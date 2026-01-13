@@ -25,7 +25,7 @@ const meta = {
       description: 'Primary scale step size',
       table: {
         category: 'Primary Scale',
-        defaultValue: { summary: 1 },
+        defaultValue: { summary: '1' },
       },
     },
     primaryFormat: {
@@ -50,7 +50,7 @@ const meta = {
       description: 'Secondary scale step size',
       table: {
         category: 'Secondary Scale',
-        defaultValue: { summary: 1 },
+        defaultValue: { summary: '1' },
       },
     },
     secondaryFormat: {
@@ -170,13 +170,13 @@ export const Default: Story = {
 
     const scales: Scale[] = [
       {
-        unit: primaryUnit as Scale['unit'],
-        step: primaryStep,
+        unit: (primaryUnit as Scale['unit']) || 'month',
+        step: primaryStep || 1,
         format: primaryFormat,
       },
       {
-        unit: secondaryUnit as Scale['unit'],
-        step: secondaryStep,
+        unit: (secondaryUnit as Scale['unit']) || 'day',
+        step: secondaryStep || 1,
         format: secondaryFormat,
       },
     ];

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import React from 'react';
 import { Gantt } from '../components/Gantt';
-import type { Task, Link, Column } from '../components/types';
+import type { Task, Column } from '../components/types';
 import '../components/Gantt/gantt.css';
 
 const meta = {
@@ -127,28 +127,28 @@ const CustomDateGrid: React.FC<{
   children,
   startDateFormat,
   endDateFormat,
-  showStartDate,
-  showEndDate,
-  startDateWidth,
-  endDateWidth,
+  showStartDate: _showStartDate,
+  showEndDate: _showEndDate,
+  startDateWidth: _startDateWidth,
+  endDateWidth: _endDateWidth,
 }) => {
-  React.useEffect(() => {
-    // Inject custom styles for date formatting
-    const styleId = 'custom-date-format-styles';
-    let styleElement = document.getElementById(styleId);
-    
-    if (!styleElement) {
-      styleElement = document.createElement('style');
-      styleElement.id = styleId;
-      document.head.appendChild(styleElement);
-    }
-    
-    // This will be handled by the Gantt component's column configuration
-    styleElement.textContent = '';
-  }, [startDateFormat, endDateFormat]);
+    React.useEffect(() => {
+      // Inject custom styles for date formatting
+      const styleId = 'custom-date-format-styles';
+      let styleElement = document.getElementById(styleId);
 
-  return <>{children}</>;
-};
+      if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = styleId;
+        document.head.appendChild(styleElement);
+      }
+
+      // This will be handled by the Gantt component's column configuration
+      styleElement.textContent = '';
+    }, [startDateFormat, endDateFormat]);
+
+    return <>{children}</>;
+  };
 
 /**
  * Start/End Dates - Interactive Controls
@@ -230,6 +230,12 @@ export const Default: Story = {
 
     return (
       <CustomDateGrid
+        startDateFormat={startDateFormat}
+        endDateFormat={endDateFormat}
+        showStartDate={showStartDate}
+        showEndDate={showEndDate}
+        startDateWidth={startDateWidth}
+        endDateWidth={endDateWidth}
       >
         <Gantt
           {...rest}
@@ -249,7 +255,7 @@ export const Default: Story = {
 function formatDateCustom(date: Date, format: string): string {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthsFull = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  
+
   const day = date.getDate();
   const dayPadded = String(day).padStart(2, '0');
   const month = date.getMonth() + 1;
@@ -257,7 +263,7 @@ function formatDateCustom(date: Date, format: string): string {
   const year = date.getFullYear();
   const monthShort = months[date.getMonth()];
   const monthFull = monthsFull[date.getMonth()];
-  
+
   // Replace in order to avoid conflicts (longer patterns first)
   return format
     .replace('YYYY', String(year))

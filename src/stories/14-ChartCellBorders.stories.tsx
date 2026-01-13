@@ -17,7 +17,7 @@ const meta = {
       description: 'Show vertical cell borders',
       table: {
         category: 'Border Settings',
-        defaultValue: { summary: true },
+        defaultValue: { summary: 'true' },
       },
     },
     showHorizontalBorders: {
@@ -25,7 +25,7 @@ const meta = {
       description: 'Show horizontal row borders',
       table: {
         category: 'Border Settings',
-        defaultValue: { summary: true },
+        defaultValue: { summary: 'true' },
       },
     },
     borderStyle: {
@@ -172,22 +172,22 @@ const ChartCellBordersWrapper: React.FC<{
   showHorizontalBorders?: boolean;
   borderStyle?: string;
   borderColor?: string;
-}> = ({ 
-  children, 
-  showVerticalBorders = true, 
+}> = ({
+  children,
+  showVerticalBorders = true,
   showHorizontalBorders = true,
   borderStyle = 'solid',
   borderColor = '#e0e0e0'
 }) => {
-  return (
-    <div 
-      className="chart-cell-borders-wrapper"
-      style={{
-        '--border-color': borderColor,
-        '--border-style': borderStyle,
-      } as React.CSSProperties}
-    >
-      <style>{`
+    return (
+      <div
+        className="chart-cell-borders-wrapper"
+        style={{
+          '--border-color': borderColor,
+          '--border-style': borderStyle,
+        } as React.CSSProperties}
+      >
+        <style>{`
         .chart-cell-borders-wrapper .gantt-timeline-cell {
           border-right: ${showVerticalBorders ? `1px var(--border-style) var(--border-color)` : 'none'};
           border-bottom: ${showHorizontalBorders ? `1px var(--border-style) var(--border-color)` : 'none'};
@@ -202,10 +202,10 @@ const ChartCellBordersWrapper: React.FC<{
           border-bottom: ${showHorizontalBorders ? `1px var(--border-style) var(--border-color)` : 'none'};
         }
       `}</style>
-      {children}
-    </div>
-  );
-};
+        {children}
+      </div>
+    );
+  };
 
 /**
  * Chart Cell Borders - Interactive Controls
