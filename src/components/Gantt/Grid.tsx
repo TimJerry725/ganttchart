@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { Task, Column } from '../types';
+import type { Task, Column } from '../types';
 import { formatDate } from '../utils/dateUtils';
 
 interface GridProps {
