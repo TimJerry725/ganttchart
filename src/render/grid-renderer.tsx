@@ -1,6 +1,6 @@
 /**
  * Grid renderer (DOM-based with Tailwind)
- * Professional styling inspired by SVAR Gantt
+ * Professional styling
  */
 
 import React from 'react';

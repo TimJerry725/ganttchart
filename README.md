@@ -1,6 +1,6 @@
 # Iris Gantt
 
-A powerful React Gantt chart component with Tailwind CSS styling, featuring full parity with SVAR Gantt free and pro editions.
+A powerful React Gantt chart component with Tailwind CSS styling, featuring comprehensive project management capabilities.
 
 ## Features
 

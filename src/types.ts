@@ -1,6 +1,5 @@
 /**
  * Iris Gantt Type Definitions
- * Inspired by SVAR React Gantt API
  */
 
 export type TaskId = string | number;

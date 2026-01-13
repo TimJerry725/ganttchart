@@ -1,6 +1,6 @@
 /**
  * Iris Gantt - Main React Component
- * Professional Gantt chart component inspired by SVAR React Gantt
+ * Professional Gantt chart component
  */
 
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';

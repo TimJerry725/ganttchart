@@ -1,6 +1,6 @@
 /**
  * Storybook stories for Iris Gantt
- * Professional examples inspired by SVAR Gantt
+ * Professional examples
  */
 
 import type { Meta, StoryObj } from '@storybook/react';

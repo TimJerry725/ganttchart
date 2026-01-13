@@ -1,7 +1,7 @@
 {
   "name": "iris-gantt",
   "version": "0.1.0",
-  "description": "A powerful React Gantt chart component with Tailwind styling - Feature parity with SVAR Gantt",
+  "description": "A powerful React Gantt chart component with Tailwind styling",
   "main": "./dist/iris-gantt.umd.js",
   "module": "./dist/iris-gantt.es.js",
   "types": "./dist/index.d.ts",
