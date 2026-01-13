@@ -413,15 +413,17 @@
 .gantt-toolbar {
   padding: 12px 16px;
   background-color: #f5f5f5;
-  border-top: 1px solid #ddd;
+  border-bottom: 2px solid #ddd;
   display: flex;
   gap: 8px;
   align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  z-index: 100;
 }
 
 .theme-dark .gantt-toolbar {
   background-color: #2d2d2d;
-  border-top-color: #444;
+  border-bottom-color: #444;
 }
 
 .gantt-toolbar button {
@@ -761,14 +763,17 @@
 
 .gantt-filter-panel {
   padding: 16px;
-  border-top: 1px solid #e0e0e0;
+  border-bottom: 2px solid #e0e0e0;
+  background-color: #fafafa;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .theme-dark .gantt-filter-panel {
-  border-top-color: #444;
+  border-bottom-color: #444;
+  background-color: #252525;
 }
 
 .gantt-filter-group {

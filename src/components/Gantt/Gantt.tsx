@@ -241,12 +241,77 @@ export const Gantt: React.FC<GanttProps> = ({
 
   return (
     <div className={`gantt-container theme-${ganttConfig.theme}`}>
-      {/* Filter and Search */}
+      {/* Enhanced Toolbar - Always at top */}
+      <div className="gantt-toolbar">
+        <div className="gantt-toolbar-left">
+          {!ganttConfig.readonly && (
+            <>
+              <button onClick={() => setShowTaskCreator(true)}>➕ Add Task</button>
+              <div className="gantt-toolbar-separator" />
+            </>
+          )}
+          <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+            ↶ Undo
+          </button>
+          <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
+            ↷ Redo
+          </button>
+          <div className="gantt-toolbar-separator" />
+          <button onClick={handleAutoSchedule} title="Auto-schedule tasks based on dependencies">
+            ⚡ Auto-Schedule
+          </button>
+          <button onClick={handleLevelResources} title="Balance resource allocation">
+            📊 Level Resources
+          </button>
+          <button
+            onClick={() => setShowCriticalPath(!showCriticalPath)}
+            className={showCriticalPath ? 'active' : ''}
+            title="Highlight critical path"
+          >
+            🎯 Critical Path
+          </button>
+          <button 
+            onClick={handleToggleBaselines} 
+            className={showBaselines ? 'active' : ''}
+            title={baselines.size > 0 ? "Toggle baseline visibility" : "Create baseline snapshot"}
+          >
+            📍 {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
+          </button>
+        </div>
+
+        <div className="gantt-toolbar-right">
+          <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}>
+            🔍− Zoom Out
+          </button>
+          <button onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}>
+            🔍+ Zoom In
+          </button>
+          <button onClick={() => setZoomLevel(1)}>
+            ↺ Reset Zoom
+          </button>
+          <div className="gantt-toolbar-separator" />
+          <button onClick={() => exportToCSV(tasks)} title="Export to CSV">
+            💾 CSV
+          </button>
+          <button onClick={() => exportToExcel(tasks)} title="Export to Excel">
+            📊 Excel
+          </button>
+          <button onClick={() => exportToJSON(tasks, links)} title="Export to JSON">
+            📄 JSON
+          </button>
+          <button onClick={() => exportToPDF(tasks)} title="Export to PDF">
+            📋 PDF
+          </button>
+        </div>
+      </div>
+
+      {/* Filter and Search - Directly below toolbar */}
       <FilterSearch
         onFilterChange={setFilters}
         owners={owners}
       />
 
+      {/* Main Gantt Layout - Grid + Timeline */}
       <div className="gantt-layout">
         <Grid
           ref={gridRef}
@@ -275,48 +340,6 @@ export const Gantt: React.FC<GanttProps> = ({
           zoomLevel={zoomLevel}
           baselines={baselines}
         />
-      </div>
-
-      {/* Enhanced Toolbar */}
-      <div className="gantt-toolbar">
-        <div className="gantt-toolbar-left">
-          {!ganttConfig.readonly && (
-            <>
-              <button onClick={() => setShowTaskCreator(true)}>+ Add Task</button>
-              <div className="gantt-toolbar-separator" />
-            </>
-          )}
-          <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">↶ Undo</button>
-          <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">↷ Redo</button>
-          <div className="gantt-toolbar-separator" />
-          <button onClick={handleAutoSchedule} title="Auto-schedule tasks">⚡ Auto-Schedule</button>
-          <button onClick={handleLevelResources} title="Level resources">📊 Level Resources</button>
-          <button
-            onClick={() => setShowCriticalPath(!showCriticalPath)}
-            className={showCriticalPath ? 'active' : ''}
-            title="Show critical path"
-          >
-            🎯 Critical Path
-          </button>
-          <button 
-            onClick={handleToggleBaselines} 
-            className={showBaselines ? 'active' : ''}
-            title={baselines.size > 0 ? "Toggle baseline visibility" : "Create and show baseline"}
-          >
-            📍 {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
-          </button>
-        </div>
-
-        <div className="gantt-toolbar-right">
-          <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}>🔍− Zoom Out</button>
-          <button onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}>🔍+ Zoom In</button>
-          <button onClick={() => setZoomLevel(1)}>↺ Reset</button>
-          <div className="gantt-toolbar-separator" />
-          <button onClick={() => exportToCSV(tasks)}>💾 CSV</button>
-          <button onClick={() => exportToExcel(tasks)}>📊 Excel</button>
-          <button onClick={() => exportToJSON(tasks, links)}>📄 JSON</button>
-          <button onClick={() => exportToPDF(tasks)}>📋 PDF</button>
-        </div>
       </div>
 
       {/* Task Creator Modal */}
