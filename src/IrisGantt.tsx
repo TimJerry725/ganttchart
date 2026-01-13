@@ -235,30 +235,41 @@ export const IrisGantt: React.FC<IrisGanttProps> = (props) => {
     );
   }
 
+  // Calculate total timeline width needed
+  const totalTimelineWidth = useMemo(() => {
+    if (timeScale.endDate && timeScale.startDate) {
+      const days = Math.ceil((timeScale.endDate.getTime() - timeScale.startDate.getTime()) / (1000 * 60 * 60 * 24));
+      return days * timeScale.pixelsPerUnit;
+    }
+    return 2000;
+  }, [timeScale]);
+
   return (
     <div
       ref={containerRef}
       className={`iris-gantt iris-gantt-container iris-gantt-scrollbar ${className || ''}`}
-      style={{ width, height, ...style }}
+      style={{ width, height, overflow: 'auto', ...style }}
       onScroll={handleScroll}
     >
-      <div className="flex" style={{ width: Math.max(viewport.width, timelineWidth + gridWidth) }}>
-        <GridRenderer
-          columns={columns}
-          tasks={tasks}
-          rows={layout.rows}
-          selectedTaskIds={selectedTaskIds}
-          rowHeight={config.rowHeight}
-          onTaskClick={handleTaskClick}
-          onTaskExpand={handleTaskExpand}
-          gridCellTemplate={gridCellTemplate}
-        />
-        <div className="flex-1 relative iris-gantt-timeline" style={{ width: timelineWidth }}>
+      <div className="flex" style={{ minWidth: gridWidth + totalTimelineWidth }}>
+        <div style={{ width: gridWidth, flexShrink: 0 }}>
+          <GridRenderer
+            columns={columns}
+            tasks={tasks}
+            rows={layout.rows}
+            selectedTaskIds={selectedTaskIds}
+            rowHeight={config.rowHeight}
+            onTaskClick={handleTaskClick}
+            onTaskExpand={handleTaskExpand}
+            gridCellTemplate={gridCellTemplate}
+          />
+        </div>
+        <div className="relative iris-gantt-timeline" style={{ width: totalTimelineWidth, minWidth: timelineWidth }}>
           <TimelineRenderer
             bars={layout.bars}
             links={layout.links}
             timeScale={timeScale}
-            viewport={{ ...viewport, width: timelineWidth }}
+            viewport={{ ...viewport, width: Math.max(timelineWidth, totalTimelineWidth) }}
             criticalPath={config.showCriticalPath ? criticalPath : undefined}
             showTodayMarker={config.showTodayMarker}
             showWeekends={config.showWeekends}

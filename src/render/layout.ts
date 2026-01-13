@@ -55,8 +55,12 @@ export class LayoutEngine {
     scheduledTasks: Map<TaskId, ScheduledTask>,
     links: Array<{ id: string; source: TaskId; target: TaskId; type: string }>,
     timeScale: TimeScale,
-    expandedTasks: Set<TaskId> = new Set()
+    expandedTasks: Set<TaskId> = new Set(),
+    rowHeight?: number,
+    barHeight?: number
   ): LayoutResult {
+    if (rowHeight) this.rowHeight = rowHeight;
+    if (barHeight) this.barHeight = barHeight;
     const rows = new Map<TaskId, RowLayout>();
     const bars = new Map<TaskId, BarLayout>();
     const linkLayouts: LinkLayout[] = [];
@@ -74,10 +78,15 @@ export class LayoutEngine {
           level,
         });
 
+        // Use actual task dates, fallback to scheduled dates
         const scheduled = scheduledTasks.get(task.id);
-        if (scheduled?.earlyStart && scheduled.earlyFinish) {
-          const barX = this.dateToX(scheduled.earlyStart, timeScale);
-          const barWidth = this.dateToX(scheduled.earlyFinish, timeScale) - barX;
+        const startDate = task.start || scheduled?.earlyStart;
+        const endDate = task.end || scheduled?.earlyFinish;
+        
+        if (startDate && endDate) {
+          const barX = this.dateToX(startDate, timeScale);
+          const endX = this.dateToX(endDate, timeScale);
+          const barWidth = Math.max(4, endX - barX + 1); // Minimum 4px width
 
           bars.set(task.id, {
             taskId: task.id,
@@ -87,6 +96,16 @@ export class LayoutEngine {
             height: this.barHeight,
             progressX: task.progress ? barX + (barWidth * task.progress) / 100 : undefined,
             progressWidth: task.progress ? (barWidth * task.progress) / 100 : undefined,
+          });
+        } else if (task.type === 'milestone' && startDate) {
+          // Milestone rendering
+          const milestoneX = this.dateToX(startDate, timeScale);
+          bars.set(task.id, {
+            taskId: task.id,
+            x: milestoneX,
+            width: 0,
+            y: currentY + (this.rowHeight - this.barHeight) / 2,
+            height: this.barHeight,
           });
         }
 

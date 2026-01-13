@@ -45,7 +45,13 @@ export const GridRenderer: React.FC<GridRendererProps> = ({
     if (column.field) {
       const value = (task as Record<string, unknown>)[column.field];
       if (value instanceof Date) {
-        return value.toLocaleDateString();
+        // Format date consistently
+        const month = String(value.getMonth() + 1).padStart(2, '0');
+        const day = String(value.getDate()).padStart(2, '0');
+        return `${month}/${day}/${value.getFullYear()}`;
+      }
+      if (column.field === 'duration' && typeof value === 'number') {
+        return `${value} days`;
       }
       return String(value || '');
     }

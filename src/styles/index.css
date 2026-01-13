@@ -14,12 +14,16 @@
   /* Main container */
   .iris-gantt-container {
     @apply bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden;
+    display: flex;
+    flex-direction: column;
   }
 
   /* Grid styles */
   .iris-gantt-grid {
     @apply bg-white border-r border-gray-300;
     min-width: 300px;
+    flex-shrink: 0;
+    overflow: hidden;
   }
 
   .iris-gantt-grid-header {
@@ -60,6 +64,8 @@
   /* Timeline styles */
   .iris-gantt-timeline {
     @apply bg-white relative overflow-hidden;
+    flex: 1;
+    min-width: 0;
   }
 
   .iris-gantt-timeline-header {

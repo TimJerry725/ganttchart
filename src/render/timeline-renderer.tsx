@@ -86,19 +86,26 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
     ctx.fillStyle = '#374151';
     ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
-    // Draw time markers
+    // Draw time markers with better spacing
     const step = getTimeStep(timeScale);
     let currentDate = new Date(timeScale.startDate);
+    currentDate.setHours(0, 0, 0, 0);
+    
     while (currentDate <= timeScale.endDate) {
       const x = dateToX(currentDate, timeScale) - viewport.x;
-      if (x >= 0 && x <= viewport.width) {
+      if (x >= -50 && x <= viewport.width + 50) {
+        // Draw vertical line
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, headerHeight);
         ctx.stroke();
 
+        // Draw label
         const label = formatDate(currentDate, timeScale.unit);
-        ctx.fillText(label, x + 8, headerHeight / 2 + 4);
+        const textX = x + 4;
+        if (textX >= 0 && textX <= viewport.width - 50) {
+          ctx.fillText(label, textX, headerHeight / 2 + 4);
+        }
       }
       currentDate = addTimeUnit(currentDate, timeScale.unit, step);
     }
@@ -167,49 +174,80 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
 
     // Draw bars
     const visibleBars = Array.from(bars.values()).filter(
-      (bar) => bar.x + bar.width >= viewport.x && bar.x <= viewport.x + viewport.width
+      (bar) => {
+        const barRight = bar.x + bar.width;
+        const barLeft = bar.x;
+        return (barRight >= viewport.x && barLeft <= viewport.x + viewport.width) ||
+               (barLeft <= viewport.x + viewport.width && barRight >= viewport.x);
+      }
     );
 
     for (const bar of visibleBars) {
       const isCritical = criticalPath?.has(bar.taskId) || false;
       const y = bar.y - viewport.y;
-      const actualBarHeight = barHeight || bar.height;
+      const actualBarHeight = barHeight || bar.height || 24;
+      const barX = bar.x - viewport.x;
+      const barW = Math.max(4, bar.width);
 
-      // Bar shadow
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
-      ctx.fillRect(
-        bar.x - viewport.x + 1,
-        y + 1,
-        bar.width,
-        actualBarHeight
-      );
+      // Skip if completely outside viewport
+      if (barX + barW < 0 || barX > viewport.width) continue;
+
+      // Milestone rendering (width = 0)
+      if (bar.width === 0) {
+        const milestoneX = bar.x - viewport.x;
+        if (milestoneX >= 0 && milestoneX <= viewport.width) {
+          ctx.fillStyle = '#3b82f6';
+          ctx.beginPath();
+          ctx.moveTo(milestoneX, y);
+          ctx.lineTo(milestoneX - 8, y + actualBarHeight / 2);
+          ctx.lineTo(milestoneX, y + actualBarHeight);
+          ctx.lineTo(milestoneX + 8, y + actualBarHeight / 2);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#2563eb';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+        continue;
+      }
+
+      // Bar shadow (subtle)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.beginPath();
+      const radius = 4;
+      ctx.roundRect(barX + 1, y + 1, barW, actualBarHeight, radius);
+      ctx.fill();
 
       // Bar background
       ctx.fillStyle = isCritical ? '#ef4444' : '#3b82f6';
       ctx.beginPath();
-      const radius = 4;
-      ctx.roundRect(bar.x - viewport.x, y, bar.width, actualBarHeight, radius);
+      ctx.roundRect(barX, y, barW, actualBarHeight, radius);
       ctx.fill();
 
-      // Progress bar
-      if (showProgress && bar.progressX && bar.progressWidth && bar.progressWidth > 0) {
-        ctx.fillStyle = '#10b981';
-        ctx.beginPath();
-        ctx.roundRect(
-          bar.progressX - viewport.x,
-          y,
-          bar.progressWidth,
-          actualBarHeight,
-          radius
-        );
-        ctx.fill();
+      // Progress bar (green overlay showing completion)
+      if (showProgress && bar.progressX !== undefined && bar.progressWidth !== undefined && bar.progressWidth > 0) {
+        const progressX = bar.progressX - viewport.x;
+        const progressW = Math.max(2, bar.progressWidth);
+        
+        if (progressX < viewport.width && progressX + progressW > 0) {
+          ctx.fillStyle = '#10b981';
+          ctx.beginPath();
+          ctx.roundRect(
+            Math.max(barX, progressX),
+            y,
+            Math.min(progressW, barW - (Math.max(barX, progressX) - barX)),
+            actualBarHeight,
+            radius
+          );
+          ctx.fill();
+        }
       }
 
       // Bar border
       ctx.strokeStyle = isCritical ? '#dc2626' : '#2563eb';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(bar.x - viewport.x, y, bar.width, actualBarHeight, radius);
+      ctx.roundRect(barX, y, barW, actualBarHeight, radius);
       ctx.stroke();
     }
   }, [bars, links, timeScale, viewport, criticalPath, showTodayMarker, showWeekends, barHeight, showProgress]);
