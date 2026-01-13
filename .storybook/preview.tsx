@@ -1,5 +1,5 @@
 import type { Preview } from '@storybook/react';
-import React from 'react';
+import '../src/styles/index.css';
 
 const preview: Preview = {
   parameters: {
@@ -10,7 +10,7 @@ const preview: Preview = {
         date: /Date$/i,
       },
     },
-    layout: 'centered',
+    layout: 'fullscreen',
     backgrounds: {
       default: 'light',
       values: [
@@ -29,13 +29,6 @@ const preview: Preview = {
       ],
     },
   },
-  decorators: [
-    (Story) => (
-      <div style={{ padding: '20px' }}>
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export default preview;

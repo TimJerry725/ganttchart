@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Iris Gantt base styles */
+@layer base {
+  .iris-gantt {
+    @apply font-sans text-sm;
+  }
+}
+
+@layer components {
+  .iris-gantt-grid {
+    @apply border-r border-gray-200 bg-white;
+  }
+
+  .iris-gantt-timeline {
+    @apply bg-white relative;
+  }
+
+  .iris-gantt-row {
+    @apply border-b border-gray-100 hover:bg-gray-50;
+  }
+
+  .iris-gantt-row-selected {
+    @apply bg-blue-50 border-blue-200;
+  }
+
+  .iris-gantt-bar {
+    @apply rounded cursor-move;
+  }
+
+  .iris-gantt-bar-critical {
+    @apply bg-red-500;
+  }
+
+  .iris-gantt-bar-normal {
+    @apply bg-blue-500;
+  }
+
+  .iris-gantt-bar-milestone {
+    @apply w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-blue-500;
+  }
+}
