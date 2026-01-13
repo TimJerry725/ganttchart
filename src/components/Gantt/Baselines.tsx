@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task, Baseline } from '../types';
+import type { Task, Baseline } from '../types';
 
 interface BaselineRendererProps {
   task: Task;

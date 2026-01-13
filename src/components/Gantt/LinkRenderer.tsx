@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task, Link } from '../types';
+import type { Task, Link } from '../types';
 
 interface LinkRendererProps {
   links: Link[];

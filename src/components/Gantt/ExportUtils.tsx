@@ -1,4 +1,4 @@
-import { Task, Link } from '../types';
+import type { Task, Link } from '../types';
 import { formatDate } from '../utils/dateUtils';
 
 // CSV Export

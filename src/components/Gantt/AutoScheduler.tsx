@@ -1,4 +1,4 @@
-import { Task, Link } from '../types';
+import type { Task, Link } from '../types';
 import { addToDate, getDaysBetween } from '../utils/dateUtils';
 
 export interface ScheduleOptions {

@@ -1,4 +1,4 @@
-import { Task, Link } from '../types';
+import type { Task, Link } from '../types';
 
 export interface CriticalPathResult {
   criticalTasks: Set<string>;

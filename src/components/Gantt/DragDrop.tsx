@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Task } from '../types';
+import type { Task } from '../types';
 import { getDaysBetween, addToDate } from '../utils/dateUtils';
 
 export interface DragState {

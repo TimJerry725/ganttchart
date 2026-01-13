@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Task } from '../types';
+import type { Task } from '../types';
 
 export interface FilterOptions {
   searchText: string;
