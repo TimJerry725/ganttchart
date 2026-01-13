@@ -192,5 +192,5 @@ export const SvarGantt: React.FC<SvarGanttProps> = (props) => {
     onTaskDoubleClick: props.onTaskDblClick ? (id) => props.onTaskDblClick?.(id, new MouseEvent('dblclick')) : undefined,
   };
 
-  return <Gantt {...ganttProps} />;
+  return React.createElement(Gantt, ganttProps);
 };
