@@ -13,6 +13,17 @@ import { autoSchedule, levelResources } from './AutoScheduler';
 import { exportToCSV, exportToExcel, exportToJSON, exportToPDF } from './ExportUtils';
 import { createBaseline } from './Baselines';
 import { addToDate, getStartOfDay } from '../utils/dateUtils';
+
+// Ant Design CSS
+import 'antd/dist/reset.css';
+
+// IBM Plex Fonts
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/600.css';
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/600.css';
+
+// Custom styles
 import './gantt.css';
 
 interface GanttProps {

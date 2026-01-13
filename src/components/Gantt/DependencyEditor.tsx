@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
+import { Modal, Select, InputNumber, Button, List, Tag, Typography, Space, Divider, Alert, Card } from 'antd';
+import { DeleteOutlined, LinkOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import type { Task, Link } from '../types';
+
+const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 interface DependencyEditorProps {
   task: Task;
@@ -46,174 +51,293 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
     }
   };
 
-  const getLagLabel = (lag?: number) => {
-    if (!lag || lag === 0) return '';
-    if (lag > 0) return `+${lag}d lag`;
-    return `${lag}d lead`;
+  const getDependencyColor = (type: Link['type']) => {
+    switch (type) {
+      case 'e2s': return 'blue';
+      case 's2s': return 'green';
+      case 'e2e': return 'purple';
+      case 's2e': return 'orange';
+    }
+  };
+
+  const getLagTag = (lag?: number) => {
+    if (!lag || lag === 0) return null;
+    if (lag > 0) {
+      return <Tag color="warning">+{lag}d lag</Tag>;
+    }
+    return <Tag color="processing">{lag}d lead</Tag>;
+  };
+
+  const renderDependencyItem = (link: Link, sourceOrTarget: 'source' | 'target') => {
+    const relatedTask = allTasks.find(t => t.id === (sourceOrTarget === 'source' ? link.source : link.target));
+    
+    return (
+      <List.Item
+        actions={[
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => onRemoveDependency(link.id)}
+          >
+            Remove
+          </Button>
+        ]}
+      >
+        <List.Item.Meta
+          title={
+            <Space>
+              <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                {relatedTask?.text || (sourceOrTarget === 'source' ? link.source : link.target)}
+              </Text>
+              <Tag color={getDependencyColor(link.type)}>
+                {getDependencyLabel(link.type)}
+              </Tag>
+              {getLagTag(link.lag)}
+            </Space>
+          }
+          description={
+            <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '12px' }}>
+              {relatedTask?.owner && `Owner: ${relatedTask.owner}`}
+              {relatedTask?.priority && ` • Priority: ${relatedTask.priority}`}
+            </Text>
+          }
+        />
+      </List.Item>
+    );
   };
 
   return (
-    <div className="gantt-dependency-editor-overlay" onClick={onClose}>
-      <div className="gantt-dependency-editor" onClick={(e) => e.stopPropagation()}>
-        <div className="gantt-dependency-editor-header">
-          <h3>Task Dependencies: {task.text}</h3>
-          <button className="gantt-close-btn" onClick={onClose}>&times;</button>
-        </div>
+    <Modal
+      title={
+        <Space>
+          <LinkOutlined style={{ fontSize: '20px' }} />
+          <Title level={4} style={{ margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>
+            Task Dependencies
+          </Title>
+        </Space>
+      }
+      open={true}
+      onCancel={onClose}
+      width={900}
+      footer={null}
+      className="gantt-dependency-modal"
+      styles={{
+        body: { maxHeight: '70vh', overflowY: 'auto', fontFamily: 'IBM Plex Sans, sans-serif' },
+      }}
+    >
+      {/* Task Info */}
+      <Card
+        size="small"
+        style={{ marginBottom: 24, backgroundColor: '#f5f5f5', borderColor: '#d9d9d9' }}
+      >
+        <Space direction="vertical" size={4}>
+          <Text strong style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '16px' }}>
+            {task.text}
+          </Text>
+          <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '13px' }}>
+            {task.start.toLocaleDateString()} → {task.end.toLocaleDateString()} 
+            {task.owner && ` • Owner: ${task.owner}`}
+            {task.priority && ` • Priority: ${task.priority}`}
+          </Text>
+        </Space>
+      </Card>
 
-        <div className="gantt-dependency-editor-body">
-          {/* Current Dependencies (Predecessors) */}
-          <div className="gantt-dependency-section">
-            <h4>Depends On (Predecessors)</h4>
-            {existingDependencies.length === 0 ? (
-              <p className="gantt-empty-message">No dependencies</p>
-            ) : (
-              <ul className="gantt-dependency-list">
-                {existingDependencies.map(link => {
-                  const sourceTask = allTasks.find(t => t.id === link.source);
-                  return (
-                    <li key={link.id} className="gantt-dependency-item">
-                      <div className="gantt-dependency-info">
-                        <span className="gantt-dependency-task-name">
-                          {sourceTask?.text || link.source}
-                        </span>
-                        <span className="gantt-dependency-type">
-                          {getDependencyLabel(link.type)}
-                        </span>
-                        {link.lag !== undefined && link.lag !== 0 && (
-                          <span className="gantt-dependency-lag">
-                            {getLagLabel(link.lag)}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        className="gantt-dependency-remove"
-                        onClick={() => onRemoveDependency(link.id)}
-                        title="Remove dependency"
-                      >
-                        🗑️
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+      {/* Predecessors Section */}
+      <div style={{ marginBottom: 32 }}>
+        <Title 
+          level={5} 
+          style={{ 
+            fontFamily: 'IBM Plex Mono, monospace', 
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            fontSize: '13px',
+            color: '#595959'
+          }}
+        >
+          📥 Depends On (Predecessors)
+        </Title>
+        {existingDependencies.length === 0 ? (
+          <Alert
+            message="No dependencies"
+            description="This task doesn't depend on any other tasks."
+            type="info"
+            showIcon
+            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+          />
+        ) : (
+          <List
+            dataSource={existingDependencies}
+            renderItem={link => renderDependencyItem(link, 'source')}
+            bordered
+            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+          />
+        )}
+      </div>
+
+      {/* Successors Section */}
+      <div style={{ marginBottom: 32 }}>
+        <Title 
+          level={5}
+          style={{ 
+            fontFamily: 'IBM Plex Mono, monospace',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
+            fontSize: '13px',
+            color: '#595959'
+          }}
+        >
+          📤 Dependents (Successors)
+        </Title>
+        {existingDependents.length === 0 ? (
+          <Alert
+            message="No dependent tasks"
+            description="No other tasks depend on this task."
+            type="info"
+            showIcon
+            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+          />
+        ) : (
+          <List
+            dataSource={existingDependents}
+            renderItem={link => renderDependencyItem(link, 'target')}
+            bordered
+            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+          />
+        )}
+      </div>
+
+      <Divider />
+
+      {/* Add New Dependency Section */}
+      <Card
+        title={
+          <Title 
+            level={5}
+            style={{ 
+              margin: 0,
+              fontFamily: 'IBM Plex Mono, monospace',
+              fontSize: '14px'
+            }}
+          >
+            <PlusOutlined /> Add New Dependency
+          </Title>
+        }
+        style={{ marginBottom: 24 }}
+      >
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          <div>
+            <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif', display: 'block', marginBottom: 8 }}>
+              Select Task:
+            </Text>
+            <Select
+              placeholder="Choose a task..."
+              value={selectedTask || undefined}
+              onChange={setSelectedTask}
+              style={{ width: '100%', fontFamily: 'IBM Plex Sans, sans-serif' }}
+              size="large"
+              showSearch
+              filterOption={(input, option) =>
+                (option?.children as string).toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {availableTasks.map(t => (
+                <Option key={t.id} value={t.id}>
+                  {t.text}
+                </Option>
+              ))}
+            </Select>
           </div>
 
-          {/* Dependent Tasks (Successors) */}
-          <div className="gantt-dependency-section">
-            <h4>Dependents (Successors)</h4>
-            {existingDependents.length === 0 ? (
-              <p className="gantt-empty-message">No dependent tasks</p>
-            ) : (
-              <ul className="gantt-dependency-list">
-                {existingDependents.map(link => {
-                  const targetTask = allTasks.find(t => t.id === link.target);
-                  return (
-                    <li key={link.id} className="gantt-dependency-item">
-                      <div className="gantt-dependency-info">
-                        <span className="gantt-dependency-task-name">
-                          {targetTask?.text || link.target}
-                        </span>
-                        <span className="gantt-dependency-type">
-                          {getDependencyLabel(link.type)}
-                        </span>
-                        {link.lag !== undefined && link.lag !== 0 && (
-                          <span className="gantt-dependency-lag">
-                            {getLagLabel(link.lag)}
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        className="gantt-dependency-remove"
-                        onClick={() => onRemoveDependency(link.id)}
-                        title="Remove dependency"
-                      >
-                        🗑️
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
+          <div>
+            <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif', display: 'block', marginBottom: 8 }}>
+              Dependency Type:
+            </Text>
+            <Select
+              value={dependencyType}
+              onChange={setDependencyType}
+              style={{ width: '100%', fontFamily: 'IBM Plex Sans, sans-serif' }}
+              size="large"
+            >
+              <Option value="e2s">
+                <Tag color="blue">FS</Tag> Finish-to-Start
+              </Option>
+              <Option value="s2s">
+                <Tag color="green">SS</Tag> Start-to-Start
+              </Option>
+              <Option value="e2e">
+                <Tag color="purple">FF</Tag> Finish-to-Finish
+              </Option>
+              <Option value="s2e">
+                <Tag color="orange">SF</Tag> Start-to-Finish
+              </Option>
+            </Select>
           </div>
 
-          {/* Add New Dependency */}
-          <div className="gantt-dependency-section gantt-add-dependency">
-            <h4>Add New Dependency</h4>
-            <div className="gantt-dependency-form">
-              <div className="gantt-form-row">
-                <label>Task:</label>
-                <select
-                  value={selectedTask}
-                  onChange={(e) => setSelectedTask(e.target.value)}
-                  className="gantt-select"
-                >
-                  <option value="">Select task...</option>
-                  {availableTasks.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.text}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="gantt-form-row">
-                <label>Type:</label>
-                <select
-                  value={dependencyType}
-                  onChange={(e) => setDependencyType(e.target.value as Link['type'])}
-                  className="gantt-select"
-                >
-                  <option value="e2s">Finish-to-Start (FS)</option>
-                  <option value="s2s">Start-to-Start (SS)</option>
-                  <option value="e2e">Finish-to-Finish (FF)</option>
-                  <option value="s2e">Start-to-Finish (SF)</option>
-                </select>
-              </div>
-
-              <div className="gantt-form-row">
-                <label>
-                  Lead/Lag (days):
-                  <span className="gantt-help-text">
-                    Negative = lead time, Positive = lag time
-                  </span>
-                </label>
-                <input
-                  type="number"
-                  value={lagTime}
-                  onChange={(e) => setLagTime(parseInt(e.target.value) || 0)}
-                  className="gantt-input"
-                  placeholder="0"
-                />
-              </div>
-
-              <div className="gantt-form-actions">
-                <button
-                  onClick={handleAdd}
-                  disabled={!selectedTask}
-                  className="gantt-btn gantt-btn-primary"
-                >
-                  Add Dependency
-                </button>
-              </div>
-            </div>
+          <div>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
+              <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+                Lead/Lag Time (days):
+              </Text>
+              <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '12px' }}>
+                Negative = lead time (overlap), Positive = lag time (delay)
+              </Text>
+              <InputNumber
+                value={lagTime}
+                onChange={(value) => setLagTime(value || 0)}
+                style={{ width: '100%', fontFamily: 'IBM Plex Sans, sans-serif' }}
+                size="large"
+                placeholder="0"
+                min={-365}
+                max={365}
+              />
+            </Space>
           </div>
 
-          {/* Quick Help */}
-          <div className="gantt-dependency-help">
-            <h5>💡 Dependency Types:</h5>
-            <ul>
-              <li><strong>Finish-to-Start (FS):</strong> The successor task cannot start until the predecessor finishes</li>
+          <Button
+            type="primary"
+            size="large"
+            icon={<PlusOutlined />}
+            onClick={handleAdd}
+            disabled={!selectedTask}
+            block
+            style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontWeight: 600 }}
+          >
+            Add Dependency
+          </Button>
+        </Space>
+      </Card>
+
+      {/* Help Section */}
+      <Alert
+        message={
+          <Text strong style={{ fontFamily: 'IBM Plex Mono, monospace' }}>
+            <InfoCircleOutlined /> Dependency Types Explained
+          </Text>
+        }
+        description={
+          <div style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
+            <ul style={{ marginBottom: 12, paddingLeft: 20 }}>
+              <li><strong>Finish-to-Start (FS):</strong> Successor starts after predecessor finishes</li>
               <li><strong>Start-to-Start (SS):</strong> Both tasks start at the same time</li>
               <li><strong>Finish-to-Finish (FF):</strong> Both tasks finish at the same time</li>
-              <li><strong>Start-to-Finish (SF):</strong> The successor finishes when the predecessor starts</li>
+              <li><strong>Start-to-Finish (SF):</strong> Successor finishes when predecessor starts</li>
             </ul>
-            <h5>💡 Keyboard Shortcuts:</h5>
-            <p>Format: <code>[TaskID][Type]+/-[Days]d</code></p>
-            <p>Example: <code>3FS+10d</code> = Task 3, Finish-to-Start, 10 days lag</p>
+            <Divider style={{ margin: '12px 0' }} />
+            <Text strong style={{ display: 'block', marginBottom: 4 }}>Keyboard Shortcuts:</Text>
+            <Paragraph style={{ margin: 0, fontSize: '12px' }} code>
+              [TaskID][Type]+/-[Days]d
+            </Paragraph>
+            <Paragraph style={{ margin: 0, fontSize: '12px' }}>
+              Example: <code>3FS+10d</code> = Task 3, Finish-to-Start, 10 days lag
+            </Paragraph>
           </div>
-        </div>
-      </div>
-    </div>
+        }
+        type="info"
+        showIcon
+        icon={<InfoCircleOutlined />}
+        style={{ marginTop: 16 }}
+      />
+    </Modal>
   );
 };
