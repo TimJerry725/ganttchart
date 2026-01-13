@@ -250,14 +250,22 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
       }
 
       // Bar shadow (subtle)
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
       ctx.beginPath();
-      const radius = 4;
-      ctx.roundRect(barX + 1, y + 1, barW, actualBarHeight, radius);
+      const radius = 6;
+      ctx.roundRect(barX + 2, y + 2, barW, actualBarHeight, radius);
       ctx.fill();
 
-      // Bar background
-      ctx.fillStyle = isCritical ? '#ef4444' : '#3b82f6';
+      // Bar background with gradient
+      const barGradient = ctx.createLinearGradient(barX, y, barX, y + actualBarHeight);
+      if (isCritical) {
+        barGradient.addColorStop(0, '#f87171');
+        barGradient.addColorStop(1, '#dc2626');
+      } else {
+        barGradient.addColorStop(0, '#60a5fa');
+        barGradient.addColorStop(1, '#3b82f6');
+      }
+      ctx.fillStyle = barGradient;
       ctx.beginPath();
       ctx.roundRect(barX, y, barW, actualBarHeight, radius);
       ctx.fill();
@@ -268,7 +276,13 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
         const progressW = Math.max(2, bar.progressWidth);
         
         if (progressX < viewport.width && progressX + progressW > 0) {
-          ctx.fillStyle = '#10b981';
+          const progressGradient = ctx.createLinearGradient(
+            Math.max(barX, progressX), y,
+            Math.max(barX, progressX), y + actualBarHeight
+          );
+          progressGradient.addColorStop(0, '#34d399');
+          progressGradient.addColorStop(1, '#10b981');
+          ctx.fillStyle = progressGradient;
           ctx.beginPath();
           ctx.roundRect(
             Math.max(barX, progressX),
@@ -282,8 +296,8 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
       }
 
       // Bar border
-      ctx.strokeStyle = isCritical ? '#dc2626' : '#2563eb';
-      ctx.lineWidth = 1;
+      ctx.strokeStyle = isCritical ? '#b91c1c' : '#1e40af';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.roundRect(barX, y, barW, actualBarHeight, radius);
       ctx.stroke();
