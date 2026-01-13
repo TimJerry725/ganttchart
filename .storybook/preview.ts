@@ -35,6 +35,13 @@ const preview: Preview = {
       ],
     },
   },
+  decorators: [
+    (Story) => (
+      <div style={{ height: '100vh', width: '100%', padding: '20px', boxSizing: 'border-box' }}>
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 export default preview;
