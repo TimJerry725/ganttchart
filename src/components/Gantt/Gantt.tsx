@@ -14,6 +14,7 @@ import { exportToCSV, exportToExcel, exportToJSON, exportToPDF } from './ExportU
 import { createBaseline } from './Baselines';
 import { addToDate, getStartOfDay } from '../utils/dateUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Button, Tooltip, Space, Divider, Segmented } from 'antd';
 import {
   faPlus,
   faLink,
@@ -75,9 +76,10 @@ interface GanttProps {
 }
 
 const defaultColumns: Column[] = [
-  { name: 'text', label: 'Task Name', width: 300, align: 'left', resize: true },
-  { name: 'start', label: 'Start Date', width: 120, align: 'center' },
-  { name: 'duration', label: 'Duration', width: 100, align: 'center' },
+  { name: 'text', label: 'Task Name', width: 280, align: 'left', resize: true },
+  { name: 'start', label: 'Start Date', width: 100, align: 'center' },
+  { name: 'duration', label: 'Duration', width: 80, align: 'center' },
+  { name: 'add', label: '', width: 40, align: 'center' },
 ];
 
 const defaultScales: Scale[] = [
@@ -118,6 +120,8 @@ export const Gantt: React.FC<GanttProps> = ({
   const [showDependencyEditor, setShowDependencyEditor] = useState(false);
   const [dependencyEditTask, setDependencyEditTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
+  const [reorderTask, setReorderTask] = useState<{ id: string; index: number } | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ id: string; position: 'before' | 'after' | 'inside' } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
@@ -156,7 +160,35 @@ export const Gantt: React.FC<GanttProps> = ({
 
   // Update filtered tasks when filters or tasks change
   useEffect(() => {
-    setFilteredTasks(applyFilters(tasks, filters));
+    // First apply user filters (search, priority, etc.)
+    const userFiltered = applyFilters(tasks, filters);
+
+    // Then apply tree visibility (hide children of closed parents)
+    const getVisibleTasks = (allTasks: Task[]) => {
+      const visibleTasks: Task[] = [];
+
+      // Identify all tasks whose parents are closed
+      // We assume tasks are ordered such that parents come before children
+      // or we can just iterate and build the visible list.
+      // Professional Gantt charts usually maintain a flat list but filter based on 'open' state.
+
+      const isParentClosed = (taskId?: string): boolean => {
+        if (!taskId) return false;
+        const parent = allTasks.find(t => t.id === taskId);
+        if (parent && !parent.open && parent.type === 'project') return true;
+        return isParentClosed(parent?.parent);
+      };
+
+      allTasks.forEach(task => {
+        if (!isParentClosed(task.parent)) {
+          visibleTasks.push(task);
+        }
+      });
+
+      return visibleTasks;
+    };
+
+    setFilteredTasks(getVisibleTasks(userFiltered));
   }, [tasks, filters]);
 
   // Calculate critical path (used in render if toggle is on)
@@ -245,14 +277,149 @@ export const Gantt: React.FC<GanttProps> = ({
     }
   };
 
-  const handleTaskDragStart = (taskId: string, _clientX: number, _clientY: number) => {
-    if (!ganttConfig.readonly) {
+  const handleTaskDragStart = (taskId: string, _clientX: number, _clientY: number, type?: 'reorder') => {
+    if (ganttConfig.readonly) return;
+
+    if (type === 'reorder') {
+      const index = tasks.findIndex(t => t.id === taskId);
+      setReorderTask({ id: taskId, index });
+      // Add global listeners for smooth reordering during drag
+      document.body.style.cursor = 'grabbing';
+    } else {
       setDraggedTask(taskId);
     }
   };
 
   const handleTaskDragEnd = () => {
+    if (reorderTask && dropTarget) {
+      const sourceTask = tasks.find(t => t.id === reorderTask.id);
+      const targetTask = tasks.find(t => t.id === dropTarget.id);
+
+      if (sourceTask && targetTask && sourceTask.id !== targetTask.id) {
+        const getDescendantIds = (parentId: string, allTasks: Task[]): string[] => {
+          let ids: string[] = [];
+          const children = allTasks.filter(t => t.parent === parentId);
+          children.forEach(child => {
+            ids.push(child.id);
+            ids = [...ids, ...getDescendantIds(child.id, allTasks)];
+          });
+          return ids;
+        };
+
+        const descendantIds = getDescendantIds(sourceTask.id, tasks);
+        const groupToMoveIds = [sourceTask.id, ...descendantIds];
+
+        if (!groupToMoveIds.includes(targetTask.id)) {
+          const newTasks = [...tasks];
+
+          // Determine new parent
+          let newParentId: string | undefined = undefined;
+          if (dropTarget.position === 'inside') {
+            newParentId = targetTask.id;
+          } else {
+            newParentId = targetTask.parent;
+          }
+
+          // Update root task parent
+          const sourceIdxInFull = newTasks.findIndex(t => t.id === sourceTask.id);
+          if (sourceIdxInFull !== -1) {
+            newTasks[sourceIdxInFull] = { ...newTasks[sourceIdxInFull], parent: newParentId };
+          }
+
+          // Extract group and insert at new position
+          const currentGroupTasks = newTasks.filter(t => groupToMoveIds.includes(t.id));
+          const otherTasks = newTasks.filter(t => !groupToMoveIds.includes(t.id));
+
+          let insertIdx = otherTasks.findIndex(t => t.id === targetTask.id);
+          if (dropTarget.position === 'after' || dropTarget.position === 'inside') {
+            insertIdx++;
+          }
+
+          otherTasks.splice(insertIdx, 0, ...currentGroupTasks);
+          setTasks(otherTasks);
+        }
+      }
+    }
     setDraggedTask(null);
+    setReorderTask(null);
+    setDropTarget(null);
+    document.body.style.cursor = '';
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (reorderTask) {
+      const rowHeight = ganttConfig.rowHeight || 44;
+      const gridBody = gridRef.current;
+      if (!gridBody) return;
+
+      const rect = gridBody.getBoundingClientRect();
+      const relativeY = e.clientY - rect.top + gridBody.scrollTop;
+      let newIndex = Math.floor(relativeY / rowHeight);
+      newIndex = Math.max(0, Math.min(newIndex, filteredTasks.length - 1));
+
+      if (newIndex !== reorderTask.index) {
+        const sourceTask = filteredTasks[reorderTask.index];
+        const targetTask = filteredTasks[newIndex];
+
+        if (sourceTask && targetTask) {
+          const getDescendantIds = (parentId: string, allTasks: Task[]): string[] => {
+            let ids: string[] = [];
+            const children = allTasks.filter(t => t.parent === parentId);
+            children.forEach(child => {
+              ids.push(child.id);
+              ids = [...ids, ...getDescendantIds(child.id, allTasks)];
+            });
+            return ids;
+          };
+
+          const descendantIds = getDescendantIds(sourceTask.id, tasks);
+          const groupToMove = [sourceTask.id, ...descendantIds];
+
+          // Check if target is part of the dragged group to avoid self-nesting/loops
+          if (groupToMove.includes(targetTask.id)) return;
+
+          // Smart reparenting based on drop position
+          let newParentId: string | undefined = undefined;
+
+          // Determine the task above the new position in filtered tasks
+          const aboveIdx = newIndex;
+          const aboveTask = filteredTasks[newIndex > reorderTask.index ? aboveIdx : aboveIdx - 1];
+
+          if (aboveTask) {
+            if (aboveTask.type === 'project' && aboveTask.open) {
+              newParentId = aboveTask.id;
+            } else {
+              newParentId = aboveTask.parent;
+            }
+          }
+
+          const newTasks = [...tasks];
+
+          // Update parent of the root task being moved
+          const sourceIdx = newTasks.findIndex(t => t.id === sourceTask.id);
+          if (sourceIdx !== -1) {
+            newTasks[sourceIdx] = { ...newTasks[sourceIdx], parent: newParentId };
+          }
+
+          // Extract group and remaining tasks
+          const tasksToMove = newTasks.filter(t => groupToMove.includes(t.id));
+          const remainingTasks = newTasks.filter(t => !groupToMove.includes(t.id));
+
+          const actualTargetTaskIndex = remainingTasks.findIndex(t => t.id === targetTask.id);
+          const insertAt = newIndex > reorderTask.index ? actualTargetTaskIndex + 1 : actualTargetTaskIndex;
+
+          remainingTasks.splice(insertAt, 0, ...tasksToMove);
+          setTasks(remainingTasks);
+          setReorderTask({ id: reorderTask.id, index: newIndex });
+        }
+      }
+    }
+  };
+
+  const handleMouseUp = () => {
+    if (reorderTask) {
+      handleTaskDragEnd();
+    }
   };
 
   const handleCreateTask = (newTaskData: Omit<Task, 'id'>) => {
@@ -364,29 +531,24 @@ export const Gantt: React.FC<GanttProps> = ({
         </div>
         <div className="gantt-page-header-right">
           <div className="gantt-theme-selector">
-            <button
-              className={currentTheme === 'light' ? 'active' : ''}
-              onClick={() => setCurrentTheme('light')}
-              title="Light Theme"
-            >
-              Willow
-            </button>
-            <button
-              className={currentTheme === 'dark' ? 'active' : ''}
-              onClick={() => setCurrentTheme('dark')}
-              title="Dark Theme"
-            >
-              Dark
-            </button>
+            <Segmented
+              options={[
+                { label: 'Willow', value: 'light' },
+                { label: 'Dark', value: 'dark' },
+              ]}
+              value={currentTheme}
+              onChange={(value) => setCurrentTheme(value as 'light' | 'dark')}
+            />
           </div>
-          <a
+          <Button
             href="https://github.com/TimJerry725/ganttchart"
             target="_blank"
-            rel="noopener noreferrer"
-            className="gantt-github-link"
+            type="default"
+            size="small"
+            className="gantt-github-link-btn"
           >
             See code on GitHub
-          </a>
+          </Button>
         </div>
       </div>
 
@@ -395,73 +557,134 @@ export const Gantt: React.FC<GanttProps> = ({
         {/* Enhanced Toolbar - Always at top */}
         <div className="gantt-toolbar">
           <div className="gantt-toolbar-left">
-            {!ganttConfig.readonly && (
-              <>
-                <button onClick={() => setShowTaskCreator(true)}>
-                  <FontAwesomeIcon icon={faPlus} /> Add Task
-                </button>
-                <button
-                  onClick={() => handleOpenDependencyEditor()}
-                  disabled={!selectedTask}
-                  title="Edit task dependencies"
+            <Space size={4}>
+              {!ganttConfig.readonly && (
+                <>
+                  <Button
+                    type="primary"
+                    icon={<FontAwesomeIcon icon={faPlus} />}
+                    onClick={() => setShowTaskCreator(true)}
+                  >
+                    Add Task
+                  </Button>
+                  <Tooltip title="Edit task dependencies">
+                    <Button
+                      icon={<FontAwesomeIcon icon={faLink} />}
+                      onClick={() => handleOpenDependencyEditor()}
+                      disabled={!selectedTask}
+                    >
+                      Dependencies
+                    </Button>
+                  </Tooltip>
+                  <Divider type="vertical" style={{ height: 24, margin: '0 4px' }} />
+                </>
+              )}
+
+              <Tooltip title="Undo (Ctrl+Z)">
+                <Button
+                  icon={<FontAwesomeIcon icon={faRotateLeft} />}
+                  onClick={undo}
+                  disabled={!canUndo}
+                />
+              </Tooltip>
+              <Tooltip title="Redo (Ctrl+Y)">
+                <Button
+                  icon={<FontAwesomeIcon icon={faRotateRight} />}
+                  onClick={redo}
+                  disabled={!canRedo}
+                />
+              </Tooltip>
+
+              <Divider type="vertical" style={{ height: 24, margin: '0 4px' }} />
+
+              <Tooltip title="Auto-schedule tasks based on dependencies">
+                <Button
+                  icon={<FontAwesomeIcon icon={faBolt} />}
+                  onClick={handleAutoSchedule}
                 >
-                  <FontAwesomeIcon icon={faLink} /> Dependencies
-                </button>
-                <div className="gantt-toolbar-separator" />
-              </>
-            )}
-            <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-              <FontAwesomeIcon icon={faRotateLeft} /> Undo
-            </button>
-            <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
-              <FontAwesomeIcon icon={faRotateRight} /> Redo
-            </button>
-            <div className="gantt-toolbar-separator" />
-            <button onClick={handleAutoSchedule} title="Auto-schedule tasks based on dependencies">
-              <FontAwesomeIcon icon={faBolt} /> Auto-Schedule
-            </button>
-            <button onClick={handleLevelResources} title="Balance resource allocation">
-              <FontAwesomeIcon icon={faChartBar} /> Level Resources
-            </button>
-            <button
-              onClick={() => setShowCriticalPath(!showCriticalPath)}
-              className={showCriticalPath ? 'active' : ''}
-              title="Highlight critical path"
-            >
-              <FontAwesomeIcon icon={faBullseye} /> Critical Path
-            </button>
-            <button
-              onClick={handleToggleBaselines}
-              className={showBaselines ? 'active' : ''}
-              title={baselines.size > 0 ? "Toggle baseline visibility" : "Create baseline snapshot"}
-            >
-              <FontAwesomeIcon icon={faMapPin} /> {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
-            </button>
+                  Auto-Schedule
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Balance resource allocation">
+                <Button
+                  icon={<FontAwesomeIcon icon={faChartBar} />}
+                  onClick={handleLevelResources}
+                >
+                  Level Resources
+                </Button>
+              </Tooltip>
+
+              <Tooltip title="Highlight critical path">
+                <Button
+                  type={showCriticalPath ? 'primary' : 'default'}
+                  icon={<FontAwesomeIcon icon={faBullseye} />}
+                  onClick={() => setShowCriticalPath(!showCriticalPath)}
+                >
+                  Critical Path
+                </Button>
+              </Tooltip>
+
+              <Tooltip title={baselines.size > 0 ? "Toggle baseline visibility" : "Create baseline snapshot"}>
+                <Button
+                  type={showBaselines ? 'primary' : 'default'}
+                  icon={<FontAwesomeIcon icon={faMapPin} />}
+                  onClick={handleToggleBaselines}
+                >
+                  {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
+                </Button>
+              </Tooltip>
+            </Space>
           </div>
 
           <div className="gantt-toolbar-right">
-            <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}>
-              <FontAwesomeIcon icon={faSearchMinus} /> Zoom Out
-            </button>
-            <button onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}>
-              <FontAwesomeIcon icon={faSearchPlus} /> Zoom In
-            </button>
-            <button onClick={() => setZoomLevel(1)}>
-              <FontAwesomeIcon icon={faRotateLeft} /> Reset Zoom
-            </button>
-            <div className="gantt-toolbar-separator" />
-            <button onClick={() => exportToCSV(tasks)} title="Export to CSV">
-              <FontAwesomeIcon icon={faFileCsv} /> CSV
-            </button>
-            <button onClick={() => exportToExcel(tasks)} title="Export to Excel">
-              <FontAwesomeIcon icon={faFileExcel} /> Excel
-            </button>
-            <button onClick={() => exportToJSON(tasks, links)} title="Export to JSON">
-              <FontAwesomeIcon icon={faFileCode} /> JSON
-            </button>
-            <button onClick={() => exportToPDF(tasks)} title="Export to PDF">
-              <FontAwesomeIcon icon={faFilePdf} /> PDF
-            </button>
+            <Space size={4}>
+              <Tooltip title="Zoom Out">
+                <Button
+                  icon={<FontAwesomeIcon icon={faSearchMinus} />}
+                  onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
+                />
+              </Tooltip>
+              <Tooltip title="Zoom In">
+                <Button
+                  icon={<FontAwesomeIcon icon={faSearchPlus} />}
+                  onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}
+                />
+              </Tooltip>
+              <Tooltip title="Reset Zoom">
+                <Button
+                  icon={<FontAwesomeIcon icon={faRotateLeft} />}
+                  onClick={() => setZoomLevel(1)}
+                />
+              </Tooltip>
+
+              <Divider type="vertical" style={{ height: 24, margin: '0 4px' }} />
+
+              <Tooltip title="Export to CSV">
+                <Button
+                  icon={<FontAwesomeIcon icon={faFileCsv} />}
+                  onClick={() => exportToCSV(tasks)}
+                />
+              </Tooltip>
+              <Tooltip title="Export to Excel">
+                <Button
+                  icon={<FontAwesomeIcon icon={faFileExcel} />}
+                  onClick={() => exportToExcel(tasks)}
+                />
+              </Tooltip>
+              <Tooltip title="Export to JSON">
+                <Button
+                  icon={<FontAwesomeIcon icon={faFileCode} />}
+                  onClick={() => exportToJSON(tasks, links)}
+                />
+              </Tooltip>
+              <Tooltip title="Export to PDF">
+                <Button
+                  icon={<FontAwesomeIcon icon={faFilePdf} />}
+                  onClick={() => exportToPDF(tasks)}
+                />
+              </Tooltip>
+            </Space>
           </div>
         </div>
 
@@ -472,17 +695,24 @@ export const Gantt: React.FC<GanttProps> = ({
         />
 
         {/* Main Gantt Layout - Grid + Timeline */}
-        <div className="gantt-layout">
+        <div
+          className="gantt-layout"
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
           <Grid
             ref={gridRef}
             tasks={filteredTasks}
-            columns={ganttConfig.columns!}
-            rowHeight={ganttConfig.rowHeight!}
+            columns={ganttConfig.columns || []}
+            rowHeight={ganttConfig.rowHeight || 44}
             selectedTask={selectedTask}
             onTaskClick={handleTaskClick}
             onTaskContextMenu={handleContextMenu}
             onScroll={handleGridScroll}
             onTaskUpdate={handleUpdateTask}
+            onTaskDragStart={handleTaskDragStart}
+            onAddTask={() => setShowTaskCreator(true)}
           />
           <Timeline
             ref={timelineRef}

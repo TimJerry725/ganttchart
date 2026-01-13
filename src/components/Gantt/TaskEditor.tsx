@@ -1,6 +1,12 @@
-import React, { useState } from 'react';
 import type { Task } from '../types';
-import { formatDate } from '../utils/dateUtils';
+import { Modal, Form, Input, DatePicker, Select, InputNumber, ColorPicker, Button } from 'antd';
+import dayjs from 'dayjs';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faExclamationTriangle } from '@fortawesome/free-solid-svg-icons';
+
+const { Option } = Select;
+const { TextArea } = Input;
+const { confirm } = Modal;
 
 interface TaskEditorProps {
   task: Task;
@@ -10,172 +16,134 @@ interface TaskEditorProps {
 }
 
 export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete, onClose }) => {
-  const [formData, setFormData] = useState({
-    text: task.text,
-    start: task.start,
-    duration: task.duration,
-    progress: task.progress,
-    type: task.type || 'task',
-    color: task.color || '#4A90E2',
-    owner: task.owner || '',
-    priority: task.priority || 'medium',
-    details: task.details || '',
-  });
+  const [form] = Form.useForm();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const end = new Date(formData.start);
-    end.setDate(end.getDate() + formData.duration);
+  const handleFinish = (values: any) => {
+    const start = values.start.toDate();
+    const end = new Date(start);
+    end.setDate(end.getDate() + (values.duration || 1));
 
     onUpdate({
       ...task,
-      text: formData.text,
-      start: formData.start,
-      end: end,
-      duration: formData.duration,
-      progress: formData.progress,
-      type: formData.type,
-      color: formData.color,
-      owner: formData.owner,
-      priority: formData.priority,
-      details: formData.details,
+      text: values.text,
+      start,
+      end,
+      duration: values.duration || 1,
+      progress: values.progress || 0,
+      type: values.type,
+      color: typeof values.color === 'string' ? values.color : (values.color?.toHexString?.() || '#4A90E2'),
+      owner: values.owner || '',
+      priority: values.priority || 'medium',
+      details: values.details || '',
     });
 
     onClose();
   };
 
-  const handleDelete = () => {
-    if (confirm(`Are you sure you want to delete "${task.text}"?`)) {
-      onDelete(task.id);
-      onClose();
-    }
+  const showDeleteConfirm = () => {
+    confirm({
+      title: `Are you sure you want to delete "${task.text}"?`,
+      icon: <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: '#faad14', marginRight: 8 }} />,
+      content: 'This action cannot be undone.',
+      okText: 'Yes, Delete',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk() {
+        onDelete(task.id);
+        onClose();
+      },
+    });
   };
 
   return (
-    <div className="gantt-modal-overlay" onClick={onClose}>
-      <div className="gantt-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="gantt-modal-header">
-          <h3>Edit Task</h3>
-          <button className="gantt-modal-close" onClick={onClose}>✕</button>
+    <Modal
+      title="Edit Task"
+      open={true}
+      onCancel={onClose}
+      footer={[
+        <Button key="delete" danger onClick={showDeleteConfirm} style={{ float: 'left' }}>
+          Delete
+        </Button>,
+        <Button key="cancel" onClick={onClose}>
+          Cancel
+        </Button>,
+        <Button key="submit" type="primary" onClick={() => form.submit()}>
+          Save Changes
+        </Button>,
+      ]}
+      width={600}
+      className="gantt-modal-antd"
+    >
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleFinish}
+        initialValues={{
+          text: task.text,
+          type: task.type || 'task',
+          priority: task.priority || 'medium',
+          start: dayjs(task.start),
+          duration: task.duration,
+          progress: task.progress,
+          color: task.color || '#4A90E2',
+          owner: task.owner || '',
+          details: task.details || '',
+        }}
+      >
+        <Form.Item
+          name="text"
+          label="Task Name"
+          rules={[{ required: true, message: 'Please enter task name' }]}
+        >
+          <Input placeholder="Enter task name" />
+        </Form.Item>
+
+        <div style={{ display: 'flex', gap: 16 }}>
+          <Form.Item name="type" label="Type" style={{ flex: 1 }}>
+            <Select>
+              <Option value="task">Task</Option>
+              <Option value="milestone">Milestone</Option>
+              <Option value="project">Project</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item name="priority" label="Priority" style={{ flex: 1 }}>
+            <Select>
+              <Option value="low">Low</Option>
+              <Option value="medium">Medium</Option>
+              <Option value="high">High</Option>
+            </Select>
+          </Form.Item>
         </div>
 
-        <form onSubmit={handleSubmit} className="gantt-modal-body">
-          <div className="gantt-form-row">
-            <label>Task Name *</label>
-            <input
-              type="text"
-              value={formData.text}
-              onChange={(e) => setFormData({ ...formData, text: e.target.value })}
-              required
-            />
-          </div>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <Form.Item name="start" label="Start Date" style={{ flex: 1 }}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
 
-          <div className="gantt-form-row-group">
-            <div className="gantt-form-row">
-              <label>Type</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-              >
-                <option value="task">Task</option>
-                <option value="milestone">Milestone</option>
-                <option value="project">Project</option>
-              </select>
-            </div>
+          <Form.Item name="duration" label="Duration (days)" style={{ flex: 1 }}>
+            <InputNumber min={0} style={{ width: '100%' }} />
+          </Form.Item>
+        </div>
 
-            <div className="gantt-form-row">
-              <label>Priority</label>
-              <select
-                value={formData.priority}
-                onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-            </div>
-          </div>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <Form.Item name="color" label="Color" style={{ flex: 1 }}>
+            <ColorPicker showText />
+          </Form.Item>
 
-          <div className="gantt-form-row-group">
-            <div className="gantt-form-row">
-              <label>Start Date</label>
-              <input
-                type="date"
-                value={formatDate(formData.start, 'YYYY-MM-DD')}
-                onChange={(e) => setFormData({ ...formData, start: new Date(e.target.value) })}
-              />
-            </div>
+          <Form.Item name="progress" label="Progress (%)" style={{ flex: 1 }}>
+            <InputNumber min={0} max={100} style={{ width: '100%' }} />
+          </Form.Item>
+        </div>
 
-            <div className="gantt-form-row">
-              <label>Duration (days)</label>
-              <input
-                type="number"
-                min="1"
-                value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 1 })}
-              />
-            </div>
-          </div>
+        <Form.Item name="owner" label="Owner">
+          <Input placeholder="Assign to..." />
+        </Form.Item>
 
-          <div className="gantt-form-row-group">
-            <div className="gantt-form-row">
-              <label>Color</label>
-              <input
-                type="color"
-                value={formData.color}
-                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-              />
-            </div>
-
-            <div className="gantt-form-row">
-              <label>Progress (%)</label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={formData.progress}
-                onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })}
-              />
-              <span className="gantt-progress-value">{formData.progress}%</span>
-            </div>
-          </div>
-
-          <div className="gantt-form-row">
-            <label>Owner</label>
-            <input
-              type="text"
-              value={formData.owner}
-              onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-              placeholder="Assign to..."
-            />
-          </div>
-
-          <div className="gantt-form-row">
-            <label>Details</label>
-            <textarea
-              value={formData.details}
-              onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-              placeholder="Add task description..."
-              rows={3}
-            />
-          </div>
-
-          <div className="gantt-modal-footer">
-            <button type="button" onClick={handleDelete} className="gantt-btn gantt-btn-danger">
-              Delete
-            </button>
-            <div className="gantt-modal-footer-right">
-              <button type="button" onClick={onClose} className="gantt-btn gantt-btn-secondary">
-                Cancel
-              </button>
-              <button type="submit" className="gantt-btn gantt-btn-primary">
-                Save Changes
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
+        <Form.Item name="details" label="Details">
+          <TextArea placeholder="Add task description..." rows={3} />
+        </Form.Item>
+      </Form>
+    </Modal>
   );
 };

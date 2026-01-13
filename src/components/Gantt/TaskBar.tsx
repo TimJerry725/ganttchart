@@ -62,7 +62,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     return {
       left: `${left}px`,
       width: `${Math.max(width, 0)}px`,
-      backgroundColor: task.color || (task.type === 'project' ? '#78909C' : '#5A9FD4'),
+      backgroundColor: task.color || (task.type === 'project' ? '#7EE3C7' : '#ADCFFE'),
     };
   };
 
@@ -92,6 +92,11 @@ export const TaskBar: React.FC<TaskBarProps> = ({
           !isSegment && <span className="gantt-task-text">{task.text}</span>
         )}
       </div>
+
+      {/* Milestone text (outside) */}
+      {task.type === 'milestone' && (
+        <span className="gantt-milestone-text">{task.text}</span>
+      )}
 
       {/* Resize handle - right */}
       {!readonly && task.type !== 'milestone' && !isSegment && (
@@ -124,7 +129,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
               style={{
                 left: `${position.left + (seg.start.getTime() - task.start.getTime()) / (task.end.getTime() - task.start.getTime()) * position.width}px`,
                 width: `${(seg.end.getTime() - seg.start.getTime()) / (task.end.getTime() - task.start.getTime()) * position.width}px`,
-                backgroundColor: task.color || '#5A9FD4',
+                backgroundColor: task.color || '#ADCFFE',
               }}
               onClick={onClick}
               onMouseDown={(e) => handleMouseDown(e, 'move')}

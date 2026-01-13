@@ -1,6 +1,9 @@
 import React, { forwardRef } from 'react';
 import type { Task, Column } from '../types';
 import { formatDate } from '../utils/dateUtils';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronRight, faChevronDown, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Button } from 'antd';
 
 interface GridProps {
   tasks: Task[];
@@ -12,10 +15,18 @@ interface GridProps {
   onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   onTaskUpdate?: (task: Task) => void;
   onTaskDragStart?: (taskId: string, clientX: number, clientY: number, type: 'reorder') => void;
+  onAddTask?: (taskId?: string) => void;
 }
 
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
-  ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onTaskContextMenu, onScroll, onTaskUpdate, onTaskDragStart }, ref) => {
+  ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onTaskContextMenu, onScroll, onTaskUpdate, onTaskDragStart, onAddTask }, ref) => {
+
+    const calculateDepth = (task: Task, depth = 0): number => {
+      if (!task.parent) return depth;
+      const parentTask = tasks.find(t => t.id === task.parent);
+      if (!parentTask) return depth;
+      return calculateDepth(parentTask, depth + 1);
+    };
 
     const getCellValue = (task: Task, column: Column): React.ReactNode => {
       if (column.template) {
@@ -24,8 +35,9 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
 
       switch (column.name) {
         case 'text':
+          const depth = calculateDepth(task);
           return (
-            <div className="gantt-grid-cell-text">
+            <div className="gantt-grid-cell-text" style={{ paddingLeft: depth * 20 }}>
               <div
                 className="gantt-row-drag-handle"
                 onMouseDown={(e) => {
@@ -33,22 +45,38 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                   onTaskDragStart?.(task.id, e.clientX, e.clientY, 'reorder');
                 }}
               >
-                ⣿
+                <FontAwesomeIcon icon={faGripVertical} />
               </div>
               {task.type === 'project' && (
-                <span className="gantt-tree-icon" onClick={() => onTaskUpdate?.({ ...task, open: !task.open })}>
-                  {task.open ? '▼' : '▶'}
+                <span className="gantt-tree-icon" onClick={(e) => {
+                  e.stopPropagation();
+                  onTaskUpdate?.({ ...task, open: !task.open });
+                }}>
+                  <FontAwesomeIcon icon={task.open ? faChevronDown : faChevronRight} />
                 </span>
               )}
-              <span>{task.text}</span>
+              {task.type !== 'project' && <span style={{ width: 16, display: 'inline-block' }} />}
+              <span className="gantt-task-name-text">{task.text}</span>
             </div>
           );
         case 'start':
-          return formatDate(task.start, 'MM/DD/YYYY');
+          return formatDate(task.start, 'DD-MM-YYYY');
         case 'end':
-          return formatDate(task.end, 'MM/DD/YYYY');
+          return formatDate(task.end, 'DD-MM-YYYY');
         case 'duration':
-          return `${task.duration}d`;
+          return `${task.duration}`;
+        case 'add':
+          return (
+            <Button
+              type="text"
+              size="small"
+              icon={<FontAwesomeIcon icon={faPlus} style={{ fontSize: 12, color: '#adb5bd' }} />}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddTask?.(task.id);
+              }}
+            />
+          );
         case 'progress':
           return (
             <div className="gantt-progress-cell">
@@ -78,7 +106,13 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                 textAlign: column.align || 'left',
               }}
             >
-              {column.label}
+              {column.name === 'add' ? (
+                <FontAwesomeIcon
+                  icon={faPlus}
+                  style={{ fontSize: 12, color: '#adb5bd', cursor: 'pointer' }}
+                  onClick={() => onAddTask?.()}
+                />
+              ) : column.label}
             </div>
           ))}
         </div>

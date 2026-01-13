@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Input, Select, Button } from 'antd';
-import { CloseCircleOutlined } from '@ant-design/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 import type { Task } from '../types';
 
 const { Search } = Input;
@@ -113,7 +114,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
             <Button
               type="default"
               danger
-              icon={<CloseCircleOutlined />}
+              icon={<FontAwesomeIcon icon={faTimesCircle} />}
               onClick={clearFilters}
               className="gantt-filter-clear-antd"
             >
