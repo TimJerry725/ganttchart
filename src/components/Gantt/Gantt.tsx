@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { Task, Link, GanttConfig, Column, Scale, Baseline } from '../types';
+import type { FilterOptions } from './FilterSearch';
 import { Grid } from './Grid';
 import { Timeline } from './Timeline';
 import { TaskCreator } from './TaskCreator';
 import { TaskEditor } from './TaskEditor';
-import { FilterSearch, applyFilters, FilterOptions } from './FilterSearch';
+import { FilterSearch, applyFilters } from './FilterSearch';
 import { useUndoRedo } from './UndoRedo';
 import { calculateCriticalPath } from './CriticalPath';
 import { autoSchedule, levelResources } from './AutoScheduler';
