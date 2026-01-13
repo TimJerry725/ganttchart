@@ -13,6 +13,24 @@ import { autoSchedule, levelResources } from './AutoScheduler';
 import { exportToCSV, exportToExcel, exportToJSON, exportToPDF } from './ExportUtils';
 import { createBaseline } from './Baselines';
 import { addToDate, getStartOfDay } from '../utils/dateUtils';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faPlus,
+  faLink,
+  faRotateLeft,
+  faRotateRight,
+  faBolt,
+  faChartBar,
+  faBullseye,
+  faMapPin,
+  faSearchMinus,
+  faSearchPlus,
+  faFileCsv,
+  faFileExcel,
+  faFileCode,
+  faFilePdf,
+  faSave,
+} from '@fortawesome/free-solid-svg-icons';
 
 // Ant Design CSS
 import 'antd/dist/reset.css';
@@ -329,68 +347,70 @@ export const Gantt: React.FC<GanttProps> = ({
         <div className="gantt-toolbar-left">
           {!ganttConfig.readonly && (
             <>
-              <button onClick={() => setShowTaskCreator(true)}>➕ Add Task</button>
+              <button onClick={() => setShowTaskCreator(true)}>
+                <FontAwesomeIcon icon={faPlus} /> Add Task
+              </button>
               <button 
                 onClick={() => handleOpenDependencyEditor()}
                 disabled={!selectedTask}
                 title="Edit task dependencies"
               >
-                🔗 Dependencies
+                <FontAwesomeIcon icon={faLink} /> Dependencies
               </button>
               <div className="gantt-toolbar-separator" />
             </>
           )}
           <button onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
-            ↶ Undo
+            <FontAwesomeIcon icon={faRotateLeft} /> Undo
           </button>
           <button onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Y)">
-            ↷ Redo
+            <FontAwesomeIcon icon={faRotateRight} /> Redo
           </button>
           <div className="gantt-toolbar-separator" />
           <button onClick={handleAutoSchedule} title="Auto-schedule tasks based on dependencies">
-            ⚡ Auto-Schedule
+            <FontAwesomeIcon icon={faBolt} /> Auto-Schedule
           </button>
           <button onClick={handleLevelResources} title="Balance resource allocation">
-            📊 Level Resources
+            <FontAwesomeIcon icon={faChartBar} /> Level Resources
           </button>
           <button
             onClick={() => setShowCriticalPath(!showCriticalPath)}
             className={showCriticalPath ? 'active' : ''}
             title="Highlight critical path"
           >
-            🎯 Critical Path
+            <FontAwesomeIcon icon={faBullseye} /> Critical Path
           </button>
           <button 
             onClick={handleToggleBaselines} 
             className={showBaselines ? 'active' : ''}
             title={baselines.size > 0 ? "Toggle baseline visibility" : "Create baseline snapshot"}
           >
-            📍 {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
+            <FontAwesomeIcon icon={faMapPin} /> {baselines.size > 0 ? 'Baselines' : 'Set Baseline'}
           </button>
         </div>
 
         <div className="gantt-toolbar-right">
           <button onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}>
-            🔍− Zoom Out
+            <FontAwesomeIcon icon={faSearchMinus} /> Zoom Out
           </button>
           <button onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}>
-            🔍+ Zoom In
+            <FontAwesomeIcon icon={faSearchPlus} /> Zoom In
           </button>
           <button onClick={() => setZoomLevel(1)}>
-            ↺ Reset Zoom
+            <FontAwesomeIcon icon={faRotateLeft} /> Reset Zoom
           </button>
           <div className="gantt-toolbar-separator" />
           <button onClick={() => exportToCSV(tasks)} title="Export to CSV">
-            💾 CSV
+            <FontAwesomeIcon icon={faFileCsv} /> CSV
           </button>
           <button onClick={() => exportToExcel(tasks)} title="Export to Excel">
-            📊 Excel
+            <FontAwesomeIcon icon={faFileExcel} /> Excel
           </button>
           <button onClick={() => exportToJSON(tasks, links)} title="Export to JSON">
-            📄 JSON
+            <FontAwesomeIcon icon={faFileCode} /> JSON
           </button>
           <button onClick={() => exportToPDF(tasks)} title="Export to PDF">
-            📋 PDF
+            <FontAwesomeIcon icon={faFilePdf} /> PDF
           </button>
         </div>
       </div>

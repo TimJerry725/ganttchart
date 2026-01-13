@@ -18,7 +18,7 @@ type Story = StoryObj<typeof Gantt>;
 const tasksWithDependencies: Task[] = [
   {
     id: '1',
-    text: '📋 Project Planning',
+    text: 'Project Planning',
     start: new Date(2024, 5, 3),
     end: new Date(2024, 5, 7),
     duration: 4,
@@ -29,7 +29,7 @@ const tasksWithDependencies: Task[] = [
   },
   {
     id: '2',
-    text: '📝 Requirements Analysis',
+    text: 'Requirements Analysis',
     start: new Date(2024, 5, 8),
     end: new Date(2024, 5, 14),
     duration: 6,
@@ -40,7 +40,7 @@ const tasksWithDependencies: Task[] = [
   },
   {
     id: '3',
-    text: '🎨 Design Phase',
+    text: 'Design Phase',
     start: new Date(2024, 5, 15),
     end: new Date(2024, 5, 21),
     duration: 6,
@@ -51,7 +51,7 @@ const tasksWithDependencies: Task[] = [
   },
   {
     id: '4',
-    text: '💻 Development - Frontend',
+    text: 'Development - Frontend',
     start: new Date(2024, 5, 22),
     end: new Date(2024, 6, 5),
     duration: 13,
@@ -62,7 +62,7 @@ const tasksWithDependencies: Task[] = [
   },
   {
     id: '5',
-    text: '⚙️ Development - Backend',
+    text: 'Development - Backend',
     start: new Date(2024, 5, 22),
     end: new Date(2024, 6, 5),
     duration: 13,
@@ -73,7 +73,7 @@ const tasksWithDependencies: Task[] = [
   },
   {
     id: '6',
-    text: '🧪 Testing & QA',
+    text: 'Testing & QA',
     start: new Date(2024, 6, 6),
     end: new Date(2024, 6, 12),
     duration: 6,
@@ -84,7 +84,7 @@ const tasksWithDependencies: Task[] = [
   },
   {
     id: '7',
-    text: '🚀 Deployment',
+    text: 'Deployment',
     start: new Date(2024, 6, 13),
     end: new Date(2024, 6, 15),
     duration: 2,
@@ -289,7 +289,7 @@ const linksWithLag: Link[] = [
  * 
  * **How to use:**
  * 1. Select any task in the grid
- * 2. Click the "🔗 Dependencies" button in the toolbar
+ * 2. Click the "Dependencies" button in the toolbar
  * 3. Add, edit, or remove dependencies
  * 
  * **Dependency Flow:**
@@ -396,7 +396,7 @@ export const LeadAndLag: Story = {
  * - Any delay in critical tasks delays the entire project
  * 
  * **How to identify critical path:**
- * 1. Click "🎯 Critical Path" in the toolbar
+ * 1. Click "Critical Path" in the toolbar
  * 2. Critical tasks are highlighted in red
  * 3. These tasks require the most attention
  * 
@@ -425,7 +425,7 @@ export const CriticalPath: Story = {
  * 
  * **Try it out:**
  * 1. Select "Development - Frontend" task
- * 2. Click "🔗 Dependencies" button
+ * 2. Click "Dependencies" button
  * 3. View existing dependencies
  * 4. Add new dependency to "Testing & QA"
  * 5. Try different dependency types
@@ -446,7 +446,7 @@ export const ComplexDependencies: Story = {
       ...tasksWithDependencies,
       {
         id: '8',
-        text: '📊 Performance Monitoring',
+        text: 'Performance Monitoring',
         start: new Date(2024, 6, 16),
         end: new Date(2024, 6, 22),
         duration: 6,
@@ -457,7 +457,7 @@ export const ComplexDependencies: Story = {
       },
       {
         id: '9',
-        text: '📚 Documentation',
+        text: 'Documentation',
         start: new Date(2024, 6, 6),
         end: new Date(2024, 6, 15),
         duration: 9,
@@ -513,7 +513,7 @@ export const ComplexDependencies: Story = {
  * 
  * **Try it:**
  * 1. Edit "Project Planning" dates
- * 2. Click "⚡ Auto-Schedule"
+ * 2. Click "Auto-Schedule"
  * 3. Watch all dependent tasks reschedule automatically
  */
 export const AutoScheduling: Story = {

@@ -62,7 +62,7 @@ const links: Link[] = [
  * 
  * Use the export buttons in the toolbar to download project data:
  * 
- * - 💾 CSV - Simple comma-separated format (tasks only)
+ * - CSV - Simple comma-separated format (tasks only)
  * - 📊 Excel - .xls file with task data
  * - 📄 JSON - Complete project data (tasks + links, can be re-imported)
  * - 📋 PDF - Printable task report

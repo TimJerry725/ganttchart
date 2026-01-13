@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Modal, Select, InputNumber, Button, List, Tag, Typography, Space, Divider, Alert, Card } from 'antd';
-import { DeleteOutlined, LinkOutlined, InfoCircleOutlined, PlusOutlined } from '@ant-design/icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faLink, 
+  faTrash, 
+  faPlus, 
+  faInfoCircle, 
+  faArrowDown, 
+  faArrowUp 
+} from '@fortawesome/free-solid-svg-icons';
 import type { Task, Link } from '../types';
 
 const { Title, Text, Paragraph } = Typography;
@@ -77,7 +85,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
           <Button
             type="text"
             danger
-            icon={<DeleteOutlined />}
+            icon={<FontAwesomeIcon icon={faTrash} />}
             onClick={() => onRemoveDependency(link.id)}
           >
             Remove
@@ -111,7 +119,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
     <Modal
       title={
         <Space>
-          <LinkOutlined style={{ fontSize: '20px' }} />
+          <FontAwesomeIcon icon={faLink} style={{ fontSize: '20px' }} />
           <Title level={4} style={{ margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>
             Task Dependencies
           </Title>
@@ -155,7 +163,8 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
             color: '#595959'
           }}
         >
-          📥 Depends On (Predecessors)
+          <FontAwesomeIcon icon={faArrowDown} style={{ marginRight: '8px' }} />
+          Depends On (Predecessors)
         </Title>
         {existingDependencies.length === 0 ? (
           <Alert
@@ -187,7 +196,8 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
             color: '#595959'
           }}
         >
-          📤 Dependents (Successors)
+          <FontAwesomeIcon icon={faArrowUp} style={{ marginRight: '8px' }} />
+          Dependents (Successors)
         </Title>
         {existingDependents.length === 0 ? (
           <Alert
@@ -220,7 +230,8 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
               fontSize: '14px'
             }}
           >
-            <PlusOutlined /> Add New Dependency
+            <FontAwesomeIcon icon={faPlus} style={{ marginRight: '8px' }} />
+            Add New Dependency
           </Title>
         }
         style={{ marginBottom: 24 }}
@@ -297,7 +308,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
           <Button
             type="primary"
             size="large"
-            icon={<PlusOutlined />}
+            icon={<FontAwesomeIcon icon={faPlus} />}
             onClick={handleAdd}
             disabled={!selectedTask}
             block
@@ -312,7 +323,8 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
       <Alert
         message={
           <Text strong style={{ fontFamily: 'IBM Plex Mono, monospace' }}>
-            <InfoCircleOutlined /> Dependency Types Explained
+            <FontAwesomeIcon icon={faInfoCircle} style={{ marginRight: '8px' }} />
+            Dependency Types Explained
           </Text>
         }
         description={
@@ -335,7 +347,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
         }
         type="info"
         showIcon
-        icon={<InfoCircleOutlined />}
+        icon={<FontAwesomeIcon icon={faInfoCircle} />}
         style={{ marginTop: 16 }}
       />
     </Modal>
