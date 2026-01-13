@@ -4,7 +4,7 @@ import type { Task, Link, Baseline } from '../components/types';
 import '../components/Gantt/gantt.css';
 
 const meta = {
-  title: 'SVAR PRO/Baselines Demo',
+  title: 'Gantt Chart/Baselines',
   component: Gantt,
   parameters: {
     layout: 'fullscreen',

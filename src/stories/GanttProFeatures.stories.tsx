@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { GanttPro } from '../components/Gantt/GanttPro';
+import { Gantt } from '../components/Gantt';
 import type { Task, Link, Baseline } from '../components/types';
 import '../components/Gantt/gantt.css';
 
 const meta = {
-  title: 'SVAR PRO/Gantt Pro Features',
-  component: GanttPro,
+  title: 'Gantt Chart/Advanced Features',
+  component: Gantt,
   parameters: {
     layout: 'fullscreen',
   },
   tags: ['autodocs'],
-} satisfies Meta<typeof GanttPro>;
+} satisfies Meta<typeof Gantt>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

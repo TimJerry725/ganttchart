@@ -4,7 +4,7 @@ import type { Task, Link } from '../components/types';
 import '../components/Gantt/gantt.css';
 
 const meta = {
-  title: 'SVAR Replicate/Advanced Gantt',
+  title: 'Gantt Chart/Basic Examples',
   component: Gantt,
   parameters: {
     layout: 'fullscreen',
