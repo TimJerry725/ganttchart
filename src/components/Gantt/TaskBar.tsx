@@ -44,8 +44,8 @@ export const TaskBar: React.FC<TaskBarProps> = ({
 
   const getTaskBarStyle = (): React.CSSProperties => {
     return {
-      left: `${position.left}%`,
-      width: `${position.width}%`,
+      left: `${position.left}px`,
+      width: `${position.width}px`,
       backgroundColor: task.color || '#5A9FD4',
     };
   };

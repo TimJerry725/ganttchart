@@ -70,42 +70,58 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       return cells;
     };
 
-    const getTaskPosition = (task: Task) => {
-      const totalDays = (range.end.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
-      const startDay = (task.start.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
-      const taskDays = (task.end.getTime() - task.start.getTime()) / (1000 * 60 * 60 * 24);
+    const getPixelPosition = (date: Date) => {
+      const scale = scales[1]; // secondary scale
+      const startMs = range.start.getTime();
+      const dateMs = date.getTime();
+      const diffMs = dateMs - startMs;
+      
+      const unitMsMap: Record<string, number> = {
+        'hour': 3600000,
+        'day': 86400000,
+        'week': 604800000,
+        'month': 2592000000,
+        'quarter': 7776000000,
+        'year': 31536000000
+      };
+      
+      const unitMs = unitMsMap[scale.unit] || 86400000;
+      return (diffMs / (unitMs * scale.step)) * columnWidth;
+    };
 
+    const getTaskPosition = (task: Task) => {
+      const left = getPixelPosition(task.start);
+      const right = getPixelPosition(task.end);
+      
       return {
-        left: (startDay / totalDays) * 100,
-        width: (taskDays / totalDays) * 100,
+        left,
+        width: Math.max(right - left, 0),
       };
     };
 
     const getBaselinePosition = (baseline: Baseline) => {
-      const totalDays = (range.end.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
-      const startDay = (baseline.start.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
-      const baselineDays = (baseline.end.getTime() - baseline.start.getTime()) / (1000 * 60 * 60 * 24);
+      const left = getPixelPosition(baseline.start);
+      const right = getPixelPosition(baseline.end);
 
       return {
-        left: (startDay / totalDays) * 100,
-        width: (baselineDays / totalDays) * 100,
+        left,
+        width: Math.max(right - left, 0),
       };
     };
 
     const getTaskPositionForLinks = (task: Task) => {
-      const totalDays = (range.end.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
-      const startDay = (task.start.getTime() - range.start.getTime()) / (1000 * 60 * 60 * 24);
-      const taskDays = (task.end.getTime() - task.start.getTime()) / (1000 * 60 * 60 * 24);
+      const pos = getTaskPosition(task);
       const index = localTasks.findIndex(t => t.id === task.id);
+      const rowHeight = config.rowHeight || 44;
+      const taskHeight = 32;
+      const topPadding = (rowHeight - taskHeight) / 2;
 
-      // Calculate pixel positions
-      const containerWidth = secondaryCells.length * columnWidth;
-      const left = (startDay / totalDays) * containerWidth;
-      const width = (taskDays / totalDays) * containerWidth;
-      const top = index * (config.rowHeight || 44) + ((config.rowHeight || 44) / 2) - 16;
-      const height = 32;
-
-      return { left, top, width, height };
+      return {
+        left: pos.left,
+        width: pos.width,
+        top: index * rowHeight + topPadding,
+        height: taskHeight
+      };
     };
 
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -131,6 +147,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     const primaryCells = generateCells(primaryScale);
     const secondaryCells = generateCells(secondaryScale);
 
+    const totalWidth = secondaryCells.length * columnWidth;
+
     return (
       <div 
         className="gantt-timeline-container" 
@@ -139,7 +157,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
       >
-        <div className="gantt-timeline-header">
+        <div className="gantt-timeline-header" style={{ width: totalWidth }}>
           {/* Primary scale (e.g., months) */}
           <div className="gantt-timeline-scale gantt-timeline-scale-primary">
             {primaryCells.map((cell, index) => (
@@ -171,7 +189,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
           </div>
         </div>
         
-        <div className="gantt-timeline-body">
+        <div className="gantt-timeline-body" style={{ width: totalWidth, height: localTasks.length * (config.rowHeight || 44) }}>
           {/* Grid lines */}
           <div className="gantt-timeline-grid">
             {secondaryCells.map((cell, index) => {
@@ -198,7 +216,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
           )}
 
           {/* Task bars */}
-          <div className="gantt-timeline-tasks">
+          <div className="gantt-timeline-tasks" style={{ width: totalWidth }}>
             {localTasks.map((task, index) => {
               const position = getTaskPosition(task);
               const baseline = showBaselines ? baselines?.get(task.id) : undefined;
@@ -211,6 +229,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                   style={{ 
                     height: config.rowHeight,
                     top: index * (config.rowHeight || 44),
+                    width: '100%'
                   }}
                 >
                   {/* Baseline bar (shown below task bar) */}
@@ -218,8 +237,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                     <div
                       className="gantt-baseline-bar"
                       style={{
-                        left: `${baselinePosition.left}%`,
-                        width: `${baselinePosition.width}%`,
+                        left: `${baselinePosition.left}px`,
+                        width: `${baselinePosition.width}px`,
                       }}
                       title={`Baseline: ${baseline.start.toLocaleDateString()} - ${baseline.end.toLocaleDateString()}`}
                     />
