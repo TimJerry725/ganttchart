@@ -12,6 +12,7 @@ export interface Task {
   details?: string;
   owner?: string;
   priority?: 'low' | 'medium' | 'high';
+  dependencies?: string[]; // Array of task IDs this task depends on
 }
 
 export interface Link {
@@ -19,6 +20,7 @@ export interface Link {
   source: string;
   target: string;
   type: 'e2s' | 's2s' | 'e2e' | 's2e'; // end-to-start, start-to-start, end-to-end, start-to-end
+  lag?: number; // lag time in days (positive = delay, negative = lead time)
 }
 
 export interface Scale {

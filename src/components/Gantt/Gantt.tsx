@@ -5,6 +5,7 @@ import { Grid } from './Grid';
 import { Timeline } from './Timeline';
 import { TaskCreator } from './TaskCreator';
 import { TaskEditor } from './TaskEditor';
+import { DependencyEditor } from './DependencyEditor';
 import { FilterSearch, applyFilters } from './FilterSearch';
 import { useUndoRedo } from './UndoRedo';
 import { calculateCriticalPath } from './CriticalPath';
@@ -67,6 +68,8 @@ export const Gantt: React.FC<GanttProps> = ({
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTaskCreator, setShowTaskCreator] = useState(false);
+  const [showDependencyEditor, setShowDependencyEditor] = useState(false);
+  const [dependencyEditTask, setDependencyEditTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
@@ -202,6 +205,38 @@ export const Gantt: React.FC<GanttProps> = ({
     }
   };
 
+  const handleOpenDependencyEditor = (taskId?: string) => {
+    const task = taskId ? tasks.find(t => t.id === taskId) : (selectedTask ? tasks.find(t => t.id === selectedTask) : null);
+    if (task) {
+      setDependencyEditTask(task);
+      setShowDependencyEditor(true);
+    }
+  };
+
+  const handleAddDependency = (sourceId: string, targetId: string, type: Link['type'], lag?: number) => {
+    const newLink: Link = {
+      id: `link-${Date.now()}`,
+      source: sourceId,
+      target: targetId,
+      type,
+      lag,
+    };
+    
+    setLinks([...links, newLink]);
+    
+    if (onLinkCreate) {
+      onLinkCreate(newLink);
+    }
+  };
+
+  const handleRemoveDependency = (linkId: string) => {
+    setLinks(links.filter(l => l.id !== linkId));
+    
+    if (onLinkDelete) {
+      onLinkDelete(linkId);
+    }
+  };
+
   const handleAutoSchedule = () => {
     const scheduled = autoSchedule(tasks, links, { mode: 'forward' });
     setTasks(scheduled);
@@ -284,6 +319,13 @@ export const Gantt: React.FC<GanttProps> = ({
           {!ganttConfig.readonly && (
             <>
               <button onClick={() => setShowTaskCreator(true)}>➕ Add Task</button>
+              <button 
+                onClick={() => handleOpenDependencyEditor()}
+                disabled={!selectedTask}
+                title="Edit task dependencies"
+              >
+                🔗 Dependencies
+              </button>
               <div className="gantt-toolbar-separator" />
             </>
           )}
@@ -394,6 +436,21 @@ export const Gantt: React.FC<GanttProps> = ({
           onUpdate={handleUpdateTask}
           onDelete={handleDeleteTask}
           onClose={() => setEditingTask(null)}
+        />
+      )}
+
+      {/* Dependency Editor Modal */}
+      {showDependencyEditor && dependencyEditTask && (
+        <DependencyEditor
+          task={dependencyEditTask}
+          allTasks={tasks}
+          links={links}
+          onAddDependency={handleAddDependency}
+          onRemoveDependency={handleRemoveDependency}
+          onClose={() => {
+            setShowDependencyEditor(false);
+            setDependencyEditTask(null);
+          }}
         />
       )}
       </div>
