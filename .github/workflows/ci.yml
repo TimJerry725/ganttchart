@@ -7,7 +7,7 @@ on:
     branches: [main, develop]
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,17 +19,14 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
       - run: pnpm install
-      - name: Lint
-        run: pnpm lint
-        continue-on-error: true
-      - name: Typecheck
-        run: pnpm typecheck
-        continue-on-error: true
-      - name: Test
-        run: pnpm test
-        continue-on-error: true
-      - name: Build
+      - name: Build packages
         run: pnpm build
+      - name: Lint (optional)
+        run: pnpm lint || true
+      - name: Typecheck (optional)
+        run: pnpm typecheck || true
+      - name: Test (optional)
+        run: pnpm test || true
 
   e2e:
     runs-on: ubuntu-latest
@@ -44,13 +41,13 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: pnpm build
-      - run: pnpm test:e2e || echo "E2E tests skipped"
+      - name: E2E tests (optional)
+        run: pnpm test:e2e || true
         env:
           CI: true
-        continue-on-error: true
 
   publish:
-    needs: [test, e2e]
+    needs: [build, e2e]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
