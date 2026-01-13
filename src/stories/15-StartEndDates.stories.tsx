@@ -12,70 +12,7 @@ const meta = {
   },
   tags: ['autodocs'],
   argTypes: {
-    showStartDate: {
-      control: 'boolean',
-      description: 'Show Start Date column',
-      table: {
-        category: 'Column Visibility',
-        defaultValue: { summary: true },
-      },
-    },
-    showEndDate: {
-      control: 'boolean',
-      description: 'Show End Date column',
-      table: {
-        category: 'Column Visibility',
-        defaultValue: { summary: true },
-      },
-    },
-    startDateFormat: {
-      control: { type: 'select' },
-      options: [
-        'MM/DD/YYYY',
-        'DD-MM-YYYY',
-        'YYYY-MM-DD',
-        'MMM DD, YYYY',
-        'DD/MM/YYYY',
-        'MM-DD-YYYY',
-      ],
-      description: 'Start date format',
-      table: {
-        category: 'Date Format',
-        defaultValue: { summary: 'MM/DD/YYYY' },
-      },
-    },
-    endDateFormat: {
-      control: { type: 'select' },
-      options: [
-        'MM/DD/YYYY',
-        'DD-MM-YYYY',
-        'YYYY-MM-DD',
-        'MMM DD, YYYY',
-        'DD/MM/YYYY',
-        'MM-DD-YYYY',
-      ],
-      description: 'End date format',
-      table: {
-        category: 'Date Format',
-        defaultValue: { summary: 'MM/DD/YYYY' },
-      },
-    },
-    startDateWidth: {
-      control: { type: 'number', min: 80, max: 200, step: 10 },
-      description: 'Start Date column width (px)',
-      table: {
-        category: 'Column Sizing',
-        defaultValue: { summary: 100 },
-      },
-    },
-    endDateWidth: {
-      control: { type: 'number', min: 80, max: 200, step: 10 },
-      description: 'End Date column width (px)',
-      table: {
-        category: 'Column Sizing',
-        defaultValue: { summary: 100 },
-      },
-    },
+    // Date column configuration is handled in each story's render function
   },
 } satisfies Meta<typeof Gantt>;
 
@@ -243,23 +180,16 @@ const CustomDateGrid: React.FC<{
 export const Default: Story = {
   args: {
     tasks,
-    showStartDate: true,
-    showEndDate: true,
-    startDateFormat: 'MM/DD/YYYY',
-    endDateFormat: 'MM/DD/YYYY',
-    startDateWidth: 100,
-    endDateWidth: 100,
   },
   render: (args) => {
-    const {
-      showStartDate,
-      showEndDate,
-      startDateFormat,
-      endDateFormat,
-      startDateWidth,
-      endDateWidth,
-      ...rest
-    } = args;
+    // Default date column configuration
+    const showStartDate = true;
+    const showEndDate = true;
+    const startDateFormat = 'MM/DD/YYYY';
+    const endDateFormat = 'MM/DD/YYYY';
+    const startDateWidth = 100;
+    const endDateWidth = 100;
+    const { ...rest } = args;
 
     const columns: Column[] = [
       { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
@@ -300,12 +230,6 @@ export const Default: Story = {
 
     return (
       <CustomDateGrid
-        startDateFormat={startDateFormat}
-        endDateFormat={endDateFormat}
-        showStartDate={showStartDate}
-        showEndDate={showEndDate}
-        startDateWidth={startDateWidth}
-        endDateWidth={endDateWidth}
       >
         <Gantt
           {...rest}
@@ -352,15 +276,16 @@ function formatDateCustom(date: Date, format: string): string {
 export const EuropeanFormat: Story = {
   args: {
     tasks,
-    showStartDate: true,
-    showEndDate: true,
-    startDateFormat: 'DD-MM-YYYY',
-    endDateFormat: 'DD-MM-YYYY',
-    startDateWidth: 100,
-    endDateWidth: 100,
   },
   render: (args) => {
-    const { showStartDate, showEndDate, startDateFormat, endDateFormat, startDateWidth, endDateWidth, ...rest } = args;
+    // European date format configuration
+    const showStartDate = true;
+    const showEndDate = true;
+    const startDateFormat = 'DD-MM-YYYY';
+    const endDateFormat = 'DD-MM-YYYY';
+    const startDateWidth = 100;
+    const endDateWidth = 100;
+    const { ...rest } = args;
     const columns: Column[] = [
       { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
     ];
@@ -408,15 +333,16 @@ export const EuropeanFormat: Story = {
 export const ISOFormat: Story = {
   args: {
     tasks,
-    showStartDate: true,
-    showEndDate: true,
-    startDateFormat: 'YYYY-MM-DD',
-    endDateFormat: 'YYYY-MM-DD',
-    startDateWidth: 110,
-    endDateWidth: 110,
   },
   render: (args) => {
-    const { showStartDate, showEndDate, startDateFormat, endDateFormat, startDateWidth, endDateWidth, ...rest } = args;
+    // ISO date format configuration
+    const showStartDate = true;
+    const showEndDate = true;
+    const startDateFormat = 'YYYY-MM-DD';
+    const endDateFormat = 'YYYY-MM-DD';
+    const startDateWidth = 110;
+    const endDateWidth = 110;
+    const { ...rest } = args;
     const columns: Column[] = [
       { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
     ];
@@ -464,15 +390,16 @@ export const ISOFormat: Story = {
 export const LongFormat: Story = {
   args: {
     tasks,
-    showStartDate: true,
-    showEndDate: true,
-    startDateFormat: 'MMM DD, YYYY',
-    endDateFormat: 'MMM DD, YYYY',
-    startDateWidth: 120,
-    endDateWidth: 120,
   },
   render: (args) => {
-    const { showStartDate, showEndDate, startDateFormat, endDateFormat, startDateWidth, endDateWidth, ...rest } = args;
+    // Custom date format configuration
+    const showStartDate = true;
+    const showEndDate = true;
+    const startDateFormat = 'MMM DD, YYYY';
+    const endDateFormat = 'MMM DD, YYYY';
+    const startDateWidth = 120;
+    const endDateWidth = 120;
+    const { ...rest } = args;
     const columns: Column[] = [
       { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
     ];
@@ -520,15 +447,16 @@ export const LongFormat: Story = {
 export const StartDateOnly: Story = {
   args: {
     tasks,
-    showStartDate: true,
-    showEndDate: false,
-    startDateFormat: 'MM/DD/YYYY',
-    endDateFormat: 'MM/DD/YYYY',
-    startDateWidth: 100,
-    endDateWidth: 100,
   },
   render: (args) => {
-    const { showStartDate, showEndDate, startDateFormat, endDateFormat, startDateWidth, endDateWidth, ...rest } = args;
+    // Start date only configuration
+    const showStartDate = true;
+    const showEndDate = false;
+    const startDateFormat = 'MM/DD/YYYY';
+    const endDateFormat = 'MM/DD/YYYY';
+    const startDateWidth = 100;
+    const endDateWidth = 100;
+    const { ...rest } = args;
     const columns: Column[] = [
       { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
     ];

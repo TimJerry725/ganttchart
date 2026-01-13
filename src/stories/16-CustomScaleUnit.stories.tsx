@@ -11,56 +11,7 @@ const meta = {
   },
   tags: ['autodocs'],
   argTypes: {
-    primaryUnit: {
-      control: { type: 'select' },
-      options: ['hour', 'day', 'week', 'month', 'quarter', 'year'],
-      description: 'Primary scale time unit',
-      table: {
-        category: 'Primary Scale',
-        defaultValue: { summary: 'month' },
-      },
-    },
-    primaryStep: {
-      control: { type: 'number', min: 1, max: 12, step: 1 },
-      description: 'Primary scale step size',
-      table: {
-        category: 'Primary Scale',
-        defaultValue: { summary: 1 },
-      },
-    },
-    primaryFormat: {
-      control: { type: 'text' },
-      description: 'Primary scale format string',
-      table: {
-        category: 'Primary Scale',
-        defaultValue: { summary: 'MMMM YYYY' },
-      },
-    },
-    secondaryUnit: {
-      control: { type: 'select' },
-      options: ['hour', 'day', 'week', 'month', 'quarter', 'year', 'none'],
-      description: 'Secondary scale time unit (or none)',
-      table: {
-        category: 'Secondary Scale',
-        defaultValue: { summary: 'day' },
-      },
-    },
-    secondaryStep: {
-      control: { type: 'number', min: 1, max: 12, step: 1 },
-      description: 'Secondary scale step size',
-      table: {
-        category: 'Secondary Scale',
-        defaultValue: { summary: 1 },
-      },
-    },
-    secondaryFormat: {
-      control: { type: 'text' },
-      description: 'Secondary scale format string',
-      table: {
-        category: 'Secondary Scale',
-        defaultValue: { summary: 'D' },
-      },
-    },
+    // Scale properties are configured in the render function via config.scales
   },
 } satisfies Meta<typeof Gantt>;
 
@@ -168,23 +119,16 @@ const tasks: Task[] = [
 export const Default: Story = {
   args: {
     tasks,
-    primaryUnit: 'month',
-    primaryStep: 1,
-    primaryFormat: 'MMMM YYYY',
-    secondaryUnit: 'day',
-    secondaryStep: 1,
-    secondaryFormat: 'D',
   },
   render: (args) => {
-    const {
-      primaryUnit,
-      primaryStep,
-      primaryFormat,
-      secondaryUnit,
-      secondaryStep,
-      secondaryFormat,
-      ...rest
-    } = args;
+    // Default scale configuration
+    const primaryUnit = 'month';
+    const primaryStep = 1;
+    const primaryFormat = 'MMMM YYYY';
+    const secondaryUnit = 'day';
+    const secondaryStep = 1;
+    const secondaryFormat = 'D';
+    const { ...rest } = args;
 
     const scales: Scale[] = [
       {

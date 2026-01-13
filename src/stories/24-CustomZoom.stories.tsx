@@ -11,14 +11,7 @@ const meta = {
   },
   tags: ['autodocs'],
   argTypes: {
-    zoomLevel: {
-      control: { type: 'range', min: 0.5, max: 2, step: 0.1 },
-      description: 'Zoom level (0.5 = zoomed out, 2 = zoomed in)',
-      table: {
-        category: 'Zoom Settings',
-        defaultValue: { summary: 1 },
-      },
-    },
+    // Zoom level is controlled internally by the component
   },
 } satisfies Meta<typeof Gantt>;
 
@@ -68,10 +61,9 @@ const tasks: Task[] = [
 export const Default: Story = {
   args: {
     tasks,
-    zoomLevel: 1.0,
   },
   render: (args) => {
-    const { zoomLevel, ...rest } = args;
+    const { ...rest } = args;
     return (
       <Gantt
         {...rest}
