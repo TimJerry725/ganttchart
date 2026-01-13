@@ -162,9 +162,11 @@ export const IrisGantt: React.FC<IrisGanttProps> = (props) => {
       scheduledTasks,
       links,
       timeScale,
-      expandedTasks
+      expandedTasks,
+      config.rowHeight,
+      config.barHeight
     );
-  }, [layoutEngine, tasks, scheduledTasks, links, timeScale, expandedTasks]);
+  }, [layoutEngine, tasks, scheduledTasks, links, timeScale, expandedTasks, config.rowHeight, config.barHeight]);
 
   useEffect(() => {
     if (containerRef.current) {

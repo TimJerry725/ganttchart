@@ -19,6 +19,7 @@ const meta: Meta<typeof IrisGantt> = {
 export default meta;
 type Story = StoryObj<typeof IrisGantt>;
 
+// Sample tasks matching the demo
 const sampleTasks: Task[] = [
   {
     id: 1,
