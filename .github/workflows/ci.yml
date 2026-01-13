@@ -17,7 +17,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
       - run: pnpm install
       - name: Build packages
         run: pnpm build
@@ -38,7 +37,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
       - run: pnpm install
       - run: pnpm build
       - name: E2E tests (optional)
@@ -58,7 +56,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
       - run: pnpm install
       - run: pnpm build
