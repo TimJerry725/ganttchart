@@ -5,4 +5,8 @@ export * from './scheduler';
 export * from './command';
 export * from './event-bus';
 export * from './plugin';
-export * from './plugins';
+// Plugin exports
+export * from './plugins/baseline';
+export * from './plugins/critical-path';
+export * from './plugins/resources';
+export * from './plugins/export';
