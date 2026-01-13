@@ -1,5 +1,6 @@
 /**
  * Timeline renderer (Canvas-based)
+ * Professional rendering with better visuals
  */
 
 import React, { useRef, useEffect } from 'react';
@@ -12,6 +13,10 @@ export interface TimelineRendererProps {
   timeScale: TimeScale;
   viewport: { x: number; y: number; width: number; height: number };
   criticalPath?: Set<TaskId>;
+  showTodayMarker?: boolean;
+  showWeekends?: boolean;
+  barHeight?: number;
+  showProgress?: boolean;
 }
 
 export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
@@ -20,6 +25,10 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
   timeScale,
   viewport,
   criticalPath,
+  showTodayMarker = true,
+  showWeekends = true,
+  barHeight = 24,
+  showProgress = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -30,21 +39,52 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    // Set high DPI rendering
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = viewport.width * dpr;
+    canvas.height = viewport.height * dpr;
+    ctx.scale(dpr, dpr);
+    canvas.style.width = `${viewport.width}px`;
+    canvas.style.height = `${viewport.height}px`;
 
     // Clear
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, viewport.width, viewport.height);
+
+    const headerHeight = 60;
+
+    // Draw weekend backgrounds
+    if (showWeekends) {
+      ctx.fillStyle = '#f9fafb';
+      let currentDate = new Date(timeScale.startDate);
+      while (currentDate <= timeScale.endDate) {
+        const dayOfWeek = currentDate.getDay();
+        if (dayOfWeek === 0 || dayOfWeek === 6) {
+          const x = dateToX(currentDate, timeScale) - viewport.x;
+          const nextDate = new Date(currentDate);
+          nextDate.setDate(nextDate.getDate() + 1);
+          const nextX = dateToX(nextDate, timeScale) - viewport.x;
+          
+          if (x < viewport.width && nextX > 0) {
+            ctx.fillRect(
+              Math.max(0, x),
+              headerHeight,
+              Math.min(nextX - x, viewport.width - Math.max(0, x)),
+              viewport.height - headerHeight
+            );
+          }
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
 
     // Draw time scale header
-    const headerHeight = 30;
-    ctx.fillStyle = '#fafafa';
-    ctx.fillRect(0, 0, canvas.width, headerHeight);
+    ctx.fillStyle = '#f9fafb';
+    ctx.fillRect(0, 0, viewport.width, headerHeight);
 
-    ctx.strokeStyle = '#d9d9d9';
+    ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
-    ctx.fillStyle = '#666666';
-    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#374151';
+    ctx.font = '12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
     // Draw time markers
     const step = getTimeStep(timeScale);
@@ -58,46 +98,70 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
         ctx.stroke();
 
         const label = formatDate(currentDate, timeScale.unit);
-        ctx.fillText(label, x + 4, headerHeight / 2 + 4);
+        ctx.fillText(label, x + 8, headerHeight / 2 + 4);
       }
       currentDate = addTimeUnit(currentDate, timeScale.unit, step);
     }
 
+    // Draw today marker
+    if (showTodayMarker) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (today >= timeScale.startDate && today <= timeScale.endDate) {
+        const todayX = dateToX(today, timeScale) - viewport.x;
+        if (todayX >= 0 && todayX <= viewport.width) {
+          ctx.strokeStyle = '#f59e0b';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(todayX, headerHeight);
+          ctx.lineTo(todayX, viewport.height);
+          ctx.stroke();
+        }
+      }
+    }
+
     // Draw links
-    ctx.strokeStyle = '#666666';
-    ctx.lineWidth = 2;
-    for (const link of links) {
-      const sourceX = link.sourceX - viewport.x;
-      const sourceY = link.sourceY - viewport.y;
-      const targetX = link.targetX - viewport.x;
-      const targetY = link.targetY - viewport.y;
+    if (links.length > 0) {
+      ctx.strokeStyle = '#6b7280';
+      ctx.lineWidth = 2;
+      ctx.fillStyle = '#6b7280';
+      
+      for (const link of links) {
+        const sourceX = link.sourceX - viewport.x;
+        const sourceY = link.sourceY - viewport.y;
+        const targetX = link.targetX - viewport.x;
+        const targetY = link.targetY - viewport.y;
 
-      if (
-        (sourceX >= 0 && sourceX <= viewport.width) ||
-        (targetX >= 0 && targetX <= viewport.width)
-      ) {
-        ctx.beginPath();
-        ctx.moveTo(sourceX, sourceY);
-        ctx.lineTo(targetX, targetY);
-        ctx.stroke();
+        if (
+          (sourceX >= 0 && sourceX <= viewport.width) ||
+          (targetX >= 0 && targetX <= viewport.width)
+        ) {
+          // Draw curved line
+          ctx.beginPath();
+          const midX = (sourceX + targetX) / 2;
+          ctx.moveTo(sourceX, sourceY);
+          ctx.quadraticCurveTo(midX, sourceY, midX, (sourceY + targetY) / 2);
+          ctx.quadraticCurveTo(midX, targetY, targetX, targetY);
+          ctx.stroke();
 
-        // Arrowhead
-        const angle = Math.atan2(targetY - sourceY, targetX - sourceX);
-        const arrowLength = 8;
-        const arrowAngle = Math.PI / 6;
+          // Arrowhead
+          const angle = Math.atan2(targetY - (sourceY + targetY) / 2, targetX - midX);
+          const arrowLength = 8;
+          const arrowAngle = Math.PI / 6;
 
-        ctx.beginPath();
-        ctx.moveTo(targetX, targetY);
-        ctx.lineTo(
-          targetX - arrowLength * Math.cos(angle - arrowAngle),
-          targetY - arrowLength * Math.sin(angle - arrowAngle)
-        );
-        ctx.lineTo(
-          targetX - arrowLength * Math.cos(angle + arrowAngle),
-          targetY - arrowLength * Math.sin(angle + arrowAngle)
-        );
-        ctx.closePath();
-        ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(targetX, targetY);
+          ctx.lineTo(
+            targetX - arrowLength * Math.cos(angle - arrowAngle),
+            targetY - arrowLength * Math.sin(angle - arrowAngle)
+          );
+          ctx.lineTo(
+            targetX - arrowLength * Math.cos(angle + arrowAngle),
+            targetY - arrowLength * Math.sin(angle + arrowAngle)
+          );
+          ctx.closePath();
+          ctx.fill();
+        }
       }
     }
 
@@ -109,23 +173,46 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
     for (const bar of visibleBars) {
       const isCritical = criticalPath?.has(bar.taskId) || false;
       const y = bar.y - viewport.y;
+      const actualBarHeight = barHeight || bar.height;
+
+      // Bar shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(
+        bar.x - viewport.x + 1,
+        y + 1,
+        bar.width,
+        actualBarHeight
+      );
 
       // Bar background
-      ctx.fillStyle = isCritical ? '#ff4d4f' : '#1890ff';
-      ctx.fillRect(bar.x - viewport.x, y, bar.width, bar.height);
+      ctx.fillStyle = isCritical ? '#ef4444' : '#3b82f6';
+      ctx.beginPath();
+      const radius = 4;
+      ctx.roundRect(bar.x - viewport.x, y, bar.width, actualBarHeight, radius);
+      ctx.fill();
 
-      // Progress
-      if (bar.progressX && bar.progressWidth) {
-        ctx.fillStyle = '#52c41a';
-        ctx.fillRect(bar.progressX - viewport.x, y, bar.progressWidth, bar.height);
+      // Progress bar
+      if (showProgress && bar.progressX && bar.progressWidth && bar.progressWidth > 0) {
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.roundRect(
+          bar.progressX - viewport.x,
+          y,
+          bar.progressWidth,
+          actualBarHeight,
+          radius
+        );
+        ctx.fill();
       }
 
-      // Border
-      ctx.strokeStyle = '#000000';
+      // Bar border
+      ctx.strokeStyle = isCritical ? '#dc2626' : '#2563eb';
       ctx.lineWidth = 1;
-      ctx.strokeRect(bar.x - viewport.x, y, bar.width, bar.height);
+      ctx.beginPath();
+      ctx.roundRect(bar.x - viewport.x, y, bar.width, actualBarHeight, radius);
+      ctx.stroke();
     }
-  }, [bars, links, timeScale, viewport, criticalPath]);
+  }, [bars, links, timeScale, viewport, criticalPath, showTodayMarker, showWeekends, barHeight, showProgress]);
 
   return (
     <div className="iris-gantt-timeline relative" style={{ width: viewport.width, height: viewport.height }}>
@@ -138,7 +225,7 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
   );
 };
 
-// Helper methods (would be in a utility class)
+// Helper methods
 function dateToX(date: Date, timeScale: TimeScale): number {
   const diff = date.getTime() - timeScale.startDate.getTime();
   const days = diff / (1000 * 60 * 60 * 24);
@@ -160,7 +247,20 @@ function dateToX(date: Date, timeScale: TimeScale): number {
 }
 
 function getTimeStep(timeScale: TimeScale): number {
-  return 1;
+  switch (timeScale.unit) {
+    case 'day':
+      return 1;
+    case 'week':
+      return 1;
+    case 'month':
+      return 1;
+    case 'quarter':
+      return 1;
+    case 'year':
+      return 1;
+    default:
+      return 1;
+  }
 }
 
 function addTimeUnit(date: Date, unit: TimeScale['unit'], step: number): Date {
@@ -201,4 +301,20 @@ function formatDate(date: Date, unit: TimeScale['unit']): string {
     default:
       return date.toLocaleDateString();
   }
+}
+
+// Polyfill for roundRect if not available
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x: number, y: number, w: number, h: number, r: number) {
+    if (w < 2 * r) r = w / 2;
+    if (h < 2 * r) r = h / 2;
+    this.beginPath();
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+    return this;
+  };
 }

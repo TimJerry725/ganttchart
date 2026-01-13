@@ -3,7 +3,19 @@
  */
 
 export { IrisGantt } from './IrisGantt';
-export type { IrisGanttProps } from './types';
+export type { 
+  IrisGanttProps, 
+  Task, 
+  Link, 
+  Resource, 
+  TaskId, 
+  TaskType, 
+  LinkType,
+  TimeUnit,
+  GanttConfig,
+  ColumnConfig,
+  ViewState,
+} from './types';
 export * from './types';
 export * from './model';
 export * from './engine';
