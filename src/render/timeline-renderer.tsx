@@ -304,6 +304,12 @@ function formatDate(date: Date, unit: TimeScale['unit']): string {
 }
 
 // Polyfill for roundRect if not available
+declare global {
+  interface CanvasRenderingContext2D {
+    roundRect(x: number, y: number, w: number, h: number, r: number): void;
+  }
+}
+
 if (!CanvasRenderingContext2D.prototype.roundRect) {
   CanvasRenderingContext2D.prototype.roundRect = function(x: number, y: number, w: number, h: number, r: number) {
     if (w < 2 * r) r = w / 2;

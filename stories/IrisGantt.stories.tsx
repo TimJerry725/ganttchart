@@ -1,10 +1,11 @@
 /**
  * Storybook stories for Iris Gantt
+ * Professional examples inspired by SVAR Gantt
  */
 
 import type { Meta, StoryObj } from '@storybook/react';
 import { IrisGantt } from '../src/IrisGantt';
-import type { Task, Link } from '../src/types';
+import type { Task, Link, GanttConfig } from '../src/types';
 
 const meta: Meta<typeof IrisGantt> = {
   title: 'Iris Gantt/Basic',
@@ -55,11 +56,37 @@ export const Basic: Story = {
   },
 };
 
+export const WithCustomConfig: Story = {
+  args: {
+    tasks: sampleTasks,
+    links: sampleLinks,
+    width: 1200,
+    height: 600,
+    config: {
+      rowHeight: 50,
+      barHeight: 30,
+      showTodayMarker: true,
+      showWeekends: true,
+      showProgress: true,
+    } as GanttConfig,
+  },
+};
+
 export const Empty: Story = {
   args: {
     tasks: [],
     links: [],
     width: 1200,
     height: 600,
+  },
+};
+
+export const Readonly: Story = {
+  args: {
+    tasks: sampleTasks,
+    links: sampleLinks,
+    width: 1200,
+    height: 600,
+    readonly: true,
   },
 };
