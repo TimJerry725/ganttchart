@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
+import { Input, Select, Button } from 'antd';
+import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import type { Task } from '../types';
+
+const { Search } = Input;
 
 export interface FilterOptions {
   searchText: string;
@@ -47,58 +51,77 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
 
   return (
     <div className="gantt-filter-container">
-      <div className="gantt-filter-inline">
-        {/* Search input */}
-        <input
-          type="text"
-          placeholder="Search tasks..."
-          value={filters.searchText}
-          onChange={(e) => handleFilterChange({ searchText: e.target.value })}
-          className="gantt-search-input"
-        />
+      <div className="gantt-filter-bar">
+        {/* Left side - Search */}
+        <div className="gantt-filter-left">
+          <Search
+            placeholder="Search tasks..."
+            value={filters.searchText}
+            onChange={(e) => handleFilterChange({ searchText: e.target.value })}
+            allowClear
+            prefix={<SearchOutlined />}
+            className="gantt-search-antd"
+            style={{ width: 250 }}
+          />
+        </div>
         
-        {/* Status filter */}
-        <select
-          value={filters.status}
-          onChange={(e) => handleFilterChange({ status: e.target.value as any })}
-          className="gantt-filter-select"
-        >
-          <option value="all">All Status</option>
-          <option value="not-started">Not Started</option>
-          <option value="in-progress">In Progress</option>
-          <option value="completed">Completed</option>
-        </select>
+        {/* Right side - Filters */}
+        <div className="gantt-filter-right">
+          {/* Status filter */}
+          <Select
+            value={filters.status}
+            onChange={(value) => handleFilterChange({ status: value as any })}
+            className="gantt-filter-select-antd"
+            style={{ width: 140 }}
+            options={[
+              { value: 'all', label: 'All Status' },
+              { value: 'not-started', label: 'Not Started' },
+              { value: 'in-progress', label: 'In Progress' },
+              { value: 'completed', label: 'Completed' },
+            ]}
+          />
 
-        {/* Priority filter */}
-        <select
-          value={filters.priority}
-          onChange={(e) => handleFilterChange({ priority: e.target.value as any })}
-          className="gantt-filter-select"
-        >
-          <option value="all">All Priority</option>
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
+          {/* Priority filter */}
+          <Select
+            value={filters.priority}
+            onChange={(value) => handleFilterChange({ priority: value as any })}
+            className="gantt-filter-select-antd"
+            style={{ width: 130 }}
+            options={[
+              { value: 'all', label: 'All Priority' },
+              { value: 'low', label: 'Low' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'high', label: 'High' },
+            ]}
+          />
 
-        {/* Owner filter */}
-        <select
-          value={filters.owner}
-          onChange={(e) => handleFilterChange({ owner: e.target.value })}
-          className="gantt-filter-select"
-        >
-          <option value="">All Owners</option>
-          {owners.map(owner => (
-            <option key={owner} value={owner}>{owner}</option>
-          ))}
-        </select>
+          {/* Owner filter */}
+          <Select
+            value={filters.owner || undefined}
+            onChange={(value) => handleFilterChange({ owner: value || '' })}
+            className="gantt-filter-select-antd"
+            style={{ width: 130 }}
+            placeholder="All Owners"
+            allowClear
+            options={[
+              { value: '', label: 'All Owners' },
+              ...owners.map(owner => ({ value: owner, label: owner }))
+            ]}
+          />
 
-        {/* Clear button */}
-        {hasActiveFilters && (
-          <button className="gantt-filter-clear" onClick={clearFilters}>
-            Clear
-          </button>
-        )}
+          {/* Clear button */}
+          {hasActiveFilters && (
+            <Button
+              type="default"
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={clearFilters}
+              className="gantt-filter-clear-antd"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
