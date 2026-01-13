@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useCallback } from 'react';
-import { Task, Link, Scale, GanttConfig, Baseline } from '../types';
+import type { Task, Link, Scale, GanttConfig, Baseline } from '../types';
 import { TaskBar } from './TaskBar';
 import { LinkRenderer } from './LinkRenderer';
 import { useDragDrop } from './DragDrop';

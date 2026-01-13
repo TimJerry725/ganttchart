@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Task, Link, GanttConfig, Column, Scale, Baseline } from '../types';
+import type { Task, Link, GanttConfig, Column, Scale, Baseline } from '../types';
 import { Grid } from './Grid';
 import { Timeline } from './Timeline';
 import { TaskCreator } from './TaskCreator';
