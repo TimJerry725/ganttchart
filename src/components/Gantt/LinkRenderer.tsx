@@ -22,203 +22,171 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     const targetPos = getTaskPosition(targetTask);
 
     const taskBarHeight = sourcePos.height;
-    const centerY = taskBarHeight / 2;
-    const cornerRadius = 10;
-    const horizontalOffset = 20;
-    const verticalOffset = 15;
+    const centerOffset = taskBarHeight / 2;
+    const radius = 8; // Corner radius for rounded paths
+    const gap = 15; // Horizontal/vertical gap from task bars
 
-    let startX = 0, startY = 0, endX = 0, endY = 0;
+    let x1 = 0, y1 = 0, x2 = 0, y2 = 0;
 
-    // Calculate connection points based on link type
+    // Set start and end points based on dependency type
     switch (link.type) {
-      case 'e2s': // End to Start - most common
-        startX = sourcePos.left + sourcePos.width;
-        startY = sourcePos.top + centerY;
-        endX = targetPos.left;
-        endY = targetPos.top + centerY;
+      case 'e2s': // Finish-to-Start
+        x1 = sourcePos.left + sourcePos.width;
+        y1 = sourcePos.top + centerOffset;
+        x2 = targetPos.left;
+        y2 = targetPos.top + centerOffset;
         break;
       
-      case 's2s': // Start to Start
-        startX = sourcePos.left;
-        startY = sourcePos.top + centerY;
-        endX = targetPos.left;
-        endY = targetPos.top + centerY;
+      case 's2s': // Start-to-Start
+        x1 = sourcePos.left;
+        y1 = sourcePos.top + centerOffset;
+        x2 = targetPos.left;
+        y2 = targetPos.top + centerOffset;
         break;
       
-      case 'e2e': // End to End
-        startX = sourcePos.left + sourcePos.width;
-        startY = sourcePos.top + centerY;
-        endX = targetPos.left + targetPos.width;
-        endY = targetPos.top + centerY;
+      case 'e2e': // End-to-End
+        x1 = sourcePos.left + sourcePos.width;
+        y1 = sourcePos.top + centerOffset;
+        x2 = targetPos.left + targetPos.width;
+        y2 = targetPos.top + centerOffset;
         break;
       
-      case 's2e': // Start to End (Start to Finish)
-        startX = sourcePos.left;
-        startY = sourcePos.top + centerY;
-        endX = targetPos.left + targetPos.width;
-        endY = targetPos.top + centerY;
+      case 's2e': // Start-to-Finish
+        x1 = sourcePos.left;
+        y1 = sourcePos.top + centerOffset;
+        x2 = targetPos.left + targetPos.width;
+        y2 = targetPos.top + centerOffset;
         break;
     }
 
-    const dx = endX - startX;
-    const dy = endY - startY;
-    const absDy = Math.abs(dy);
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    
+    // Helper function to create rounded corner
+    const corner = (x: number, y: number, toX: number, toY: number) => {
+      return `Q ${x} ${y} ${toX} ${toY}`;
+    };
 
-    // Finish-to-Start (e2s) - Standard forward dependency
+    // FINISH-TO-START (e2s) - Most common
     if (link.type === 'e2s') {
-      if (dx > horizontalOffset) {
-        // Target is to the right - smooth S-curve
-        const controlOffset = Math.min(dx / 3, 40);
-        if (absDy < 5) {
-          return `M ${startX} ${startY} L ${endX - 6} ${endY}`;
+      if (dx > 2 * gap) {
+        // Simple path when target is to the right
+        const midX = x1 + dx / 2;
+        if (Math.abs(dy) < 5) {
+          // Straight horizontal line
+          return `M ${x1} ${y1} L ${x2} ${y2}`;
         } else {
-          return `M ${startX} ${startY} 
-                  C ${startX + controlOffset} ${startY}, 
-                    ${endX - controlOffset} ${endY}, 
-                    ${endX - 6} ${endY}`;
+          // S-curve for vertical offset
+          return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
         }
       } else {
-        // Target is to the left or same position - go around
-        const direction = dy >= 0 ? 1 : -1;
-        const vOffset = Math.max(absDy / 2, taskBarHeight / 2) + verticalOffset;
+        // Rectangular path when target is to the left or nearby
+        const yDir = dy >= 0 ? 1 : -1;
+        const yMid = y1 + yDir * (Math.abs(dy) / 2 + gap);
         
-        return `M ${startX} ${startY}
-                L ${startX + horizontalOffset} ${startY}
-                Q ${startX + horizontalOffset} ${startY + direction * cornerRadius} 
-                  ${startX + horizontalOffset} ${startY + direction * cornerRadius}
-                L ${startX + horizontalOffset} ${startY + direction * vOffset}
-                Q ${startX + horizontalOffset} ${startY + direction * (vOffset + cornerRadius)}
-                  ${startX + horizontalOffset - cornerRadius} ${startY + direction * (vOffset + cornerRadius)}
-                L ${endX - horizontalOffset + cornerRadius} ${startY + direction * (vOffset + cornerRadius)}
-                Q ${endX - horizontalOffset} ${startY + direction * (vOffset + cornerRadius)}
-                  ${endX - horizontalOffset} ${startY + direction * (vOffset + cornerRadius) - direction * cornerRadius}
-                L ${endX - horizontalOffset} ${endY + direction * cornerRadius}
-                Q ${endX - horizontalOffset} ${endY}
-                  ${endX - horizontalOffset + cornerRadius} ${endY}
-                L ${endX - 6} ${endY}`;
+        let path = `M ${x1} ${y1}`;
+        path += ` L ${x1 + gap} ${y1}`;
+        path += ` ${corner(x1 + gap, y1 + yDir * radius, x1 + gap, y1 + yDir * radius)}`;
+        path += ` L ${x1 + gap} ${yMid - yDir * radius}`;
+        path += ` ${corner(x1 + gap, yMid, x1 + gap - radius, yMid)}`;
+        path += ` L ${x2 - gap + radius} ${yMid}`;
+        path += ` ${corner(x2 - gap, yMid, x2 - gap, yMid + yDir * radius)}`;
+        path += ` L ${x2 - gap} ${y2 - yDir * radius}`;
+        path += ` ${corner(x2 - gap, y2, x2 - gap + radius, y2)}`;
+        path += ` L ${x2} ${y2}`;
+        return path;
       }
     }
     
-    // Start-to-Start (s2s)
+    // START-TO-START (s2s)
     else if (link.type === 's2s') {
-      const direction = dy >= 0 ? 1 : -1;
-      const vOffset = Math.max(absDy / 2, taskBarHeight / 2) + verticalOffset;
+      const yDir = dy >= 0 ? 1 : -1;
+      const leftX = Math.min(x1, x2) - gap;
       
-      return `M ${startX} ${startY}
-              L ${startX - horizontalOffset} ${startY}
-              Q ${startX - horizontalOffset} ${startY + direction * cornerRadius}
-                ${startX - horizontalOffset} ${startY + direction * cornerRadius}
-              L ${startX - horizontalOffset} ${endY - direction * cornerRadius}
-              Q ${startX - horizontalOffset} ${endY}
-                ${startX - horizontalOffset + cornerRadius} ${endY}
-              L ${endX - 6} ${endY}`;
+      let path = `M ${x1} ${y1}`;
+      path += ` L ${leftX + radius} ${y1}`;
+      path += ` ${corner(leftX, y1, leftX, y1 + yDir * radius)}`;
+      path += ` L ${leftX} ${y2 - yDir * radius}`;
+      path += ` ${corner(leftX, y2, leftX + radius, y2)}`;
+      path += ` L ${x2} ${y2}`;
+      return path;
     }
     
-    // End-to-End (e2e)
+    // END-TO-END (e2e)
     else if (link.type === 'e2e') {
-      const direction = dy >= 0 ? 1 : -1;
-      const vOffset = Math.max(absDy / 2, taskBarHeight / 2) + verticalOffset;
+      const yDir = dy >= 0 ? 1 : -1;
+      const rightX = Math.max(x1, x2) + gap;
       
-      return `M ${startX} ${startY}
-              L ${startX + horizontalOffset} ${startY}
-              Q ${startX + horizontalOffset} ${startY + direction * cornerRadius}
-                ${startX + horizontalOffset} ${startY + direction * cornerRadius}
-              L ${startX + horizontalOffset} ${endY - direction * cornerRadius}
-              Q ${startX + horizontalOffset} ${endY}
-                ${startX + horizontalOffset - cornerRadius} ${endY}
-              L ${endX + 6} ${endY}`;
+      let path = `M ${x1} ${y1}`;
+      path += ` L ${rightX - radius} ${y1}`;
+      path += ` ${corner(rightX, y1, rightX, y1 + yDir * radius)}`;
+      path += ` L ${rightX} ${y2 - yDir * radius}`;
+      path += ` ${corner(rightX, y2, rightX - radius, y2)}`;
+      path += ` L ${x2} ${y2}`;
+      return path;
     }
     
-    // Start-to-End/Finish (s2e/s2f)
+    // START-TO-FINISH (s2e)
     else if (link.type === 's2e') {
-      if (dx < -horizontalOffset) {
-        // Target is to the left - smooth curve
-        const controlOffset = Math.min(Math.abs(dx) / 3, 40);
-        if (absDy < 5) {
-          return `M ${startX} ${startY} L ${endX + 6} ${endY}`;
+      if (dx < -2 * gap) {
+        // Simple path when target is to the left
+        const midX = x1 + dx / 2;
+        if (Math.abs(dy) < 5) {
+          return `M ${x1} ${y1} L ${x2} ${y2}`;
         } else {
-          return `M ${startX} ${startY} 
-                  C ${startX - controlOffset} ${startY}, 
-                    ${endX + controlOffset} ${endY}, 
-                    ${endX + 6} ${endY}`;
+          return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
         }
       } else {
-        // Target is to the right or same position - go around
-        const direction = dy >= 0 ? 1 : -1;
-        const vOffset = Math.max(absDy / 2, taskBarHeight / 2) + verticalOffset;
+        // Path when target is to the right
+        const yDir = dy >= 0 ? 1 : -1;
+        const leftX = x1 - gap;
         
-        return `M ${startX} ${startY}
-                L ${startX - horizontalOffset} ${startY}
-                Q ${startX - horizontalOffset} ${startY + direction * cornerRadius}
-                  ${startX - horizontalOffset} ${startY + direction * cornerRadius}
-                L ${startX - horizontalOffset} ${endY - direction * cornerRadius}
-                Q ${startX - horizontalOffset} ${endY}
-                  ${startX - horizontalOffset + cornerRadius} ${endY}
-                L ${endX + 6} ${endY}`;
+        let path = `M ${x1} ${y1}`;
+        path += ` L ${leftX + radius} ${y1}`;
+        path += ` ${corner(leftX, y1, leftX, y1 + yDir * radius)}`;
+        path += ` L ${leftX} ${y2 - yDir * radius}`;
+        path += ` ${corner(leftX, y2, leftX + radius, y2)}`;
+        path += ` L ${x2} ${y2}`;
+        return path;
       }
     }
 
     return '';
   };
 
-  const getArrowPoints = (link: Link): { path: string; tipX: number; tipY: number } => {
-    const sourceTask = getTaskById(link.source);
+  const getArrowhead = (link: Link): string => {
     const targetTask = getTaskById(link.target);
-
-    if (!sourceTask || !targetTask) return { path: '', tipX: 0, tipY: 0 };
+    if (!targetTask) return '';
 
     const targetPos = getTaskPosition(targetTask);
-    const taskBarHeight = targetPos.height;
-    const centerY = taskBarHeight / 2;
+    const centerOffset = targetPos.height / 2;
+    const size = 7;
+    const width = 5;
 
-    let tipX = 0, tipY = 0;
-    let direction: 'right' | 'left' = 'right';
+    let x = 0, y = 0, pointsRight = true;
 
-    // Determine arrow position and direction based on link type
     switch (link.type) {
-      case 'e2s': // Finish-to-Start: Arrow points RIGHT into start of target
-        tipX = targetPos.left;
-        tipY = targetPos.top + centerY;
-        direction = 'right';
+      case 'e2s': // Arrow points right into target start
+      case 's2s':
+        x = targetPos.left;
+        y = targetPos.top + centerOffset;
+        pointsRight = true;
         break;
-        
-      case 's2s': // Start-to-Start: Arrow points RIGHT into start of target
-        tipX = targetPos.left;
-        tipY = targetPos.top + centerY;
-        direction = 'right';
-        break;
-        
-      case 'e2e': // End-to-End: Arrow points LEFT into end of target
-        tipX = targetPos.left + targetPos.width;
-        tipY = targetPos.top + centerY;
-        direction = 'left';
-        break;
-        
-      case 's2e': // Start-to-Finish: Arrow points LEFT into end of target
-        tipX = targetPos.left + targetPos.width;
-        tipY = targetPos.top + centerY;
-        direction = 'left';
+      
+      case 'e2e': // Arrow points left into target end
+      case 's2e':
+        x = targetPos.left + targetPos.width;
+        y = targetPos.top + centerOffset;
+        pointsRight = false;
         break;
     }
 
-    // Create arrow triangle pointing in the correct direction
-    const arrowSize = 8;
-    const arrowWidth = 6;
-    
-    if (direction === 'right') {
-      // Right-pointing arrow (pointing into the task from left)
-      return {
-        path: `M ${tipX} ${tipY} L ${tipX - arrowSize} ${tipY - arrowWidth} L ${tipX - arrowSize} ${tipY + arrowWidth} Z`,
-        tipX,
-        tipY
-      };
+    if (pointsRight) {
+      // Right-pointing triangle
+      return `M ${x} ${y} L ${x - size} ${y - width} L ${x - size} ${y + width} Z`;
     } else {
-      // Left-pointing arrow (pointing into the task from right)
-      return {
-        path: `M ${tipX} ${tipY} L ${tipX + arrowSize} ${tipY - arrowWidth} L ${tipX + arrowSize} ${tipY + arrowWidth} Z`,
-        tipX,
-        tipY
-      };
+      // Left-pointing triangle
+      return `M ${x} ${y} L ${x + size} ${y - width} L ${x + size} ${y + width} Z`;
     }
   };
 
@@ -231,11 +199,10 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
         if (!sourceTask || !targetTask) return null;
 
         const path = calculateLinkPath(link);
-        const arrow = getArrowPoints(link);
+        const arrowhead = getArrowhead(link);
         
         return (
           <g key={link.id} className="gantt-link">
-            {/* Main link line */}
             <path
               d={path}
               fill="none"
@@ -245,9 +212,8 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            {/* Arrow head */}
             <path
-              d={arrow.path}
+              d={arrowhead}
               fill="#4A90E2"
               className="gantt-link-arrow"
             />
