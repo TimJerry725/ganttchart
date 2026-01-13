@@ -1,4 +1,4 @@
-import { Scale } from '../types';
+import type { Scale } from '../types';
 
 export const addToDate = (date: Date, count: number, unit: Scale['unit']): Date => {
   const newDate = new Date(date);
