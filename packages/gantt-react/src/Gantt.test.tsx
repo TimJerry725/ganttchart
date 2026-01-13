@@ -4,8 +4,26 @@
 
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
+import React from 'react';
 import { Gantt } from './Gantt';
 import type { Task } from '@gantt/core';
+
+// Mock canvas methods
+HTMLCanvasElement.prototype.getContext = () => {
+  return {
+    clearRect: () => {},
+    fillRect: () => {},
+    strokeRect: () => {},
+    fillText: () => {},
+    stroke: () => {},
+    beginPath: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    closePath: () => {},
+    setLineDash: () => {},
+    fill: () => {},
+  } as unknown as CanvasRenderingContext2D;
+};
 
 describe('Gantt', () => {
   it('should render with tasks', () => {

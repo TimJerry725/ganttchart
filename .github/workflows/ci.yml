@@ -19,10 +19,17 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
       - run: pnpm install
-      - run: pnpm lint || echo "Linting skipped"
-      - run: pnpm typecheck || echo "Typecheck skipped"
-      - run: pnpm test || echo "Tests skipped"
-      - run: pnpm build
+      - name: Lint
+        run: pnpm lint
+        continue-on-error: true
+      - name: Typecheck
+        run: pnpm typecheck
+        continue-on-error: true
+      - name: Test
+        run: pnpm test
+        continue-on-error: true
+      - name: Build
+        run: pnpm build
 
   e2e:
     runs-on: ubuntu-latest

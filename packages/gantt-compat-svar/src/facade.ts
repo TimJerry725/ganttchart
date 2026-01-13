@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { Gantt } from '@gantt/react';
+import type { GanttProps } from '@gantt/react';
 import { GanttModel } from '@gantt/core';
 import { EventBus } from '@gantt/core';
 import type { SvarConfig, SvarEvents, SvarTask, SvarLink } from './types';
@@ -181,16 +182,15 @@ export const SvarGantt: React.FC<SvarGanttProps> = (props) => {
     field: col.name,
   }));
 
-  return (
-    <Gantt
-      tasks={internalTasks}
-      links={internalLinks}
-      columns={internalColumns}
-      rowHeight={props.row_height}
-      barHeight={props.bar_height}
-      onTaskClick={(id) => props.onTaskClick?.(id, new MouseEvent('click'))}
-      onTaskDoubleClick={(id) => props.onTaskDblClick?.(id, new MouseEvent('dblclick'))}
-      {...rest}
-    />
-  );
+  const ganttProps: GanttProps = {
+    tasks: internalTasks,
+    links: internalLinks,
+    columns: internalColumns,
+    rowHeight: props.row_height,
+    barHeight: props.bar_height,
+    onTaskClick: props.onTaskClick ? (id) => props.onTaskClick?.(id, new MouseEvent('click')) : undefined,
+    onTaskDoubleClick: props.onTaskDblClick ? (id) => props.onTaskDblClick?.(id, new MouseEvent('dblclick')) : undefined,
+  };
+
+  return <Gantt {...ganttProps} />;
 };
