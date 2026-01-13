@@ -57,10 +57,10 @@ interface GanttProps {
 }
 
 const defaultColumns: Column[] = [
-  { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
-  { name: 'start', label: 'Start Date', width: 100, align: 'center' },
-  { name: 'duration', label: 'Duration', width: 80, align: 'center' },
-  { name: 'progress', label: 'Progress', width: 80, align: 'center' },
+  { name: 'text', label: 'Task Name', width: 300, align: 'left', resize: true },
+  { name: 'start', label: 'Start Date', width: 120, align: 'center' },
+  { name: 'duration', label: 'Duration', width: 100, align: 'center' },
+  { name: 'progress', label: 'Progress', width: 100, align: 'center' },
 ];
 
 const defaultScales: Scale[] = [
@@ -346,8 +346,41 @@ export const Gantt: React.FC<GanttProps> = ({
   }, [undo, redo]);
 
   return (
-    <div className={`gantt-wrapper theme-${ganttConfig.theme}`}>
-      {/* Main Gantt Container - SVAR Style */}
+    <div className={`gantt-page-wrapper theme-${currentTheme}`}>
+      {/* Page Header - Exact Match to Image */}
+      <div className="gantt-page-header">
+        <div className="gantt-page-header-left">
+          <h1 className="gantt-page-title">React Gantt</h1>
+        </div>
+        <div className="gantt-page-header-right">
+          <div className="gantt-theme-selector">
+            <button
+              className={currentTheme === 'light' ? 'active' : ''}
+              onClick={() => setCurrentTheme('light')}
+              title="Light Theme"
+            >
+              Willow
+            </button>
+            <button
+              className={currentTheme === 'dark' ? 'active' : ''}
+              onClick={() => setCurrentTheme('dark')}
+              title="Dark Theme"
+            >
+              Dark
+            </button>
+          </div>
+          <a
+            href="https://github.com/TimJerry725/ganttchart"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="gantt-github-link"
+          >
+            See code on GitHub
+          </a>
+        </div>
+      </div>
+
+      {/* Main Gantt Container */}
       <div className={`gantt-container theme-${ganttConfig.theme}`}>
         {/* Enhanced Toolbar - Always at top */}
         <div className="gantt-toolbar">
