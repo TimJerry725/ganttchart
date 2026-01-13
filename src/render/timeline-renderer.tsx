@@ -3,12 +3,10 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import type { Task, TaskId } from '../types';
+import type { TaskId } from '../types';
 import type { BarLayout, LinkLayout, TimeScale } from './layout';
-import type { ScheduledTask } from '../engine/scheduler';
 
 export interface TimelineRendererProps {
-  tasks: Task[];
   bars: Map<TaskId, BarLayout>;
   links: LinkLayout[];
   timeScale: TimeScale;
@@ -23,7 +21,6 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
   timeScale,
   viewport,
   criticalPath,
-  onBarClick,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -137,9 +134,6 @@ export const TimelineRenderer: React.FC<TimelineRendererProps> = ({
         ref={canvasRef}
         className="absolute top-0 left-0"
         style={{ width: viewport.width, height: viewport.height }}
-        onClick={(e) => {
-          // Hit testing would go here
-        }}
       />
     </div>
   );

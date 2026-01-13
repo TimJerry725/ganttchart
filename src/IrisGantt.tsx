@@ -3,8 +3,6 @@
  */
 
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
-import { TaskModel } from './model/task';
-import { LinkModel } from './model/link';
 import { Scheduler } from './engine/scheduler';
 import { LayoutEngine } from './render/layout';
 import { GridRenderer } from './render/grid-renderer';
@@ -42,11 +40,8 @@ export const IrisGantt: React.FC<IrisGanttProps> = (props) => {
   const [expandedTasks, setExpandedTasks] = useState<Set<TaskId>>(new Set());
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<TaskId>>(new Set(selection));
 
-  const taskModel = useMemo(() => new TaskModel(tasks), [tasks]);
-  const linkModel = useMemo(() => new LinkModel(links), [links]);
   const scheduler = useMemo(() => new Scheduler(tasks, links), [tasks, links]);
   const layoutEngine = useMemo(() => new LayoutEngine(), []);
-  const virtualizationManager = useMemo(() => new VirtualizationManager(), []);
 
   const scheduledTasks = useMemo(() => scheduler.schedule(), [scheduler]);
   const criticalPath = useMemo(() => {
@@ -151,7 +146,6 @@ export const IrisGantt: React.FC<IrisGanttProps> = (props) => {
         />
         <div className="flex-1 relative" style={{ width: timelineWidth }}>
           <TimelineRenderer
-            tasks={tasks}
             bars={layout.bars}
             links={layout.links}
             timeScale={timeScale}
