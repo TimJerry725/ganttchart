@@ -1,5 +1,3 @@
-import type React from 'react';
-
 export interface Task {
   id: string;
   text: string;
@@ -36,7 +34,7 @@ export interface Column {
   align?: 'left' | 'center' | 'right';
   resize?: boolean;
   sort?: boolean;
-  template?: (task: Task) => string | React.ReactNode;
+  template?: (task: Task) => string | any;
 }
 
 export interface GanttConfig {
