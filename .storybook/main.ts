@@ -24,6 +24,9 @@ const config: StorybookConfig = {
     // Ensure proper path resolution
     if (config.resolve) {
       const path = await import('path');
+      const { fileURLToPath } = await import('url');
+      const __dirname = path.dirname(fileURLToPath(import.meta.url));
+      
       config.resolve.alias = {
         ...config.resolve.alias,
         '@gantt/core': path.resolve(__dirname, '../packages/gantt-core/src'),
@@ -33,6 +36,18 @@ const config: StorybookConfig = {
         '@gantt/antd': path.resolve(__dirname, '../packages/gantt-antd/src'),
       };
     }
+    
+    // Ensure React is properly resolved
+    if (config.optimizeDeps) {
+      config.optimizeDeps.include = [
+        ...(config.optimizeDeps.include || []),
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+      ];
+    }
+    
     return config;
   },
 };
