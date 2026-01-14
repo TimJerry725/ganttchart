@@ -156,7 +156,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
       secondaryCells.forEach((cell) => {
         const month = cell.date.getMonth();
-        const label = formatDate(cell.date, 'MMMM YYYY');
+        const label = formatDate(cell.date, 'MMM');
 
         if (month !== currentMonth) {
           if (currentMonth !== -1) {
@@ -185,7 +185,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         const day = cell.date.getDate();
         const period = day <= 15 ? 0 : 1;
         const month = cell.date.getMonth();
-        const monthLabel = formatDate(cell.date, 'MMMM');
+        const monthLabel = formatDate(cell.date, 'MMM');
         const label = period === 0 ? `${monthLabel} 1 - 15` : `${monthLabel} 16 - ${new Date(cell.date.getFullYear(), cell.date.getMonth() + 1, 0).getDate()}`;
 
         if (period !== currentPeriod || month !== currentMonth) {

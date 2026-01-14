@@ -17,9 +17,10 @@ interface GridProps {
   onTaskDragStart?: (taskId: string, clientX: number, clientY: number, type: 'reorder') => void;
   onAddTask?: (taskId?: string) => void;
   dropIndicator?: { taskId: string; position: 'above' | 'below' | 'inside' } | null;
-  reorderTask?: { id: string; initialIndex: number; currentY: number } | null;
+  reorderTask?: { id: string; initialIndex: number; currentY: number; descendantIds: string[] } | null;
 }
 
+// Force rebuild
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
   ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onTaskContextMenu, onScroll, onTaskUpdate, onTaskDragStart, onAddTask, dropIndicator, reorderTask }, ref) => {
     const localRef = React.useRef<HTMLDivElement>(null);
@@ -122,14 +123,18 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
           ))}
         </div>
         <div className="gantt-grid-body">
-          {tasks.map((task) => (
-            <div
-              key={task.id}
-              className={`gantt-grid-row ${selectedTask === task.id ? 'selected' : ''} ${reorderTask?.id === task.id ? 'dragging-row' : ''} ${dropIndicator?.taskId === task.id ? `drop-target-${dropIndicator.position}` : ''}`}
-              style={{ height: rowHeight }}
-              onClick={() => onTaskClick(task.id)}
-              onContextMenu={(e) => onTaskContextMenu?.(e, task.id)}
-            >
+          {tasks.map((task) => {
+            const isDragging = reorderTask?.id === task.id;
+            const isDescendantDragging = reorderTask?.descendantIds.includes(task.id);
+            
+            return (
+              <div
+                key={task.id}
+                className={`gantt-grid-row ${selectedTask === task.id ? 'selected' : ''} ${isDragging ? 'dragging-row' : ''} ${isDescendantDragging ? 'descendant-dragging-row' : ''} ${dropIndicator?.taskId === task.id ? `drop-target-${dropIndicator.position}` : ''}`}
+                style={{ height: rowHeight }}
+                onClick={() => onTaskClick(task.id)}
+                onContextMenu={(e) => onTaskContextMenu?.(e, task.id)}
+              >
               {columns.map((column) => (
                 <div
                   key={`${task.id}-${column.name}`}
@@ -146,42 +151,10 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                 <div className={`gantt-drop-indicator ${dropIndicator.position}`} />
               )}
             </div>
-          ))}
-          {reorderTask && (
-            <div
-              className="gantt-grid-row ghost-row"
-              style={{
-                height: rowHeight,
-                top: reorderTask.currentY - rowHeight / 2,
-                left: localRef.current?.getBoundingClientRect().left,
-                position: 'fixed',
-                pointerEvents: 'none',
-                opacity: 0.8,
-                zIndex: 9999,
-                width: localRef.current?.offsetWidth,
-                backgroundColor: '#ffffff',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                border: '1px solid #2196F3',
-                display: 'flex'
-              }}
-            >
-              {columns.map((column) => (
-                <div
-                  key={`ghost-${column.name}`}
-                  className="gantt-grid-cell"
-                  style={{
-                    width: column.width,
-                    textAlign: column.align || 'left',
-                  }}
-                >
-                  {getCellValue(tasks.find(t => t.id === reorderTask.id)!, column)}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          );
+        })}
       </div>
-    );
+      </div>
     );
   }
 );

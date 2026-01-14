@@ -107,6 +107,7 @@ export const useUndoRedo = (initialTasks: Task[], initialLinks: Link[] = []) => 
     updateTask,
     createTask,
     deleteTask,
+    saveState,
     history,
   };
 };

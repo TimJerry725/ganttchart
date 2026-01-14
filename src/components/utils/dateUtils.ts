@@ -41,21 +41,24 @@ export const formatDate = (date: Date, format: string): string => {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthsFull = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
-  return format
-    .replace('YYYY', date.getFullYear().toString())
-    .replace('YY', date.getFullYear().toString().slice(-2))
-    .replace('MMMM', monthsFull[date.getMonth()])
-    .replace('MMM', months[date.getMonth()])
-    .replace('MM', String(date.getMonth() + 1).padStart(2, '0'))
-    .replace('M', String(date.getMonth() + 1))
-    .replace('DD', String(date.getDate()).padStart(2, '0'))
-    .replace('D', String(date.getDate()))
-    .replace('dddd', days[date.getDay()])
-    .replace('HH', String(date.getHours()).padStart(2, '0'))
-    .replace('H', String(date.getHours()))
-    .replace('mm', String(date.getMinutes()).padStart(2, '0'))
-    .replace('m', String(date.getMinutes()));
+
+  const map: Record<string, string> = {
+    'YYYY': date.getFullYear().toString(),
+    'YY': date.getFullYear().toString().slice(-2),
+    'MMMM': monthsFull[date.getMonth()],
+    'MMM': months[date.getMonth()],
+    'MM': String(date.getMonth() + 1).padStart(2, '0'),
+    'M': String(date.getMonth() + 1),
+    'DD': String(date.getDate()).padStart(2, '0'),
+    'D': String(date.getDate()),
+    'dddd': days[date.getDay()],
+    'HH': String(date.getHours()).padStart(2, '0'),
+    'H': String(date.getHours()),
+    'mm': String(date.getMinutes()).padStart(2, '0'),
+    'm': String(date.getMinutes()),
+  };
+
+  return format.replace(/YYYY|YY|MMMM|MMM|MM|M|DD|D|dddd|HH|H|mm|m/g, (matched) => map[matched]);
 };
 
 export const isWeekend = (date: Date): boolean => {

@@ -12,7 +12,7 @@ import { useUndoRedo } from './UndoRedo';
 import { autoSchedule, levelResources } from './AutoScheduler';
 import { exportToCSV, exportToExcel, exportToJSON, exportToPDF } from './ExportUtils';
 import { createBaseline } from './Baselines';
-import { addToDate, getStartOfDay } from '../utils/dateUtils';
+import { addToDate, getStartOfDay, formatDate } from '../utils/dateUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button, Tooltip, Space, Divider, Segmented } from 'antd';
 import {
@@ -30,6 +30,7 @@ import {
   faFileExcel,
   faFileCode,
   faFilePdf,
+  faGripVertical,
 } from '@fortawesome/free-solid-svg-icons';
 
 // Ant Design CSS
@@ -83,7 +84,7 @@ const defaultColumns: Column[] = [
 ];
 
 const defaultScales: Scale[] = [
-  { unit: 'month', step: 1, format: 'MMMM YYYY' },
+  { unit: 'month', step: 1, format: 'MMM' },
   { unit: 'day', step: 1, format: 'D' },
 ];
 
@@ -110,6 +111,7 @@ export const Gantt: React.FC<GanttProps> = ({
     updateTask,
     createTask: createTaskWithHistory,
     deleteTask: deleteTaskWithHistory,
+    saveState,
   } = useUndoRedo(initialTasks, initialLinks);
 
   // State management
@@ -120,7 +122,7 @@ export const Gantt: React.FC<GanttProps> = ({
   const [showDependencyEditor, setShowDependencyEditor] = useState(false);
   const [dependencyEditTask, setDependencyEditTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
-  const [reorderTask, setReorderTask] = useState<{ id: string; initialIndex: number; currentY: number } | null>(null);
+  const [reorderTask, setReorderTask] = useState<{ id: string; initialIndex: number; currentY: number; descendantIds: string[] } | null>(null);
   const [dropIndicator, setDropIndicator] = useState<{ taskId: string; position: 'above' | 'below' | 'inside' } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
@@ -136,7 +138,7 @@ export const Gantt: React.FC<GanttProps> = ({
   });
 
   const timelineRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const ganttConfig: GanttConfig = {
     columns: defaultColumns,
@@ -230,8 +232,8 @@ export const Gantt: React.FC<GanttProps> = ({
   };
 
   const handleTimelineScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (gridRef.current) {
-      gridRef.current.scrollTop = (e.target as HTMLDivElement).scrollTop;
+    if (gridContainerRef.current) {
+      gridContainerRef.current.scrollTop = (e.target as HTMLDivElement).scrollTop;
     }
   };
 
@@ -282,7 +284,19 @@ export const Gantt: React.FC<GanttProps> = ({
 
     if (type === 'reorder') {
       const index = filteredTasks.findIndex(t => t.id === taskId);
-      setReorderTask({ id: taskId, initialIndex: index, currentY: clientY });
+
+      const getDescendantIds = (parentId: string, allTasks: Task[]): string[] => {
+        let ids: string[] = [];
+        const children = allTasks.filter(t => t.parent === parentId);
+        children.forEach(child => {
+          ids.push(child.id);
+          ids = [...ids, ...getDescendantIds(child.id, allTasks)];
+        });
+        return ids;
+      };
+
+      const descendantIds = getDescendantIds(taskId, tasks);
+      setReorderTask({ id: taskId, initialIndex: index, currentY: clientY, descendantIds });
       document.body.classList.add('gantt-dragging');
     } else {
       setDraggedTask(taskId);
@@ -295,23 +309,11 @@ export const Gantt: React.FC<GanttProps> = ({
       const targetTask = tasks.find(t => t.id === dropIndicator.taskId);
 
       if (sourceTask && targetTask && sourceTask.id !== targetTask.id) {
-        // Move source task and its descendants
-        const getDescendantIds = (parentId: string, allTasks: Task[]): string[] => {
-          let ids: string[] = [];
-          const children = allTasks.filter(t => t.parent === parentId);
-          children.forEach(child => {
-            ids.push(child.id);
-            ids = [...ids, ...getDescendantIds(child.id, allTasks)];
-          });
-          return ids;
-        };
-
-        const descendantIds = getDescendantIds(sourceTask.id, tasks);
-        const groupToMoveIds = [sourceTask.id, ...descendantIds];
+        const groupToMoveIds = [sourceTask.id, ...reorderTask.descendantIds];
 
         if (!groupToMoveIds.includes(targetTask.id)) {
           const newTasks = [...tasks];
-          
+
           // Determine new parent and insert position
           let newParentId: string | undefined = undefined;
           if (dropIndicator.position === 'inside') {
@@ -326,17 +328,45 @@ export const Gantt: React.FC<GanttProps> = ({
             newTasks[sourceIdxInFull] = { ...newTasks[sourceIdxInFull], parent: newParentId };
           }
 
-          // Extract group
+          // Extract group - keep original order of the group
           const currentGroupTasks = newTasks.filter(t => groupToMoveIds.includes(t.id));
           const remainingTasks = newTasks.filter(t => !groupToMoveIds.includes(t.id));
 
           let insertIdx = remainingTasks.findIndex(t => t.id === targetTask.id);
-          if (dropIndicator.position === 'below' || dropIndicator.position === 'inside') {
-            insertIdx++;
+
+          if (dropIndicator.position === 'inside') {
+            // Find last child of targetTask to insert after it
+            const children = remainingTasks.filter(t => t.parent === targetTask.id);
+            if (children.length > 0) {
+              const lastChild = children[children.length - 1];
+              insertIdx = remainingTasks.findIndex(t => t.id === lastChild.id) + 1;
+            } else {
+              insertIdx++; // Just after the parent
+            }
+          } else if (dropIndicator.position === 'below') {
+            // Find all descendants of targetTask to insert after them
+            const getDescendantIds = (parentId: string, allTasks: Task[]): string[] => {
+              let ids: string[] = [];
+              const children = allTasks.filter(t => t.parent === parentId);
+              children.forEach(child => {
+                ids.push(child.id);
+                ids = [...ids, ...getDescendantIds(child.id, allTasks)];
+              });
+              return ids;
+            };
+            const targetDescendants = getDescendantIds(targetTask.id, remainingTasks);
+            if (targetDescendants.length > 0) {
+              const lastDescendant = targetDescendants[targetDescendants.length - 1];
+              insertIdx = remainingTasks.findIndex(t => t.id === lastDescendant) + 1;
+            } else {
+              insertIdx++;
+            }
           }
 
+          const beforeState = { tasks: [...tasks], links: [...links] };
           remainingTasks.splice(insertIdx, 0, ...currentGroupTasks);
           setTasks(remainingTasks);
+          saveState('task_update', beforeState, { tasks: remainingTasks, links });
         }
       }
     }
@@ -349,21 +379,21 @@ export const Gantt: React.FC<GanttProps> = ({
   const handleMouseMove = (e: React.MouseEvent) => {
     if (reorderTask) {
       const rowHeight = ganttConfig.rowHeight || 44;
-      const gridBody = gridRef.current?.querySelector('.gantt-grid-body');
+      const gridBody = gridContainerRef.current?.querySelector('.gantt-grid-body');
       if (!gridBody) return;
 
       const rect = gridBody.getBoundingClientRect();
-      const scrollOffset = (gridRef.current as HTMLDivElement).scrollTop;
+      const scrollOffset = (gridContainerRef.current as HTMLDivElement).scrollTop;
       const relativeY = e.clientY - rect.top + scrollOffset;
       let index = Math.floor(relativeY / rowHeight);
       index = Math.max(0, Math.min(index, filteredTasks.length - 1));
-      
+
       const taskAtPointer = filteredTasks[index];
 
       if (taskAtPointer) {
         const taskRectY = index * rowHeight;
         const offsetInRow = relativeY - taskRectY;
-        
+
         let position: 'above' | 'below' | 'inside' = 'above';
         if (taskAtPointer.type === 'project') {
           if (offsetInRow < rowHeight * 0.3) position = 'above';
@@ -379,7 +409,7 @@ export const Gantt: React.FC<GanttProps> = ({
           setDropIndicator(null);
         }
       }
-      
+
       setReorderTask(prev => prev ? { ...prev, currentY: e.clientY } : null);
     }
   };
@@ -495,7 +525,7 @@ export const Gantt: React.FC<GanttProps> = ({
       {/* Page Header - Exact Match to Image */}
       <div className="gantt-page-header">
         <div className="gantt-page-header-left">
-          <h1 className="gantt-page-title">React Gantt</h1>
+          <h1 className="gantt-page-title">Iris Gantt</h1>
         </div>
         <div className="gantt-page-header-right">
           <div className="gantt-theme-selector">
@@ -670,7 +700,7 @@ export const Gantt: React.FC<GanttProps> = ({
           onMouseLeave={handleMouseUp}
         >
           <Grid
-            ref={gridRef}
+            ref={gridContainerRef}
             tasks={filteredTasks}
             columns={ganttConfig.columns || []}
             rowHeight={ganttConfig.rowHeight || 44}
@@ -774,6 +804,64 @@ export const Gantt: React.FC<GanttProps> = ({
               onClose={() => setContextMenu(null)}
             />
           </>
+        )}
+
+        {/* Drag & Drop Ghost Row */}
+        {reorderTask && (
+          <div
+            className="gantt-grid-row ghost-row"
+            style={{
+              height: ganttConfig.rowHeight,
+              top: reorderTask.currentY - (ganttConfig.rowHeight || 44) / 2,
+              left: gridContainerRef.current?.getBoundingClientRect().left,
+              position: 'fixed',
+              pointerEvents: 'none',
+              opacity: 0.8,
+              zIndex: 9999,
+              width: gridContainerRef.current?.offsetWidth,
+              backgroundColor: '#ffffff',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              border: '1px solid #2196F3',
+              display: 'flex'
+            }}
+          >
+            {ganttConfig.columns?.map((column) => (
+              <div
+                key={`ghost-${column.name}`}
+                className="gantt-grid-cell"
+                style={{
+                  width: column.width,
+                  textAlign: column.align || 'left',
+                }}
+              >
+                {(() => {
+                  const task = tasks.find(t => t.id === reorderTask.id);
+                  if (!task) return null;
+                  if (column.template) return column.template(task);
+                  switch (column.name) {
+                    case 'text':
+                      const descendantCount = reorderTask.descendantIds.length;
+                      return (
+                        <div className="gantt-grid-cell-text">
+                          <FontAwesomeIcon icon={faGripVertical} style={{ marginRight: 8, color: '#adb5bd' }} />
+                          <span className="gantt-task-name-text">
+                            {task.text}
+                            {descendantCount > 0 && (
+                              <span className="gantt-ghost-descendant-count">
+                                +{descendantCount} subtasks
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    case 'start': return formatDate(task.start, 'DD-MM-YYYY');
+                    case 'duration': return `${task.duration}`;
+                    default: return (task as any)[column.name] || '';
+                  }
+                })()}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
