@@ -372,8 +372,6 @@ export const Gantt: React.FC<GanttProps> = ({
           setZoomLevel={setZoomLevel}
           onBaselineToggle={toggleBaselines}
           showBaselines={showBaselines}
-          onUndo={undo}
-          onRedo={redo}
           onExport={(type) => {
             if (type === 'csv') ExportUtils.exportToCSV(tasks);
             if (type === 'excel') ExportUtils.exportToExcel(tasks);
@@ -382,6 +380,7 @@ export const Gantt: React.FC<GanttProps> = ({
           }}
           onFilterChange={(f: FilterOptions) => setFilters(f)}
           owners={owners}
+          onAddTask={() => setShowTaskCreator(true)}
         />
 
         <div className="gantt-layout" ref={layoutRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>

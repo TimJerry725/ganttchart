@@ -10,8 +10,7 @@ import {
     faFileCode,
     faFilePdf,
     faCalendarCheck,
-    faUndo,
-    faRedo,
+    faPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import { FilterSearch } from './FilterSearch';
 import type { FilterOptions } from './FilterSearch';
@@ -23,9 +22,8 @@ interface ToolbarProps {
     showBaselines: boolean;
     onExport: (type: 'csv' | 'excel' | 'json' | 'pdf') => void;
     onFilterChange: (filters: FilterOptions) => void;
-    onUndo?: () => void;
-    onRedo?: () => void;
     owners: string[];
+    onAddTask?: () => void;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -35,9 +33,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     showBaselines,
     onExport,
     onFilterChange,
-    onUndo,
-    onRedo,
     owners,
+    onAddTask,
 }) => {
     return (
         <div className="gantt-toolbar-wrapper">
@@ -45,39 +42,26 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                 <div className="gantt-toolbar-left">
                     <Space size={8}>
                         <Button
-                            type={showBaselines ? "primary" : "default"}
-                            icon={<FontAwesomeIcon icon={faCalendarCheck} />}
-                            onClick={onBaselineToggle}
+                            type="primary"
+                            icon={<FontAwesomeIcon icon={faPlus} />}
+                            onClick={onAddTask}
                         >
-                            {showBaselines ? 'Baselines' : 'Set Baseline'}
+                            New Task
                         </Button>
-
-                        <Divider type="vertical" style={{ height: 24, margin: '0 8px' }} />
-
-                        <FilterSearch
-                            onFilterChange={onFilterChange}
-                            owners={owners}
-                        />
+                        <Tooltip title={showBaselines ? "Hide Baselines" : "Show Baselines"}>
+                            <Button
+                                type={showBaselines ? "primary" : "default"}
+                                icon={<FontAwesomeIcon icon={faCalendarCheck} />}
+                                onClick={onBaselineToggle}
+                            >
+                                {showBaselines ? 'Baselines' : 'Set Baseline'}
+                            </Button>
+                        </Tooltip>
                     </Space>
                 </div>
 
                 <div className="gantt-toolbar-right">
                     <Space size={4}>
-                        <Tooltip title="Undo">
-                            <Button
-                                icon={<FontAwesomeIcon icon={faUndo} />}
-                                onClick={onUndo}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Redo">
-                            <Button
-                                icon={<FontAwesomeIcon icon={faRedo} />}
-                                onClick={onRedo}
-                            />
-                        </Tooltip>
-
-                        <Divider type="vertical" style={{ height: 24, margin: '0 4px' }} />
-
                         <Tooltip title="Zoom Out">
                             <Button
                                 icon={<FontAwesomeIcon icon={faSearchMinus} />}
@@ -126,6 +110,11 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                     </Space>
                 </div>
             </div>
+
+            <FilterSearch
+                onFilterChange={onFilterChange}
+                owners={owners}
+            />
         </div>
     );
 };
