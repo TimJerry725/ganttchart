@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import type { Task, Column } from '../types';
 import { formatDate } from '../utils/dateUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faChevronDown, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faChevronDown, faChevronUp, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Button } from 'antd';
 
 interface GridProps {

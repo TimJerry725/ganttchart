@@ -179,10 +179,10 @@
 .gantt-grid {
   display: flex;
   flex-direction: column;
-  width: 500px;
-  min-width: 500px;
-  max-width: 500px;
-  border-right: 1px solid #e5e7eb;
+  width: 560px;
+  min-width: 560px;
+  max-width: 560px;
+  border-right: 2px solid #e5e7eb;
   background-color: #ffffff;
   flex-shrink: 0;
   position: sticky;
