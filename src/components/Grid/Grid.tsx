@@ -2,7 +2,7 @@ import React, { forwardRef } from 'react';
 import type { Task, Column } from '../types';
 import { formatDate } from '../utils/dateUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faChevronDown, faChevronUp, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faChevronDown, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Button } from 'antd';
 
 interface GridProps {
@@ -121,7 +121,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                 <>
                   {column.label}
                   {column.name === 'start' && (
-                    <FontAwesomeIcon icon={faChevronUp} style={{ marginLeft: 8, fontSize: 10, color: '#64748b' }} />
+                    <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: 8, fontSize: 10, color: '#64748b' }} />
                   )}
                 </>
               )}

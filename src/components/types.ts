@@ -78,3 +78,10 @@ export interface Baseline {
   start: Date;
   end: Date;
 }
+
+export type ZoomLevel = number;
+
+export interface DropIndicator {
+  taskId: string;
+  position: 'above' | 'below' | 'inside';
+}

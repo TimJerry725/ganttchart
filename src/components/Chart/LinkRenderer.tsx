@@ -89,8 +89,8 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
 
     const tPos = getTaskPosition(target);
     const cy = tPos.top + tPos.height / 2;
-    const size = 12;
-    const width = 8;
+    const size = 8;
+    const width = 6;
 
     let x = 0;
     let pointRight = true;

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Gantt } from '../components/Gantt';
+import { Gantt } from '../components';
 import type { Task, Link } from '../components/types';
-import '../components/Gantt/gantt.css';
+import '../components/gantt.css';
 
 const meta = {
   title: 'Gantt/Critical Path (PRO)',

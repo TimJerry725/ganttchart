@@ -16,7 +16,7 @@ interface TimelineProps {
   onTaskClick: (taskId: string) => void;
   onTaskDragStart: (taskId: string, clientX: number, clientY: number) => void;
   onTaskDragEnd: () => void;
-  onTaskUpdate?: (task: Task) => void;
+  onTaskUpdate?: (id: string, updates: Partial<Task>) => void;
   zoomLevel: number;
   baselines?: Map<string, Baseline>;
 }
@@ -111,8 +111,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     const getTaskPositionForLinks = (task: Task) => {
       const pos = getTaskPosition(task);
       const index = localTasks.findIndex(t => t.id === task.id);
-      const rowHeight = config.rowHeight || 44;
-      const taskHeight = 28;
+      const rowHeight = config.rowHeight || 48;
+      const taskHeight = 32;
       const topPadding = (rowHeight - taskHeight) / 2;
 
       return {
@@ -149,25 +149,30 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     const generateTopHeaderCells = () => {
       const cells: { label: string; width: number }[] = [];
       let currentMonth = -1;
+      let currentYear = -1;
       let currentWidth = 0;
       let currentLabel = '';
 
       secondaryCells.forEach((cell) => {
         const month = cell.date.getMonth();
-        const label = formatDate(cell.date, 'MMMM YYYY');
+        const year = cell.date.getFullYear();
+        const label = formatDate(cell.date, 'MMM YYYY');
 
-        if (month !== currentMonth) {
+        if (month !== currentMonth || year !== currentYear) {
           if (currentMonth !== -1) {
             cells.push({ label: currentLabel, width: currentWidth });
           }
           currentMonth = month;
+          currentYear = year;
           currentWidth = columnWidth;
           currentLabel = label;
         } else {
           currentWidth += columnWidth;
         }
       });
-      cells.push({ label: currentLabel, width: currentWidth });
+      if (currentMonth !== -1) {
+        cells.push({ label: currentLabel, width: currentWidth });
+      }
       return cells;
     };
 
@@ -177,29 +182,34 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       let currentPeriod = -1; // 0 for 1-15, 1 for 16+
       let currentWidth = 0;
       let currentMonth = -1;
+      let currentYear = -1;
       let currentLabel = '';
 
       secondaryCells.forEach((cell) => {
         const day = cell.date.getDate();
         const period = day <= 15 ? 0 : 1;
         const month = cell.date.getMonth();
-        const monthLabel = formatDate(cell.date, 'MMMM');
-        const lastDay = new Date(cell.date.getFullYear(), cell.date.getMonth() + 1, 0).getDate();
+        const year = cell.date.getFullYear();
+        const monthLabel = formatDate(cell.date, 'MMM');
+        const lastDay = new Date(year, month + 1, 0).getDate();
         const label = period === 0 ? `${monthLabel} 1 - 15` : `${monthLabel} 16 - ${lastDay}`;
 
-        if (period !== currentPeriod || month !== currentMonth) {
+        if (period !== currentPeriod || month !== currentMonth || year !== currentYear) {
           if (currentPeriod !== -1) {
             cells.push({ label: currentLabel, width: currentWidth });
           }
           currentPeriod = period;
           currentMonth = month;
+          currentYear = year;
           currentWidth = columnWidth;
           currentLabel = label;
         } else {
           currentWidth += columnWidth;
         }
       });
-      cells.push({ label: currentLabel, width: currentWidth });
+      if (currentPeriod !== -1) {
+        cells.push({ label: currentLabel, width: currentWidth });
+      }
       return cells;
     };
 
@@ -215,42 +225,57 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         onMouseUp={handleMouseUp}
         style={{ width: totalWidth }}
       >
-        <div className="gantt-timeline-header" style={{ width: totalWidth }}>
+        <div className="gantt-timeline-header" style={{ width: totalWidth, minWidth: totalWidth }}>
           {/* Level 1: Month/Year */}
-          <div className="gantt-timeline-scale gantt-timeline-scale-month">
+          <div className="gantt-timeline-scale gantt-timeline-scale-month" style={{ width: totalWidth }}>
             {topHeaderCells.map((cell, index) => (
               <div
-                key={index}
+                key={`top-${index}`}
                 className="gantt-timeline-cell"
-                style={{ width: cell.width, minWidth: cell.width }}
+                style={{
+                  width: cell.width,
+                  minWidth: cell.width,
+                  maxWidth: cell.width,
+                  borderRight: index === topHeaderCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
+                }}
               >
                 {cell.label}
               </div>
             ))}
           </div>
           {/* Level 2: 15-day range */}
-          <div className="gantt-timeline-scale gantt-timeline-scale-range">
+          <div className="gantt-timeline-scale gantt-timeline-scale-range" style={{ width: totalWidth }}>
             {middleHeaderCells.map((cell, index) => (
               <div
-                key={index}
+                key={`mid-${index}`}
                 className="gantt-timeline-cell"
-                style={{ width: cell.width, minWidth: cell.width }}
+                style={{
+                  width: cell.width,
+                  minWidth: cell.width,
+                  maxWidth: cell.width,
+                  borderRight: index === middleHeaderCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
+                }}
               >
                 {cell.label}
               </div>
             ))}
           </div>
           {/* Level 3: Individual Days */}
-          <div className="gantt-timeline-scale gantt-timeline-scale-day">
+          <div className="gantt-timeline-scale gantt-timeline-scale-day" style={{ width: totalWidth }}>
             {secondaryCells.map((cell, index) => {
               const isWeekendDay = config.weekends && isWeekend(cell.date);
               const isHolidayDay = config.holidays && isHoliday(cell.date, config.holidays);
 
               return (
                 <div
-                  key={index}
+                  key={`day-${index}`}
                   className={`gantt-timeline-cell ${isWeekendDay ? 'weekend' : ''} ${isHolidayDay ? 'holiday' : ''}`}
-                  style={{ width: columnWidth, minWidth: columnWidth }}
+                  style={{
+                    width: columnWidth,
+                    minWidth: columnWidth,
+                    maxWidth: columnWidth,
+                    borderRight: index === secondaryCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
+                  }}
                 >
                   {cell.label}
                 </div>
@@ -291,6 +316,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
               const position = getTaskPosition(task);
               const baseline = showBaselines ? baselines?.get(task.id) : undefined;
               const baselinePosition = baseline ? getBaselinePosition(baseline) : undefined;
+
 
               return (
                 <div

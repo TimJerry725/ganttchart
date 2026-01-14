@@ -15,7 +15,7 @@ export interface DragState {
 
 export const useDragDrop = (
   tasks: Task[],
-  onTaskUpdate?: (task: Task) => void,
+  onTaskUpdate?: (id: string, updates: Partial<Task>) => void,
   columnWidth: number = 60,
   unit: string = 'day',
   step: number = 1
@@ -111,7 +111,8 @@ export const useDragDrop = (
 
   const handleDragEnd = useCallback((updatedTask: Task | null) => {
     if (updatedTask && onTaskUpdate) {
-      onTaskUpdate(updatedTask);
+      const { id, ...updates } = updatedTask;
+      onTaskUpdate(id, updates);
     }
 
     setDragState({

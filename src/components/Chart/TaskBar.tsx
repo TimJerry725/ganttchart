@@ -62,7 +62,8 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     return {
       left: `${left}px`,
       width: `${Math.max(width, 0)}px`,
-      backgroundColor: task.color || (task.type === 'project' ? '#00bfa5' : '#3b82f6'),
+      // Color handled by CSS classes (.project, .milestone) or task.color override
+      backgroundColor: task.color || undefined,
     };
   };
 
@@ -77,25 +78,26 @@ export const TaskBar: React.FC<TaskBarProps> = ({
       )}
 
       {/* Progress bar */}
-      {!isSegment && (
+      {!isSegment && task.type !== 'milestone' && (
         <div
           className="gantt-task-progress"
           style={{ width: `${task.progress}%` }}
         />
       )}
 
-      {/* Task content */}
+      {/* Task content container */}
       <div className="gantt-task-content">
-        {task.type === 'milestone' ? (
-          <div className="gantt-milestone-marker" />
-        ) : (
-          !isSegment && <span className="gantt-task-text">{task.text}</span>
+        {!isSegment && task.type !== 'milestone' && (
+          <span className="gantt-task-text">{task.text}</span>
         )}
       </div>
 
-      {/* Milestone text (outside) */}
+      {/* Milestone rendering (Independent of content clipping) */}
       {task.type === 'milestone' && (
-        <span className="gantt-milestone-text">{task.text}</span>
+        <>
+          <div className="gantt-milestone-diamond" />
+          <span className="gantt-milestone-text">{task.text}</span>
+        </>
       )}
 
       {/* Resize handle - right */}

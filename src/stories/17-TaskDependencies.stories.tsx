@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Gantt } from '../components/Gantt/Gantt';
+import { Gantt } from '../components';
 import type { Task, Link } from '../components/types';
 
 const meta: Meta<typeof Gantt> = {

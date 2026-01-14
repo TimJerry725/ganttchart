@@ -9,6 +9,7 @@ import {
   faFlag,
   faFolder,
   faTasks,
+  faRotateLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import type { Task } from '../types';
 
@@ -23,6 +24,7 @@ interface ContextMenuProps {
   onConvertToMilestone: () => void;
   onConvertToTask: () => void;
   onConvertToProject: () => void;
+  onAutoSchedule?: () => void;
   onClose: () => void;
 }
 
@@ -37,6 +39,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onConvertToMilestone,
   onConvertToTask,
   onConvertToProject,
+  onAutoSchedule,
   onClose,
 }) => {
   if (!task) return null;
@@ -108,6 +111,15 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
           },
         },
       ],
+    },
+    {
+      key: 'auto-schedule',
+      label: 'Auto Schedule',
+      icon: <FontAwesomeIcon icon={faRotateLeft} />,
+      onClick: () => {
+        onAutoSchedule?.();
+        onClose();
+      },
     },
     {
       type: 'divider' as const,
