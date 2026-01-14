@@ -146,8 +146,8 @@ export const Gantt: React.FC<GanttProps> = ({
     scales: defaultScales,
     readonly: false,
     editable: true,
-    taskHeight: 32,
-    rowHeight: 48, // Matches --gantt-row-height CSS variable (48px)
+    taskHeight: 28,
+    rowHeight: 44, // Matches updated industrial standard
     scaleHeight: 28, // Matches --gantt-scale-height CSS variable
     columnWidth: 80,
     minColumnWidth: 60,

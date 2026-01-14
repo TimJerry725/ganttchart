@@ -111,8 +111,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     const getTaskPositionForLinks = (task: Task) => {
       const pos = getTaskPosition(task);
       const index = localTasks.findIndex(t => t.id === task.id);
-      const rowHeight = config.rowHeight || 48;
-      const taskHeight = 32;
+      const rowHeight = config.rowHeight || 44;
+      const taskHeight = 28;
       const topPadding = (rowHeight - taskHeight) / 2;
 
       return {
