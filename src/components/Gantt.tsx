@@ -372,6 +372,8 @@ export const Gantt: React.FC<GanttProps> = ({
           setZoomLevel={setZoomLevel}
           onBaselineToggle={toggleBaselines}
           showBaselines={showBaselines}
+          onUndo={undo}
+          onRedo={redo}
           onExport={(type) => {
             if (type === 'csv') ExportUtils.exportToCSV(tasks);
             if (type === 'excel') ExportUtils.exportToExcel(tasks);
