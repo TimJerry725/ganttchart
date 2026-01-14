@@ -8,11 +8,10 @@ import { Button } from 'antd';
 interface GridProps {
   tasks: Task[];
   columns: Column[];
-  rowHeight: number;
   selectedTask: string | null;
   onTaskClick: (taskId: string) => void;
   onTaskContextMenu?: (e: React.MouseEvent, taskId: string) => void;
-  onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
+
   onTaskUpdate?: (task: Task) => void;
   onTaskDragStart?: (taskId: string, clientX: number, clientY: number, type: 'reorder') => void;
   onAddTask?: (taskId?: string) => void;
@@ -22,7 +21,7 @@ interface GridProps {
 
 // Force rebuild
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
-  ({ tasks, columns, rowHeight, selectedTask, onTaskClick, onTaskContextMenu, onScroll, onTaskUpdate, onTaskDragStart, onAddTask, dropIndicator, reorderTask }, ref) => {
+  ({ tasks, columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, dropIndicator, reorderTask }, ref) => {
     const localRef = React.useRef<HTMLDivElement>(null);
 
     React.useImperativeHandle(ref, () => localRef.current!);
@@ -43,7 +42,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
         case 'text':
           const depth = calculateDepth(task);
           return (
-            <div className="gantt-grid-cell-text" style={{ paddingLeft: depth * 20 }}>
+            <div className="gantt-grid-cell-text" style={{ paddingLeft: depth * 14 }}>
               <div
                 className="gantt-row-drag-handle"
                 onMouseDown={(e) => {
@@ -101,7 +100,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
     };
 
     return (
-      <div className="gantt-grid" ref={localRef} onScroll={onScroll}>
+      <div className="gantt-grid" ref={localRef}>
         <div className="gantt-grid-header">
           {columns.map((column) => (
             <div
@@ -109,16 +108,23 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
               className="gantt-grid-header-cell"
               style={{
                 width: column.width,
-                textAlign: column.align || 'left',
+                justifyContent: column.align === 'center' ? 'center' : 'flex-start',
               }}
             >
               {column.name === 'add' ? (
                 <FontAwesomeIcon
                   icon={faPlus}
-                  style={{ fontSize: 12, color: '#adb5bd', cursor: 'pointer' }}
+                  style={{ fontSize: 12, color: '#64748b', cursor: 'pointer' }}
                   onClick={() => onAddTask?.()}
                 />
-              ) : column.label}
+              ) : (
+                <>
+                  {column.label}
+                  {column.name === 'start' && (
+                    <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: 8, fontSize: 10, color: '#64748b' }} />
+                  )}
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -126,34 +132,33 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
           {tasks.map((task) => {
             const isDragging = reorderTask?.id === task.id;
             const isDescendantDragging = reorderTask?.descendantIds.includes(task.id);
-            
+
             return (
               <div
                 key={task.id}
                 className={`gantt-grid-row ${selectedTask === task.id ? 'selected' : ''} ${isDragging ? 'dragging-row' : ''} ${isDescendantDragging ? 'descendant-dragging-row' : ''} ${dropIndicator?.taskId === task.id ? `drop-target-${dropIndicator.position}` : ''}`}
-                style={{ height: rowHeight }}
                 onClick={() => onTaskClick(task.id)}
                 onContextMenu={(e) => onTaskContextMenu?.(e, task.id)}
               >
-              {columns.map((column) => (
-                <div
-                  key={`${task.id}-${column.name}`}
-                  className="gantt-grid-cell"
-                  style={{
-                    width: column.width,
-                    textAlign: column.align || 'left',
-                  }}
-                >
-                  {getCellValue(task, column)}
-                </div>
-              ))}
-              {dropIndicator?.taskId === task.id && (
-                <div className={`gantt-drop-indicator ${dropIndicator.position}`} />
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {columns.map((column) => (
+                  <div
+                    key={`${task.id}-${column.name}`}
+                    className="gantt-grid-cell"
+                    style={{
+                      width: column.width,
+                      textAlign: column.align || 'left',
+                    }}
+                  >
+                    {getCellValue(task, column)}
+                  </div>
+                ))}
+                {dropIndicator?.taskId === task.id && (
+                  <div className={`gantt-drop-indicator ${dropIndicator.position}`} />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }

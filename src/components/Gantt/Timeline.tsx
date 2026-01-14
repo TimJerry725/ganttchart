@@ -16,7 +16,6 @@ interface TimelineProps {
   onTaskClick: (taskId: string) => void;
   onTaskDragStart: (taskId: string, clientX: number, clientY: number) => void;
   onTaskDragEnd: () => void;
-  onScroll: (e: React.UIEvent<HTMLDivElement>) => void;
   onTaskUpdate?: (task: Task) => void;
   zoomLevel: number;
   baselines?: Map<string, Baseline>;
@@ -33,7 +32,6 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     onTaskClick,
     onTaskDragStart,
     onTaskDragEnd,
-    onScroll,
     onTaskUpdate,
     zoomLevel,
     baselines,
@@ -113,7 +111,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     const getTaskPositionForLinks = (task: Task) => {
       const pos = getTaskPosition(task);
       const index = localTasks.findIndex(t => t.id === task.id);
-      const rowHeight = config.rowHeight || 44;
+      const rowHeight = config.rowHeight || 48;
       const taskHeight = 32;
       const topPadding = (rowHeight - taskHeight) / 2;
 
@@ -156,7 +154,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
       secondaryCells.forEach((cell) => {
         const month = cell.date.getMonth();
-        const label = formatDate(cell.date, 'MMM');
+        const label = formatDate(cell.date, 'MMMM YYYY');
 
         if (month !== currentMonth) {
           if (currentMonth !== -1) {
@@ -185,8 +183,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         const day = cell.date.getDate();
         const period = day <= 15 ? 0 : 1;
         const month = cell.date.getMonth();
-        const monthLabel = formatDate(cell.date, 'MMM');
-        const label = period === 0 ? `${monthLabel} 1 - 15` : `${monthLabel} 16 - ${new Date(cell.date.getFullYear(), cell.date.getMonth() + 1, 0).getDate()}`;
+        const monthLabel = formatDate(cell.date, 'MMMM');
+        const lastDay = new Date(cell.date.getFullYear(), cell.date.getMonth() + 1, 0).getDate();
+        const label = period === 0 ? `${monthLabel} 1 - 15` : `${monthLabel} 16 - ${lastDay}`;
 
         if (period !== currentPeriod || month !== currentMonth) {
           if (currentPeriod !== -1) {
@@ -212,9 +211,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       <div
         className="gantt-timeline-container"
         ref={ref}
-        onScroll={onScroll}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        style={{ width: totalWidth }}
       >
         <div className="gantt-timeline-header" style={{ width: totalWidth }}>
           {/* Level 1: Month/Year */}
@@ -260,7 +259,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
           </div>
         </div>
 
-        <div className="gantt-timeline-body" style={{ width: totalWidth, height: localTasks.length * (config.rowHeight || 44) }}>
+        <div className="gantt-timeline-body" style={{ width: totalWidth }}>
           {/* Grid lines */}
           <div className="gantt-timeline-grid">
             {secondaryCells.map((cell, index) => {
@@ -271,7 +270,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                 <div
                   key={index}
                   className={`gantt-timeline-grid-column ${isWeekendDay ? 'weekend' : ''} ${isHolidayDay ? 'holiday' : ''}`}
-                  style={{ minWidth: columnWidth }}
+                  style={{ width: columnWidth, minWidth: columnWidth }}
                 />
               );
             })}
@@ -288,7 +287,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
           {/* Task bars */}
           <div className="gantt-timeline-tasks" style={{ width: totalWidth }}>
-            {localTasks.map((task, index) => {
+            {localTasks.map((task) => {
               const position = getTaskPosition(task);
               const baseline = showBaselines ? baselines?.get(task.id) : undefined;
               const baselinePosition = baseline ? getBaselinePosition(baseline) : undefined;
@@ -297,11 +296,6 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                 <div
                   key={task.id}
                   className="gantt-timeline-row"
-                  style={{
-                    height: config.rowHeight,
-                    top: index * (config.rowHeight || 44),
-                    width: '100%'
-                  }}
                 >
                   {/* Baseline bar (shown below task bar) */}
                   {baseline && baselinePosition && task.type !== 'milestone' && (

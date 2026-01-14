@@ -77,9 +77,9 @@ interface GanttProps {
 }
 
 const defaultColumns: Column[] = [
-  { name: 'text', label: 'Task Name', width: 280, align: 'left', resize: true },
-  { name: 'start', label: 'Start Date', width: 100, align: 'center' },
-  { name: 'duration', label: 'Duration', width: 80, align: 'center' },
+  { name: 'text', label: 'Task name', width: 280, align: 'left', resize: true },
+  { name: 'start', label: 'Start date', width: 120, align: 'left' },
+  { name: 'duration', label: 'Duration', width: 80, align: 'left' },
   { name: 'add', label: '', width: 40, align: 'center' },
 ];
 
@@ -139,6 +139,7 @@ export const Gantt: React.FC<GanttProps> = ({
 
   const timelineRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const layoutRef = useRef<HTMLDivElement>(null);
 
   const ganttConfig: GanttConfig = {
     columns: defaultColumns,
@@ -146,8 +147,8 @@ export const Gantt: React.FC<GanttProps> = ({
     readonly: false,
     editable: true,
     taskHeight: 32,
-    rowHeight: 44,
-    scaleHeight: 40,
+    rowHeight: 48, // Matches --gantt-row-height CSS variable (48px)
+    scaleHeight: 28, // Matches --gantt-scale-height CSS variable
     columnWidth: 60,
     minColumnWidth: 40,
     autoSchedule: false,
@@ -223,19 +224,6 @@ export const Gantt: React.FC<GanttProps> = ({
   };
 
   const range = getTimelineRange();
-
-  // Sync scroll between grid and timeline
-  const handleGridScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (timelineRef.current) {
-      timelineRef.current.scrollTop = (e.target as HTMLDivElement).scrollTop;
-    }
-  };
-
-  const handleTimelineScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (gridContainerRef.current) {
-      gridContainerRef.current.scrollTop = (e.target as HTMLDivElement).scrollTop;
-    }
-  };
 
   const handleTaskClick = (taskId: string) => {
     setSelectedTask(taskId);
@@ -378,13 +366,13 @@ export const Gantt: React.FC<GanttProps> = ({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (reorderTask) {
-      const rowHeight = ganttConfig.rowHeight || 44;
+      const rowHeight = ganttConfig.rowHeight || 48;
       const gridBody = gridContainerRef.current?.querySelector('.gantt-grid-body');
-      if (!gridBody) return;
+      const layout = layoutRef.current;
+      if (!gridBody || !layout) return;
 
       const rect = gridBody.getBoundingClientRect();
-      const scrollOffset = (gridContainerRef.current as HTMLDivElement).scrollTop;
-      const relativeY = e.clientY - rect.top + scrollOffset;
+      const relativeY = e.clientY - rect.top;
       let index = Math.floor(relativeY / rowHeight);
       index = Math.max(0, Math.min(index, filteredTasks.length - 1));
 
@@ -695,6 +683,7 @@ export const Gantt: React.FC<GanttProps> = ({
         {/* Main Gantt Layout - Grid + Timeline */}
         <div
           className="gantt-layout"
+          ref={layoutRef}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
@@ -703,11 +692,9 @@ export const Gantt: React.FC<GanttProps> = ({
             ref={gridContainerRef}
             tasks={filteredTasks}
             columns={ganttConfig.columns || []}
-            rowHeight={ganttConfig.rowHeight || 44}
             selectedTask={selectedTask}
             onTaskClick={handleTaskClick}
             onTaskContextMenu={handleContextMenu}
-            onScroll={handleGridScroll}
             onTaskUpdate={handleUpdateTask}
             onTaskDragStart={handleTaskDragStart}
             onAddTask={() => setShowTaskCreator(true)}
@@ -726,7 +713,6 @@ export const Gantt: React.FC<GanttProps> = ({
             onTaskClick={handleTaskClick}
             onTaskDragStart={handleTaskDragStart}
             onTaskDragEnd={handleTaskDragEnd}
-            onScroll={handleTimelineScroll}
             onTaskUpdate={handleUpdateTask}
             zoomLevel={zoomLevel}
             baselines={baselines}
@@ -812,7 +798,7 @@ export const Gantt: React.FC<GanttProps> = ({
             className="gantt-grid-row ghost-row"
             style={{
               height: ganttConfig.rowHeight,
-              top: reorderTask.currentY - (ganttConfig.rowHeight || 44) / 2,
+              top: reorderTask.currentY - (ganttConfig.rowHeight || 48) / 2,
               left: gridContainerRef.current?.getBoundingClientRect().left,
               position: 'fixed',
               pointerEvents: 'none',
@@ -854,7 +840,7 @@ export const Gantt: React.FC<GanttProps> = ({
                           </span>
                         </div>
                       );
-                    case 'start': return formatDate(task.start, 'DD-MM-YYYY');
+                    case 'start': return formatDate(task.start, 'DD MMM YYYY');
                     case 'duration': return `${task.duration}`;
                     default: return (task as any)[column.name] || '';
                   }

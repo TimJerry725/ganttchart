@@ -49,44 +49,34 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
 
     const dx = tX - sX;
     const dy = tY - sY;
-    const gap = 20;
+    const minStep = 20;
 
-    // Build the path with boxy (orthogonal) lines
+    // Refined orthogonal routing
     if (link.type === 'e2s') {
-      // Finish to Start
-      if (dx > gap) {
-        // Target is to the right - orthogonal zig-zag
-        const mx = sX + gap / 2;
+      if (dx >= minStep) {
+        // Simple 3-segment orthogonal
+        const mx = sX + dx / 2;
         return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
       } else {
-        // Target is to the left - go around
-        const my = sY + (dy >= 0 ? 1 : -1) * Math.max(Math.abs(dy) / 2 + gap, gap);
-        return `M ${sX},${sY} L ${sX + gap / 2},${sY} L ${sX + gap / 2},${my} L ${tX - gap / 2},${my} L ${tX - gap / 2},${tY} L ${tX},${tY}`;
+        // Backward link - 5 segments
+        const step = minStep / 2;
+        const my = sY + dy / 2;
+        return `M ${sX},${sY} L ${sX + step},${sY} L ${sX + step},${my} L ${tX - step},${my} L ${tX - step},${tY} L ${tX},${tY}`;
       }
-    }
-
-    else if (link.type === 's2s') {
-      // Start to Start
-      const leftX = Math.min(sX, tX) - gap / 2;
-      return `M ${sX},${sY} L ${leftX},${sY} L ${leftX},${tY} L ${tX},${tY}`;
-    }
-
-    else if (link.type === 'e2e') {
-      // End to End
-      const rightX = Math.max(sX, tX) + gap / 2;
-      return `M ${sX},${sY} L ${rightX},${sY} L ${rightX},${tY} L ${tX},${tY}`;
-    }
-
-    else if (link.type === 's2e') {
-      // Start to Finish
-      if (dx < -gap) {
-        // Target is to the left - orthogonal zig-zag
-        const mx = sX - gap / 2;
+    } else if (link.type === 's2s') {
+      const mx = Math.min(sX, tX) - minStep / 2;
+      return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
+    } else if (link.type === 'e2e') {
+      const mx = Math.max(sX, tX) + minStep / 2;
+      return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
+    } else if (link.type === 's2e') {
+      if (dx <= -minStep) {
+        const mx = sX + dx / 2;
         return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
       } else {
-        // Target is to the right - go around
-        const leftX = sX - gap / 2;
-        return `M ${sX},${sY} L ${leftX},${sY} L ${leftX},${tY} L ${tX},${tY}`;
+        const step = minStep / 2;
+        const my = sY + dy / 2;
+        return `M ${sX},${sY} L ${sX - step},${sY} L ${sX - step},${my} L ${tX + step},${my} L ${tX + step},${tY} L ${tX},${tY}`;
       }
     }
 
@@ -99,7 +89,8 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
 
     const tPos = getTaskPosition(target);
     const cy = tPos.top + tPos.height / 2;
-    const size = 10;
+    const size = 12;
+    const width = 8;
 
     let x = 0;
     let pointRight = true;
@@ -115,9 +106,9 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
 
     // Create triangle
     if (pointRight) {
-      return `M ${x},${cy} L ${x - size},${cy - (size * 0.7)} L ${x - size},${cy + (size * 0.7)} Z`;
+      return `M ${x},${cy} L ${x - size},${cy - width / 2} L ${x - size},${cy + width / 2} Z`;
     } else {
-      return `M ${x},${cy} L ${x + size},${cy - (size * 0.7)} L ${x + size},${cy + (size * 0.7)} Z`;
+      return `M ${x},${cy} L ${x + size},${cy - width / 2} L ${x + size},${cy + width / 2} Z`;
     }
   };
 
@@ -137,7 +128,7 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
             <path
               d={pathD}
               fill="none"
-              strokeWidth="2.5"
+              strokeWidth="1.5"
               className="gantt-link-line"
             />
             <path

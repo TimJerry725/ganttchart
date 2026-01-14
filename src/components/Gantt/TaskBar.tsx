@@ -62,7 +62,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     return {
       left: `${left}px`,
       width: `${Math.max(width, 0)}px`,
-      backgroundColor: task.color || (task.type === 'project' ? '#7EE3C7' : '#ADCFFE'),
+      backgroundColor: task.color || (task.type === 'project' ? '#00bfa5' : '#3b82f6'),
     };
   };
 
