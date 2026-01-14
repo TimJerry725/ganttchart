@@ -77,9 +77,9 @@ interface GanttProps {
 }
 
 const defaultColumns: Column[] = [
-  { name: 'text', label: 'Task name', width: 300, align: 'left', resize: true },
-  { name: 'start', label: 'Start date', width: 120, align: 'left' },
-  { name: 'duration', label: 'Duration', width: 80, align: 'left' },
+  { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
+  { name: 'start', label: 'Start Date', width: 110, align: 'left' },
+  { name: 'duration', label: 'Duration', width: 100, align: 'center' },
   { name: 'add', label: '', width: 40, align: 'center' },
 ];
 
