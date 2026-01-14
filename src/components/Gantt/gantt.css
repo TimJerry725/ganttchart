@@ -208,6 +208,50 @@
   background-color: #f8f9fa;
 }
 
+.gantt-grid-row.dragging-row {
+  opacity: 0.4;
+  background-color: #f1f3f5;
+}
+
+.gantt-grid-row.ghost-row {
+  transition: none !important;
+}
+
+body.gantt-dragging {
+  user-select: none !important;
+  cursor: grabbing !important;
+}
+
+.gantt-drop-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #2196F3;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.gantt-drop-indicator.above {
+  top: -1px;
+}
+
+.gantt-drop-indicator.below {
+  bottom: -1px;
+}
+
+.gantt-drop-indicator.inside {
+  top: 0;
+  bottom: 0;
+  height: auto;
+  background-color: rgba(33, 150, 243, 0.1);
+  border: 2px solid #2196F3;
+}
+
+.gantt-grid-body {
+  position: relative;
+}
+
 .gantt-grid-row.selected {
   background-color: #f1f7ff;
 }
@@ -245,12 +289,16 @@
   line-height: 1;
   padding: 0 4px;
   user-select: none;
-  opacity: 0.5;
+  opacity: 0;
   transition: opacity 0.2s;
 }
 
 .gantt-grid-row:hover .gantt-row-drag-handle {
   opacity: 1;
+}
+
+.gantt-dragging .gantt-row-drag-handle {
+  cursor: grabbing !important;
 }
 
 .gantt-tree-icon {

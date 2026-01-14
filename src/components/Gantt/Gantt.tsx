@@ -120,8 +120,8 @@ export const Gantt: React.FC<GanttProps> = ({
   const [showDependencyEditor, setShowDependencyEditor] = useState(false);
   const [dependencyEditTask, setDependencyEditTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
-  const [reorderTask, setReorderTask] = useState<{ id: string; index: number } | null>(null);
-  const [dropTarget, setDropTarget] = useState<{ id: string; position: 'before' | 'after' | 'inside' } | null>(null);
+  const [reorderTask, setReorderTask] = useState<{ id: string; initialIndex: number; currentY: number } | null>(null);
+  const [dropIndicator, setDropIndicator] = useState<{ taskId: string; position: 'above' | 'below' | 'inside' } | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [showCriticalPath, setShowCriticalPath] = useState(false);
@@ -277,25 +277,25 @@ export const Gantt: React.FC<GanttProps> = ({
     }
   };
 
-  const handleTaskDragStart = (taskId: string, _clientX: number, _clientY: number, type?: 'reorder') => {
+  const handleTaskDragStart = (taskId: string, _clientX: number, clientY: number, type?: 'reorder') => {
     if (ganttConfig.readonly) return;
 
     if (type === 'reorder') {
-      const index = tasks.findIndex(t => t.id === taskId);
-      setReorderTask({ id: taskId, index });
-      // Add global listeners for smooth reordering during drag
-      document.body.style.cursor = 'grabbing';
+      const index = filteredTasks.findIndex(t => t.id === taskId);
+      setReorderTask({ id: taskId, initialIndex: index, currentY: clientY });
+      document.body.classList.add('gantt-dragging');
     } else {
       setDraggedTask(taskId);
     }
   };
 
   const handleTaskDragEnd = () => {
-    if (reorderTask && dropTarget) {
+    if (reorderTask && dropIndicator) {
       const sourceTask = tasks.find(t => t.id === reorderTask.id);
-      const targetTask = tasks.find(t => t.id === dropTarget.id);
+      const targetTask = tasks.find(t => t.id === dropIndicator.taskId);
 
       if (sourceTask && targetTask && sourceTask.id !== targetTask.id) {
+        // Move source task and its descendants
         const getDescendantIds = (parentId: string, allTasks: Task[]): string[] => {
           let ids: string[] = [];
           const children = allTasks.filter(t => t.parent === parentId);
@@ -311,10 +311,10 @@ export const Gantt: React.FC<GanttProps> = ({
 
         if (!groupToMoveIds.includes(targetTask.id)) {
           const newTasks = [...tasks];
-
-          // Determine new parent
+          
+          // Determine new parent and insert position
           let newParentId: string | undefined = undefined;
-          if (dropTarget.position === 'inside') {
+          if (dropIndicator.position === 'inside') {
             newParentId = targetTask.id;
           } else {
             newParentId = targetTask.parent;
@@ -326,93 +326,61 @@ export const Gantt: React.FC<GanttProps> = ({
             newTasks[sourceIdxInFull] = { ...newTasks[sourceIdxInFull], parent: newParentId };
           }
 
-          // Extract group and insert at new position
+          // Extract group
           const currentGroupTasks = newTasks.filter(t => groupToMoveIds.includes(t.id));
-          const otherTasks = newTasks.filter(t => !groupToMoveIds.includes(t.id));
+          const remainingTasks = newTasks.filter(t => !groupToMoveIds.includes(t.id));
 
-          let insertIdx = otherTasks.findIndex(t => t.id === targetTask.id);
-          if (dropTarget.position === 'after' || dropTarget.position === 'inside') {
+          let insertIdx = remainingTasks.findIndex(t => t.id === targetTask.id);
+          if (dropIndicator.position === 'below' || dropIndicator.position === 'inside') {
             insertIdx++;
           }
 
-          otherTasks.splice(insertIdx, 0, ...currentGroupTasks);
-          setTasks(otherTasks);
+          remainingTasks.splice(insertIdx, 0, ...currentGroupTasks);
+          setTasks(remainingTasks);
         }
       }
     }
     setDraggedTask(null);
     setReorderTask(null);
-    setDropTarget(null);
-    document.body.style.cursor = '';
+    setDropIndicator(null);
+    document.body.classList.remove('gantt-dragging');
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (reorderTask) {
       const rowHeight = ganttConfig.rowHeight || 44;
-      const gridBody = gridRef.current;
+      const gridBody = gridRef.current?.querySelector('.gantt-grid-body');
       if (!gridBody) return;
 
       const rect = gridBody.getBoundingClientRect();
-      const relativeY = e.clientY - rect.top + gridBody.scrollTop;
-      let newIndex = Math.floor(relativeY / rowHeight);
-      newIndex = Math.max(0, Math.min(newIndex, filteredTasks.length - 1));
+      const scrollOffset = (gridRef.current as HTMLDivElement).scrollTop;
+      const relativeY = e.clientY - rect.top + scrollOffset;
+      let index = Math.floor(relativeY / rowHeight);
+      index = Math.max(0, Math.min(index, filteredTasks.length - 1));
+      
+      const taskAtPointer = filteredTasks[index];
 
-      if (newIndex !== reorderTask.index) {
-        const sourceTask = filteredTasks[reorderTask.index];
-        const targetTask = filteredTasks[newIndex];
+      if (taskAtPointer) {
+        const taskRectY = index * rowHeight;
+        const offsetInRow = relativeY - taskRectY;
+        
+        let position: 'above' | 'below' | 'inside' = 'above';
+        if (taskAtPointer.type === 'project') {
+          if (offsetInRow < rowHeight * 0.3) position = 'above';
+          else if (offsetInRow > rowHeight * 0.7) position = 'below';
+          else position = 'inside';
+        } else {
+          position = offsetInRow < rowHeight / 2 ? 'above' : 'below';
+        }
 
-        if (sourceTask && targetTask) {
-          const getDescendantIds = (parentId: string, allTasks: Task[]): string[] => {
-            let ids: string[] = [];
-            const children = allTasks.filter(t => t.parent === parentId);
-            children.forEach(child => {
-              ids.push(child.id);
-              ids = [...ids, ...getDescendantIds(child.id, allTasks)];
-            });
-            return ids;
-          };
-
-          const descendantIds = getDescendantIds(sourceTask.id, tasks);
-          const groupToMove = [sourceTask.id, ...descendantIds];
-
-          // Check if target is part of the dragged group to avoid self-nesting/loops
-          if (groupToMove.includes(targetTask.id)) return;
-
-          // Smart reparenting based on drop position
-          let newParentId: string | undefined = undefined;
-
-          // Determine the task above the new position in filtered tasks
-          const aboveIdx = newIndex;
-          const aboveTask = filteredTasks[newIndex > reorderTask.index ? aboveIdx : aboveIdx - 1];
-
-          if (aboveTask) {
-            if (aboveTask.type === 'project' && aboveTask.open) {
-              newParentId = aboveTask.id;
-            } else {
-              newParentId = aboveTask.parent;
-            }
-          }
-
-          const newTasks = [...tasks];
-
-          // Update parent of the root task being moved
-          const sourceIdx = newTasks.findIndex(t => t.id === sourceTask.id);
-          if (sourceIdx !== -1) {
-            newTasks[sourceIdx] = { ...newTasks[sourceIdx], parent: newParentId };
-          }
-
-          // Extract group and remaining tasks
-          const tasksToMove = newTasks.filter(t => groupToMove.includes(t.id));
-          const remainingTasks = newTasks.filter(t => !groupToMove.includes(t.id));
-
-          const actualTargetTaskIndex = remainingTasks.findIndex(t => t.id === targetTask.id);
-          const insertAt = newIndex > reorderTask.index ? actualTargetTaskIndex + 1 : actualTargetTaskIndex;
-
-          remainingTasks.splice(insertAt, 0, ...tasksToMove);
-          setTasks(remainingTasks);
-          setReorderTask({ id: reorderTask.id, index: newIndex });
+        if (taskAtPointer.id !== reorderTask.id) {
+          setDropIndicator({ taskId: taskAtPointer.id, position });
+        } else {
+          setDropIndicator(null);
         }
       }
+      
+      setReorderTask(prev => prev ? { ...prev, currentY: e.clientY } : null);
     }
   };
 
@@ -713,6 +681,8 @@ export const Gantt: React.FC<GanttProps> = ({
             onTaskUpdate={handleUpdateTask}
             onTaskDragStart={handleTaskDragStart}
             onAddTask={() => setShowTaskCreator(true)}
+            dropIndicator={dropIndicator}
+            reorderTask={reorderTask}
           />
           <Timeline
             ref={timelineRef}
