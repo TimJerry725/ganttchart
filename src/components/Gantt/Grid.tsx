@@ -121,7 +121,7 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                 <>
                   {column.label}
                   {column.name === 'start' && (
-                    <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: 8, fontSize: 10, color: '#64748b' }} />
+                    <FontAwesomeIcon icon={faChevronUp} style={{ marginLeft: 8, fontSize: 10, color: '#64748b' }} />
                   )}
                 </>
               )}

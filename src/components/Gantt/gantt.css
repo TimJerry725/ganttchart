@@ -94,8 +94,9 @@
   flex: 1;
   overflow: hidden;
   background-color: #ffffff;
-  border: 1px solid #dfe3e6;
+  border: 1px solid #e5e7eb;
   margin: 0;
+  border-radius: 4px;
 }
 
 .gantt-container.theme-dark {
@@ -181,7 +182,7 @@
   width: 500px;
   min-width: 500px;
   max-width: 500px;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid #e5e7eb;
   background-color: #ffffff;
   flex-shrink: 0;
   position: sticky;
@@ -204,7 +205,7 @@
   z-index: 30;
   height: var(--gantt-header-height);
   display: flex;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e5e7eb;
   background-color: #ffffff;
   box-shadow: none;
 }
@@ -216,13 +217,13 @@
 
 .gantt-grid-header-cell {
   height: 100%;
-  padding: 0 12px;
-  font-weight: 400;
-  font-size: 13px;
+  padding: 0 16px;
+  font-weight: 600;
+  font-size: 14px;
   font-family: var(--font-body);
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid #e5e7eb;
   background-color: #ffffff;
-  color: #6b7280;
+  color: #374151;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -246,7 +247,7 @@
 
 .gantt-grid-row {
   display: flex;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid #e5e7eb;
   cursor: pointer;
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: #ffffff;
@@ -335,9 +336,9 @@ body.gantt-dragging {
 }
 
 .gantt-grid-cell {
-  padding: 0 12px;
+  padding: 0 16px;
   font-size: 13px;
-  border-right: 1px solid #f5f5f5;
+  border-right: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -451,14 +452,14 @@ body.gantt-dragging {
   top: 0;
   z-index: 20;
   background-color: #ffffff;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e5e7eb;
   height: var(--gantt-header-height);
   box-shadow: none;
 }
 
 .gantt-timeline-scale {
   display: flex;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e5e7eb;
   align-items: center;
   min-height: var(--gantt-scale-height);
 }
@@ -471,13 +472,13 @@ body.gantt-dragging {
 .gantt-timeline-scale-month {
   height: var(--gantt-scale-height);
   background-color: #ffffff;
-  font-weight: 400;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e5e7eb;
   font-size: 13px;
-  color: #6b7280;
+  color: #374151;
   text-transform: none;
   font-family: var(--font-body);
 }
@@ -492,12 +493,12 @@ body.gantt-dragging {
   height: var(--gantt-scale-height);
   background-color: #fafafa;
   font-size: 11px;
-  font-weight: 400;
-  color: #9ca3af;
+  font-weight: 500;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #e5e7eb;
   text-transform: none;
   letter-spacing: 0;
   font-family: var(--font-body);
@@ -517,7 +518,7 @@ body.gantt-dragging {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  color: #9ca3af;
+  color: #6b7280;
   font-weight: 400;
   font-family: var(--font-body);
 }
@@ -533,11 +534,11 @@ body.gantt-dragging {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-right: 1px solid #f5f5f5;
-  font-size: 12px;
+  border-right: 1px solid #e5e7eb;
+  font-size: 13px;
   white-space: nowrap;
   padding: 0;
-  color: inherit;
+  color: #374151;
   font-family: var(--font-body);
   min-width: 0;
 }
@@ -580,7 +581,7 @@ body.gantt-dragging {
 
 .gantt-timeline-grid-column {
   flex-shrink: 0;
-  border-right: 1px solid #f5f5f5;
+  border-right: 1px solid #e5e7eb;
 }
 
 .theme-dark .gantt-timeline-grid-column {
@@ -668,7 +669,7 @@ body.gantt-dragging {
 .gantt-timeline-row {
   position: relative;
   width: 100%;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid #e5e7eb;
   height: var(--gantt-row-height);
   min-height: var(--gantt-row-height);
   max-height: var(--gantt-row-height);

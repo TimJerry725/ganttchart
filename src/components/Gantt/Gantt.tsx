@@ -77,9 +77,9 @@ interface GanttProps {
 }
 
 const defaultColumns: Column[] = [
-  { name: 'text', label: 'Task Name', width: 250, align: 'left', resize: true },
-  { name: 'start', label: 'Start Date', width: 110, align: 'left' },
-  { name: 'duration', label: 'Duration', width: 100, align: 'center' },
+  { name: 'text', label: 'Task Name', width: 300, align: 'left', resize: true },
+  { name: 'start', label: 'Start Date', width: 120, align: 'left' },
+  { name: 'duration', label: 'Duration', width: 100, align: 'left' },
   { name: 'add', label: '', width: 40, align: 'center' },
 ];
 
@@ -149,8 +149,8 @@ export const Gantt: React.FC<GanttProps> = ({
     taskHeight: 32,
     rowHeight: 48, // Matches --gantt-row-height CSS variable (48px)
     scaleHeight: 28, // Matches --gantt-scale-height CSS variable
-    columnWidth: 60,
-    minColumnWidth: 40,
+    columnWidth: 80,
+    minColumnWidth: 60,
     autoSchedule: false,
     criticalPath: false,
     baselines: showBaselines,
