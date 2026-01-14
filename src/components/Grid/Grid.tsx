@@ -52,15 +52,16 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
               >
                 <FontAwesomeIcon icon={faGripVertical} />
               </div>
-              {task.type === 'project' && (
+              {task.type === 'project' ? (
                 <span className="gantt-tree-icon" onClick={(e) => {
                   e.stopPropagation();
                   onTaskUpdate?.({ ...task, open: !task.open });
                 }}>
                   <FontAwesomeIcon icon={task.open ? faChevronDown : faChevronRight} />
                 </span>
+              ) : (
+                <span style={{ width: 16, display: 'inline-block' }} />
               )}
-              {task.type !== 'project' && <span style={{ width: 16, display: 'inline-block' }} />}
               <span className="gantt-task-name-text">{task.text}</span>
             </div>
           );

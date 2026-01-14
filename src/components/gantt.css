@@ -125,12 +125,12 @@
   min-width: 560px;
   max-width: 560px;
   border-right: var(--wx-gantt-border);
-  background-color: var(--wx-gantt-background);
+  background-color: #ffffff;
   flex-shrink: 0;
   position: sticky;
   left: 0;
-  z-index: 40;
-  box-shadow: none;
+  z-index: 100 !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
   height: 100%;
   align-self: flex-start;
 }
@@ -144,11 +144,11 @@
 .gantt-grid-header {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 110 !important;
   height: var(--gantt-header-height);
   display: flex;
   border-bottom: var(--wx-gantt-border);
-  background-color: var(--wx-gantt-background);
+  background-color: #ffffff;
   box-shadow: none;
 }
 
@@ -308,7 +308,7 @@ body.gantt-dragging {
 .gantt-grid-cell-text {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   white-space: nowrap;
   overflow: hidden;
   width: 100%;
@@ -492,10 +492,12 @@ body.gantt-dragging {
   border-right: var(--wx-gantt-border);
   font-size: 13px;
   white-space: nowrap;
-  padding: 0;
+  padding: 0 4px;
   color: var(--wx-gantt-font-color);
   font-family: var(--font-body);
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theme-dark .gantt-timeline-cell {
