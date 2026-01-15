@@ -1,5 +1,5 @@
 :root {
-  /* SVAR Willow Theme Foundations */
+  /* Iris Willow Theme Foundations */
   --wx-gantt-primary: #37a9ef;
   --wx-gantt-primary-selected: #d5eaf7;
   --wx-gantt-success: #77d257;
@@ -13,7 +13,7 @@
   --gantt-row-height: 44px;
   --gantt-scale-height: 28px;
 
-  /* Authentic SVAR Gantt Tokens */
+  /* Authentic Iris Gantt Tokens */
   --wx-gantt-border: 1px solid #e6e6e6;
   --wx-gantt-border-color: #e6e6e6;
   --wx-gantt-background: #ffffff;
@@ -1694,7 +1694,7 @@ h6,
   font-family: var(--font-body);
 }
 
-/* Context Menu - SVAR Style */
+/* Context Menu - Iris Style */
 .gantt-context-menu-overlay {
   position: fixed;
   top: 0;

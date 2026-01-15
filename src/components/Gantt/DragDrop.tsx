@@ -70,7 +70,7 @@ export const useDragDrop = (
     if (!task) return null;
 
     // Use stepsMoved but allow smooth rendering if needed
-    // SVAR behavior: real-time update with snapping
+    // Iris behavior: real-time update with snapping
     const stepsMoved = Math.round(deltaX / columnWidth);
 
     let newStart = new Date(dragState.initialStart);

@@ -1,6 +1,6 @@
-# SVAR Gantt Chart Replicate - Feature Documentation
+# Iris Gantt Replicate - Feature Documentation
 
-This is a comprehensive, unified Gantt chart component built with React and TypeScript, replicating all features of SVAR Gantt Chart (Free + PRO) in a single component.
+This is a comprehensive, unified Gantt chart component built with React and TypeScript, replicating all features of Iris Gantt (Free + PRO) in a single component.
 
 ## ✅ Implemented Features
 
@@ -329,11 +329,11 @@ This Gantt chart now includes ALL planned features from both FREE and PRO editio
 
 MIT - Free for commercial and personal use
 
-## 🤝 Comparison with SVAR Gantt
+## 🤝 Comparison with Iris Gantt
 
 ### ✅ ALL Features Included (Free + PRO)
 
-Our unified Gantt component includes **ALL** features from both SVAR Free and PRO editions:
+Our unified Gantt component includes **ALL** features from both Iris Free and PRO editions:
 
 **Free Features (Complete)**
 ✅ Task management (create, edit, delete)
@@ -361,4 +361,4 @@ Our unified Gantt component includes **ALL** features from both SVAR Free and PR
 ✅ Task creation UI (modal)
 ✅ Task editing UI (modal)
 
-**🎉 This is a complete, production-ready implementation matching and exceeding SVAR Gantt!**
+**🎉 This is a complete, production-ready implementation matching and exceeding Iris Gantt!**

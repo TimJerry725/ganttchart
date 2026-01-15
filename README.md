@@ -1,6 +1,6 @@
-# SVAR Gantt Chart - Complete React Implementation
+# Iris Gantt - Complete React Implementation
 
-A comprehensive, production-ready Gantt chart component built with React and TypeScript, featuring all FREE and PRO capabilities from SVAR Gantt in a single, unified component.
+A comprehensive, production-ready Gantt chart component built with React and TypeScript, featuring all FREE and PRO capabilities from Iris Gantt in a single, unified component.
 
 ![Gantt Chart Demo](https://img.shields.io/badge/React-19.2.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
@@ -241,11 +241,11 @@ Custom colors can be applied per task:
 - **JSON** - Complete project data (can be imported)
 - **PDF** - Text report (can be enhanced with jsPDF)
 
-## 🤝 Comparison with SVAR Gantt
+## 🤝 Comparison with Iris Gantt
 
-This implementation provides **ALL** features from both SVAR Free and PRO editions in a single component:
+This implementation provides **ALL** features from both Iris Free and PRO editions in a single component:
 
-| Feature | SVAR Free | SVAR PRO | This Implementation |
+| Feature | Iris Free | Iris PRO | This Implementation |
 |---------|-----------|----------|---------------------|
 | Task Management | ✅ | ✅ | ✅ |
 | Dependencies | ✅ | ✅ | ✅ |
@@ -265,7 +265,7 @@ MIT - Free for commercial and personal use
 
 ## 🙏 Acknowledgments
 
-- Inspired by [SVAR Gantt Chart](https://svar.dev/demos/react/gantt/)
+- Inspired by [Iris Gantt](https://svar.dev/demos/react/gantt/)
 - Built with React 19, TypeScript 5.9, and Storybook 10
 
 ## 🔗 Links
