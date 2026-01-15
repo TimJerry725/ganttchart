@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Task, Link } from '../types';
+import type { Task, Link } from './types';
 
 export interface HistoryState {
   tasks: Task[];

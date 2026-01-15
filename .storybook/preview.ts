@@ -11,7 +11,7 @@ import '@fontsource/ibm-plex-sans/400.css';
 import '@fontsource/ibm-plex-sans/600.css';
 
 // Custom Gantt styles
-import '../src/components/gantt.css';
+import '../src/components/Gantt/gantt.css';
 
 const preview: Preview = {
   parameters: {

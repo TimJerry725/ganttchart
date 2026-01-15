@@ -8,7 +8,7 @@
  * import { Gantt } from './components/Gantt';
  */
 
-import { Gantt } from '../Gantt';
+import { Gantt } from './Gantt';
 
 /**
  * @deprecated Use Gantt component instead. All features are now in the unified Gantt component.

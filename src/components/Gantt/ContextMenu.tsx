@@ -11,7 +11,7 @@ import {
   faTasks,
   faRotateLeft,
 } from '@fortawesome/free-solid-svg-icons';
-import type { Task } from '../types';
+import type { Task } from './types';
 
 interface ContextMenuProps {
   x: number;
