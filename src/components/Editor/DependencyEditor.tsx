@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Select, InputNumber, Button, List, Tag, Typography, Space, Divider, Alert, Card } from 'antd';
+import { Modal, Select, InputNumber, Button, List, Tag, Typography, Space, Divider, Alert, Card, Input } from 'antd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faLink,
@@ -10,6 +10,7 @@ import {
   faArrowUp
 } from '@fortawesome/free-solid-svg-icons';
 import type { Task, Link } from '../types';
+import { parseDependencyString, convertDependencyType, convertLagToDays } from '../utils/dependencyParser';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -34,6 +35,8 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
   const [selectedTask, setSelectedTask] = useState<string>('');
   const [dependencyType, setDependencyType] = useState<Link['type']>('e2s');
   const [lagTime, setLagTime] = useState<number>(0);
+  const [lagUnit, setLagUnit] = useState<'day' | 'hour' | 'week' | 'month'>('day');
+  const [quickAddValue, setQuickAddValue] = useState<string>('');
 
   // Get existing dependencies
   const existingDependencies = links.filter(link => link.target === task.id);
@@ -44,10 +47,37 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
 
   const handleAdd = () => {
     if (selectedTask) {
-      onAddDependency(selectedTask, task.id, dependencyType, lagTime);
+      const lagInDays = convertLagToDays(lagTime, lagUnit);
+      onAddDependency(selectedTask, task.id, dependencyType, lagInDays);
       setSelectedTask('');
       setLagTime(0);
+      setLagUnit('day');
     }
+  };
+
+  const handleQuickAdd = () => {
+    if (!quickAddValue.trim()) return;
+
+    const parsed = parseDependencyString(quickAddValue.trim());
+    if (!parsed) {
+      alert('Invalid format. Use: [TaskNumber][Type][+/-][Lag][Unit]\nExample: 3FS+10d');
+      return;
+    }
+
+    // Find task by number (assuming task text starts with a number or has an index)
+    const taskIndex = parsed.taskNumber - 1;
+    const sourceTask = allTasks[taskIndex];
+
+    if (!sourceTask) {
+      alert(`Task ${parsed.taskNumber} not found`);
+      return;
+    }
+
+    const linkType = convertDependencyType(parsed.type);
+    const lagInDays = convertLagToDays(parsed.lag, parsed.lagUnit);
+
+    onAddDependency(sourceTask.id, task.id, linkType, lagInDays);
+    setQuickAddValue('');
   };
 
   const getDependencyLabel = (type: Link['type']) => {
@@ -237,6 +267,36 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
         style={{ marginBottom: 24 }}
       >
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
+          {/* Quick Add Section */}
+          <div>
+            <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif', display: 'block', marginBottom: 8 }}>
+              Quick Add (Keyboard Shortcut):
+            </Text>
+            <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '12px', display: 'block', marginBottom: 8 }}>
+              Format: [TaskNumber][Type][+/-][Lag][Unit] • Example: 3FS+10d, 5SS-2w
+            </Text>
+            <Space.Compact style={{ width: '100%' }}>
+              <Input
+                placeholder="e.g., 3FS+10d"
+                value={quickAddValue}
+                onChange={(e) => setQuickAddValue(e.target.value)}
+                onPressEnter={handleQuickAdd}
+                size="large"
+                style={{ fontFamily: 'IBM Plex Mono, monospace' }}
+              />
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleQuickAdd}
+                style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+              >
+                Add
+              </Button>
+            </Space.Compact>
+          </div>
+
+          <Divider style={{ margin: '8px 0' }}>OR</Divider>
+
           <div>
             <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif', display: 'block', marginBottom: 8 }}>
               Select Task:
@@ -288,20 +348,33 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
           <div>
             <Space direction="vertical" size={4} style={{ width: '100%' }}>
               <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                Lead/Lag Time (days):
+                Lead/Lag Time:
               </Text>
               <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '12px' }}>
                 Negative = lead time (overlap), Positive = lag time (delay)
               </Text>
-              <InputNumber
-                value={lagTime}
-                onChange={(value) => setLagTime(value || 0)}
-                style={{ width: '100%', fontFamily: 'IBM Plex Sans, sans-serif' }}
-                size="large"
-                placeholder="0"
-                min={-365}
-                max={365}
-              />
+              <Space.Compact style={{ width: '100%' }}>
+                <InputNumber
+                  value={lagTime}
+                  onChange={(value) => setLagTime(value || 0)}
+                  style={{ flex: 1, fontFamily: 'IBM Plex Sans, sans-serif' }}
+                  size="large"
+                  placeholder="0"
+                  min={-365}
+                  max={365}
+                />
+                <Select
+                  value={lagUnit}
+                  onChange={setLagUnit}
+                  style={{ width: 120, fontFamily: 'IBM Plex Sans, sans-serif' }}
+                  size="large"
+                >
+                  <Option value="day">Days</Option>
+                  <Option value="hour">Hours</Option>
+                  <Option value="week">Weeks</Option>
+                  <Option value="month">Months</Option>
+                </Select>
+              </Space.Compact>
             </Space>
           </div>
 

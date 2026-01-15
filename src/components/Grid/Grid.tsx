@@ -1,9 +1,9 @@
 import React, { forwardRef } from 'react';
-import type { Task, Column } from '../types';
+import type { Task, Column, Link } from '../types';
 import { formatDate } from '../utils/dateUtils';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faChevronDown, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { Button } from 'antd';
+import { faChevronRight, faChevronDown, faGripVertical, faPlus, faLink } from '@fortawesome/free-solid-svg-icons';
+import { Button, Tooltip } from 'antd';
 
 interface GridProps {
   tasks: Task[];
@@ -15,13 +15,15 @@ interface GridProps {
   onTaskUpdate?: (task: Task) => void;
   onTaskDragStart?: (taskId: string, clientX: number, clientY: number, type: 'reorder') => void;
   onAddTask?: (taskId?: string) => void;
+  onDependencyClick?: (taskId: string) => void;
+  links?: Link[];
   dropIndicator?: { taskId: string; position: 'above' | 'below' | 'inside' } | null;
   reorderTask?: { id: string; initialIndex: number; currentY: number; descendantIds: string[] } | null;
 }
 
 // Force rebuild
 export const Grid = forwardRef<HTMLDivElement, GridProps>(
-  ({ tasks, columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, dropIndicator, reorderTask }, ref) => {
+  ({ tasks, columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, onDependencyClick, links = [], dropIndicator, reorderTask }, ref) => {
     const localRef = React.useRef<HTMLDivElement>(null);
 
     React.useImperativeHandle(ref, () => localRef.current!);
@@ -70,7 +72,40 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
         case 'end':
           return formatDate(task.end, 'DD-MM-YYYY');
         case 'duration':
-          return `${task.duration}`;
+          const hasDependencies = links.some(l => l.target === task.id || l.source === task.id);
+          return (
+            <Tooltip title="Click to manage dependencies">
+              <div
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDependencyClick?.(task.id);
+                }}
+                style={{
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '2px 4px',
+                  borderRadius: '3px',
+                  transition: 'background-color 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#f0f0f0';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <span>{task.duration}</span>
+                {hasDependencies && (
+                  <FontAwesomeIcon
+                    icon={faLink}
+                    style={{ fontSize: 10, color: '#1890ff', opacity: 0.7 }}
+                  />
+                )}
+              </div>
+            </Tooltip>
+          );
         case 'add':
           return (
             <Button

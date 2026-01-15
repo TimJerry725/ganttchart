@@ -28,6 +28,7 @@ export interface Link {
   target: string;
   type: 'e2s' | 's2s' | 'e2e' | 's2e'; // end-to-start, start-to-start, end-to-end, start-to-end
   lag?: number; // lag time in days (positive = delay, negative = lead time)
+  lagUnit?: 'day' | 'hour' | 'week' | 'month'; // unit for lag time (default: 'day')
 }
 
 export interface Scale {

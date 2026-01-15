@@ -394,6 +394,14 @@ export const Gantt: React.FC<GanttProps> = ({
             onTaskUpdate={handleUpdateTask}
             onTaskDragStart={handleTaskDragStart}
             onAddTask={() => setShowTaskCreator(true)}
+            onDependencyClick={(taskId) => {
+              const task = tasks.find(t => t.id === taskId);
+              if (task) {
+                setDependencyEditTask(task);
+                setShowDependencyEditor(true);
+              }
+            }}
+            links={links}
             dropIndicator={dropIndicator}
             reorderTask={reorderTask}
           />
