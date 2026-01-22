@@ -65,8 +65,8 @@
   "peerDependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",
-    "@fortawesome/react-fontawesome": "^3.1.0",
-    "antd": "^5.29.3",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "antd": "^5.19.2",
     "dayjs": "^1.11.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
