@@ -1,5 +1,4 @@
 import React, { forwardRef, useState, useCallback } from 'react';
-import type { CSSProperties } from 'react';
 import type { Task, Link, Scale, GanttConfig, Baseline } from './types';
 import { TaskBar } from './TaskBar';
 import { LinkRenderer } from './LinkRenderer';

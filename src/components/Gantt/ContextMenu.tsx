@@ -26,6 +26,7 @@ interface ContextMenuProps {
   onConvertToProject: () => void;
   onAutoSchedule?: () => void;
   onClose: () => void;
+  iconConfig?: Partial<import('./types').GanttIconConfig>;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -41,6 +42,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onConvertToProject,
   onAutoSchedule,
   onClose,
+  iconConfig: _iconConfig,
 }) => {
   if (!task) return null;
 

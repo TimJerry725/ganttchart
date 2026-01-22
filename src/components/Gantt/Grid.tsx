@@ -23,11 +23,12 @@ interface GridProps {
   allTasks?: Task[];
   dropIndicator?: { taskId: string; position: 'above' | 'below' | 'inside' } | null;
   reorderTask?: { id: string; initialIndex: number; currentY: number; descendantIds: string[] } | null;
+  iconConfig?: Partial<import('./types').GanttIconConfig>;
 }
 
 // Memoized Grid component for performance
 export const Grid = memo(forwardRef<HTMLDivElement, GridProps>(
-  ({ tasks, allTasks = [], columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, onAddDependency, links = [], dropIndicator, reorderTask }, ref) => {
+  ({ tasks, allTasks = [], columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, onAddDependency, links = [], dropIndicator, reorderTask, iconConfig: _iconConfig }, ref) => {
     const localRef = React.useRef<HTMLDivElement>(null);
 
     React.useImperativeHandle(ref, () => localRef.current!);

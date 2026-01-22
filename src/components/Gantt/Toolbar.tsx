@@ -33,7 +33,7 @@ interface ToolbarProps {
     onExport: (type: 'csv' | 'excel' | 'json' | 'pdf') => void;
     onFilterChange: (filters: FilterOptions) => void;
     owners: string[];
-    onAddTask?: () => void;
+    onAddTask?: (parentId?: string) => void;
     uiConfig: GanttUIConfig;
     iconConfig?: Partial<GanttIconConfig>;
 }
@@ -61,7 +61,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                             <Button
                                 type="primary"
                                 icon={renderIcon(iconConfig.addTask, faPlus)}
-                                onClick={onAddTask}
+                                onClick={() => onAddTask?.()}
                             >
                                 {uiConfig.addTaskButtonText || 'New Task'}
                             </Button>
