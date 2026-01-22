@@ -1,40 +1,57 @@
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+
 :root {
-  /* Iris Willow Theme Foundations */
+  /* Iris Willow Theme Foundations - Can be overridden by parent project */
   --wx-gantt-primary: #37a9ef;
   --wx-gantt-primary-selected: #d5eaf7;
   --wx-gantt-success: #77d257;
   --wx-gantt-warning: #fcba2e;
   --wx-gantt-danger: #fe6158;
-  --wx-gantt-font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  
+  /* Fonts - Inherit from parent if available, fallback to defaults */
+  --wx-gantt-font-family: inherit, "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --wx-gantt-font-mono: inherit, "IBM Plex Mono", monospace;
+  --wx-gantt-font-size: inherit;
+  --wx-gantt-font-weight: inherit;
+  --wx-gantt-line-height: inherit;
 
-  /* Layout & Spacing */
-  --gantt-header-height: 84px;
-  /* 28px * 3 levels */
-  --gantt-row-height: 44px;
-  --gantt-scale-height: 28px;
+  /* Layout & Spacing - Responsive units */
+  --gantt-header-height: clamp(60px, 8vh, 84px);
+  --gantt-row-height: clamp(48px, 5vh, 52px); /* Increased to 48px to ensure baseline bar is fully visible with space below: task bar (28px) + gap (4px) + baseline (6px) + space below (6px) + padding (4px) = 48px */
+  --gantt-scale-height: clamp(24px, 3vh, 28px);
+  --gantt-grid-width: clamp(280px, 30vw, 720px);
+  --gantt-container-height: 100%;
+  --gantt-container-min-height: 400px;
 
-  /* Authentic Iris Gantt Tokens */
-  --wx-gantt-border: 1px solid #e6e6e6;
+  /* Authentic Iris Gantt Tokens - Can be overridden */
+  --wx-gantt-border: 1px solid var(--wx-gantt-border-color, #e6e6e6);
   --wx-gantt-border-color: #e6e6e6;
-  --wx-gantt-background: #ffffff;
+  --wx-gantt-background: inherit;
   --wx-gantt-background-alt: #f2f3f7;
   --wx-gantt-background-hover: #eaedf5;
   --wx-gantt-select-color: #eaedf5;
 
   /* Gantt Task Specifics */
-  --wx-gantt-task-color: #37a9ef;
+  --wx-gantt-task-color: var(--wx-gantt-primary, #37a9ef);
   --wx-gantt-task-fill-color: rgba(0, 0, 0, 0.15);
-  /* Progress overlay */
   --wx-gantt-project-color: #81C784;
   --wx-gantt-milestone-color: #9c27b0;
   --wx-gantt-milestone-border-radius: 2px;
   --wx-gantt-bar-border-radius: 3px;
   --wx-gantt-bar-shadow: 0 1px 2px rgba(44, 47, 60, 0.06), 0 3px 10px rgba(44, 47, 60, 0.12);
 
-  /* Typography */
-  --wx-gantt-font-color: #2c2f3c;
+  /* Typography - Inherit from parent */
+  --wx-gantt-font-color: inherit;
   --wx-gantt-font-color-alt: #9fa1ae;
   --wx-gantt-icon-color: #9fa1ae;
+
+  /* Spacing - Responsive */
+  --gantt-spacing-xs: clamp(4px, 0.5vw, 8px);
+  --gantt-spacing-sm: clamp(8px, 1vw, 12px);
+  --gantt-spacing-md: clamp(12px, 1.5vw, 16px);
+  --gantt-spacing-lg: clamp(16px, 2vw, 24px);
 
   /* Legacy/Compatibility Fallbacks */
   --font-body: var(--wx-gantt-font-family);
@@ -43,13 +60,19 @@
 }
 
 
-/* Page Wrapper - Critical for scrolling and layout */
+/* Page Wrapper - Responsive and adaptable */
 .gantt-page-wrapper {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 40px);
-  /* Leave some space for storybook padding */
+  height: var(--gantt-container-height, 100%);
+  min-height: var(--gantt-container-min-height, 400px);
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* Inherit font from parent */
+  font-family: var(--wx-gantt-font-family);
+  font-size: var(--wx-gantt-font-size, 14px);
+  color: var(--wx-gantt-font-color, inherit);
 }
 
 .gantt-container {
@@ -59,12 +82,17 @@
   min-height: 0;
   min-width: 0;
   max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
   /* Critical: Prevent container from expanding beyond viewport */
   overflow: hidden;
-  background-color: var(--wx-gantt-background);
+  background-color: var(--wx-gantt-background, #ffffff);
   border: var(--wx-gantt-border);
   margin: 0;
   border-radius: var(--wx-gantt-bar-border-radius);
+  /* Inherit parent styles */
+  font-family: inherit;
+  color: inherit;
 }
 
 .gantt-container.theme-dark {
@@ -86,10 +114,14 @@
   overflow-y: auto;
   position: relative;
   background-color: #fafafa;
-  scroll-behavior: smooth;
+  /* Remove smooth scroll for better performance - can cause hanging */
+  /* scroll-behavior: smooth; */
   min-height: 0;
   min-width: 0;
   width: 100%;
+  /* Performance optimizations */
+  will-change: scroll-position;
+  transform: translateZ(0);
   /* Fill available space */
 }
 
@@ -117,15 +149,15 @@
   background-color: #1a1a1a;
 }
 
-/* Grid Styles - Exact Match to Image */
+/* Grid Styles - Responsive */
 .gantt-grid {
   display: flex;
   flex-direction: column;
-  width: 720px;
-  min-width: 720px;
-  max-width: 720px;
+  width: var(--gantt-grid-width, clamp(280px, 30vw, 720px));
+  min-width: clamp(650px, 30vw, 720px); /* Increased to show all columns: index(40) + name(250) + depends(120) + duration(110) + start(130) + add(50) = 700px */
+  max-width: var(--gantt-grid-width, clamp(280px, 30vw, 720px));
   border-right: var(--wx-gantt-border);
-  background-color: #ffffff;
+  background-color: var(--wx-gantt-background, #ffffff);
   flex-shrink: 0;
   position: sticky;
   left: 0;
@@ -133,6 +165,8 @@
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
   height: 100%;
   align-self: flex-start;
+  box-sizing: border-box;
+  overflow-x: auto; /* Allow horizontal scroll if needed on smaller screens */
 }
 
 .theme-dark .gantt-grid {
@@ -150,6 +184,8 @@
   border-bottom: var(--wx-gantt-border);
   background-color: #ffffff;
   box-shadow: none;
+  overflow-x: visible; /* Ensure header cells are visible */
+  min-width: 100%; /* Ensure header spans all columns */
 }
 
 .theme-dark .gantt-grid-header {
@@ -159,7 +195,7 @@
 
 .gantt-grid-header-cell {
   height: 100%;
-  padding: 0 16px;
+  padding: 0 12px;
   font-weight: 600;
   font-size: 14px;
   font-family: var(--font-body);
@@ -168,7 +204,7 @@
   /* Pure white per visual spec */
   color: var(--wx-gantt-font-color);
   white-space: nowrap;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to visible */
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
@@ -176,6 +212,7 @@
   flex-shrink: 0;
   text-transform: none;
   letter-spacing: 0;
+  min-width: fit-content; /* Ensure header text is visible */
 }
 
 .gantt-grid-header-cell:last-child {
@@ -190,6 +227,13 @@
 
 .gantt-grid-body {
   flex: 1;
+  overflow-y: auto;
+  overflow-x: auto; /* Changed to auto to allow horizontal scroll if columns don't fit */
+  /* Performance optimizations for smooth scrolling */
+  will-change: scroll-position;
+  transform: translateZ(0);
+  /* Use hardware acceleration */
+  -webkit-overflow-scrolling: touch;
 }
 
 .gantt-grid-row {
@@ -198,9 +242,13 @@
   cursor: pointer;
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: var(--wx-gantt-background);
-  height: var(--gantt-row-height);
-  min-height: var(--gantt-row-height);
-  max-height: var(--gantt-row-height);
+  /* Performance optimization */
+  contain: layout style paint;
+  height: var(--gantt-row-height, 48px);
+  min-height: var(--gantt-row-height, 48px);
+  max-height: var(--gantt-row-height, 48px);
+  min-width: 100%; /* Ensure row spans all columns */
+  width: 100%;
 }
 
 .gantt-grid-row:hover {
@@ -288,12 +336,13 @@ body.gantt-dragging {
   border-right: var(--wx-gantt-border);
   display: flex;
   align-items: center;
-  overflow: hidden;
+  overflow: visible; /* Changed from hidden to visible to show content */
   font-family: var(--font-body);
   color: var(--wx-gantt-font-color);
   white-space: nowrap;
   text-overflow: ellipsis;
   flex-shrink: 0;
+  min-width: 0; /* Allow shrinking but ensure visibility */
 }
 
 .gantt-grid-cell:last-child {
@@ -392,6 +441,7 @@ body.gantt-dragging {
   flex-shrink: 0;
   min-width: 0;
   overflow: visible;
+  position: relative;
 }
 
 .theme-dark .gantt-timeline-container {
@@ -524,6 +574,13 @@ body.gantt-dragging {
 .gantt-timeline-body {
   position: relative;
   min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Performance optimizations for smooth scrolling */
+  will-change: scroll-position;
+  transform: translateZ(0);
+  /* Use hardware acceleration */
+  -webkit-overflow-scrolling: touch;
 }
 
 .gantt-timeline-grid {
@@ -563,7 +620,7 @@ body.gantt-dragging {
 
 .gantt-timeline-tasks {
   position: relative;
-  z-index: 1;
+  z-index: 2; /* Above links */
   display: flex;
   flex-direction: column;
 }
@@ -576,7 +633,7 @@ body.gantt-dragging {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 1;
+  z-index: 5; /* Above grid but below task bars */
   overflow: visible;
 }
 
@@ -588,7 +645,7 @@ body.gantt-dragging {
 
 .gantt-link-line {
   transition: all 0.2s ease;
-  stroke: #cbd5e0;
+  stroke: #94a3b8; /* Darker gray for better visibility */
   stroke-width: 1.5;
 }
 
@@ -607,7 +664,8 @@ body.gantt-dragging {
 
 .gantt-link-arrow {
   transition: all 0.2s ease;
-  fill: #cbd5e0;
+  fill: #94a3b8; /* Darker gray for better visibility */
+  stroke: none;
 }
 
 .theme-dark .gantt-link-arrow {
@@ -627,10 +685,14 @@ body.gantt-dragging {
   position: relative;
   width: 100%;
   border-bottom: 1px solid #e5e7eb;
-  height: var(--gantt-row-height);
-  min-height: var(--gantt-row-height);
-  max-height: var(--gantt-row-height);
+  height: var(--gantt-row-height, 44px);
+  min-height: 44px; /* Minimum 44px to ensure baseline is visible: task bar (28px) + gap (4px) + baseline (6px) + padding (6px) = 44px */
+  /* Performance optimization */
+  contain: layout style paint;
+  max-height: var(--gantt-row-height, 44px);
   flex-shrink: 0;
+  /* Ensure baseline bar is visible */
+  overflow: visible;
 }
 
 .theme-dark .gantt-timeline-row {
@@ -1181,6 +1243,51 @@ body.gantt-dragging {
   background-color: rgba(255, 255, 255, 0.4);
 }
 
+/* Today and Project Start Lines - Clean thin lines matching reference image */
+.gantt-today-line {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  /* Clean thin vertical line - no shadow, no border, just pure color */
+  transition: opacity 0.2s ease;
+  /* Ensure line is crisp and aligned */
+  will-change: transform;
+}
+
+.gantt-today-line-label {
+  position: absolute;
+  white-space: nowrap;
+  z-index: 100;
+  /* Better shadow for depth */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  /* Smooth appearance */
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  /* Prevent label from being cut off */
+  overflow: visible;
+}
+
+.gantt-project-start-line {
+  position: absolute;
+  z-index: 6;
+  pointer-events: none;
+  /* Clean thin vertical line - no shadow, no border, just pure color */
+  transition: opacity 0.2s ease;
+  /* Ensure line is crisp and aligned */
+  will-change: transform;
+}
+
+.gantt-project-start-line-label {
+  position: absolute;
+  white-space: nowrap;
+  z-index: 100;
+  /* Better shadow for depth */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  /* Smooth appearance */
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  /* Prevent label from being cut off */
+  overflow: visible;
+}
+
 /* Baseline Styles */
 .gantt-baseline-container {
   position: relative;
@@ -1190,13 +1297,23 @@ body.gantt-dragging {
 
 .gantt-baseline-bar {
   position: absolute;
-  height: 8px;
+  height: 6px;
   background-color: #bdbdbd;
-  top: 50%;
-  transform: translateY(calc(-50% + 20px));
-  border-radius: 4px;
+  /* Position below task bar: 
+   * Task bar is 28px high, centered at 50%
+   * Task bar bottom edge is at: 50% + 14px
+   * Add 2px gap, baseline center at: 50% + 14px + 2px + 3px = 50% + 19px
+   * Then translateY(-50%) centers the 6px baseline bar
+   */
+  top: calc(50% + 19px);
+  transform: translateY(-50%);
+  border-radius: 3px;
   z-index: 0;
   pointer-events: none;
+  opacity: 0.7;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  /* Ensure baseline is always visible - adjust if row is smaller */
+  max-top: calc(100% - 4px); /* Keep at least 4px from bottom */
 }
 
 .gantt-variance-indicator {
@@ -1872,10 +1989,32 @@ h6,
   }
 }
 
-/* Mobile portrait (max-width: 480px) */
-@media (max-width: 480px) {
+/* Tablet (max-width: 1024px) */
+@media (max-width: 1024px) {
+  :root {
+    --gantt-grid-width: clamp(250px, 35vw, 600px);
+    --gantt-row-height: clamp(40px, 4.5vh, 44px);
+  }
+
+  .gantt-grid {
+    width: var(--gantt-grid-width);
+    min-width: var(--gantt-grid-width);
+    max-width: var(--gantt-grid-width);
+  }
+}
+
+/* Mobile landscape (max-width: 768px) */
+@media (max-width: 768px) {
+  :root {
+    --gantt-grid-width: 100%;
+    --gantt-header-height: clamp(50px, 6vh, 70px);
+    --gantt-row-height: clamp(36px, 4vh, 40px);
+    --gantt-scale-height: clamp(22px, 2.5vh, 26px);
+  }
+
   .gantt-page-wrapper {
-    height: 100vh;
+    height: auto;
+    min-height: var(--gantt-container-min-height, 400px);
     overflow: auto;
   }
 
@@ -2072,23 +2211,67 @@ h6,
   }
 }
 
-/* Ensure proper viewport handling */
+/* Ensure proper viewport handling - Responsive */
 .gantt-page-wrapper {
   position: relative;
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .gantt-container {
   max-width: 100%;
+  width: 100%;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .gantt-layout {
   max-width: 100%;
+  width: 100%;
   overflow-x: auto;
   overflow-y: auto;
+  box-sizing: border-box;
+  /* Smooth scrolling on mobile */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Inherit parent project styles where possible */
+.gantt-page-wrapper * {
+  box-sizing: border-box;
+}
+
+/* Allow parent to override colors */
+.gantt-container {
+  /* Use CSS variables that can be overridden */
+  background-color: var(--wx-gantt-background, var(--background, #ffffff));
+  color: var(--wx-gantt-font-color, var(--text-color, inherit));
+}
+
+/* Responsive font sizes */
+.gantt-page-title {
+  font-size: clamp(18px, 2.5vw, 24px);
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Responsive toolbar */
+.gantt-toolbar {
+  padding: var(--gantt-spacing-sm, 12px);
+  gap: var(--gantt-spacing-xs, 8px);
+  flex-wrap: wrap;
+}
+
+/* Responsive grid cells */
+.gantt-grid-cell {
+  padding: var(--gantt-spacing-xs, 8px) var(--gantt-spacing-sm, 12px);
+  font-size: clamp(12px, 1.5vw, 14px);
+}
+
+.gantt-grid-header-cell {
+  padding: var(--gantt-spacing-sm, 12px);
+  font-size: clamp(11px, 1.3vw, 13px);
 }
 
 /* Dependency Popover Styles */
@@ -2165,3 +2348,23 @@ h6,
   transform: none;
   box-shadow: none;
 }
+
+/* ============================================
+   PARENT PROJECT STYLE INTEGRATION
+   ============================================
+   
+   Override CSS variables in your project to match your design system:
+   
+   Example:
+   
+   .my-project .gantt-page-wrapper {
+     --wx-gantt-primary: #your-brand-color;
+     --wx-gantt-font-family: 'Your Font', sans-serif;
+     --wx-gantt-background: var(--your-bg-color);
+     --wx-gantt-font-color: var(--your-text-color);
+     --gantt-container-height: 600px;
+     --gantt-grid-width: 400px;
+   }
+   
+   All CSS variables can be overridden to match your project's theme.
+   ============================================ */

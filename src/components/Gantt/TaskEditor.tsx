@@ -1,4 +1,4 @@
-import type { Task } from './types';
+import type { Task, GanttUIConfig } from './types';
 import { Modal, Form, Input, DatePicker, Select, InputNumber, ColorPicker, Button } from 'antd';
 import dayjs from 'dayjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -13,9 +13,10 @@ interface TaskEditorProps {
   onUpdate: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onClose: () => void;
+  uiConfig?: Partial<GanttUIConfig>;
 }
 
-export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete, onClose }) => {
+export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete, onClose, uiConfig = {} }) => {
   const [form] = Form.useForm();
 
   const handleFinish = (values: any) => {
@@ -42,12 +43,12 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
 
   const showDeleteConfirm = () => {
     confirm({
-      title: `Are you sure you want to delete "${task.text}"?`,
+      title: uiConfig.deleteConfirmTitle ? `${uiConfig.deleteConfirmTitle}: "${task.text}"?` : `Are you sure you want to delete "${task.text}"?`,
       icon: <FontAwesomeIcon icon={faExclamationTriangle} style={{ color: '#faad14', marginRight: 8 }} />,
-      content: 'This action cannot be undone.',
-      okText: 'Yes, Delete',
+      content: uiConfig.deleteConfirmContent || 'This action cannot be undone.',
+      okText: uiConfig.deleteConfirmOkText || 'Yes, Delete',
       okType: 'danger',
-      cancelText: 'No',
+      cancelText: uiConfig.deleteConfirmCancelText || 'No',
       onOk() {
         onDelete(task.id);
         onClose();
@@ -57,18 +58,18 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
 
   return (
     <Modal
-      title="Edit Task"
+      title={uiConfig.taskEditorTitle || "Edit Task"}
       open={true}
       onCancel={onClose}
       footer={[
         <Button key="delete" danger onClick={showDeleteConfirm} style={{ float: 'left' }}>
-          Delete
+          {uiConfig.taskEditorDeleteText || 'Delete'}
         </Button>,
         <Button key="cancel" onClick={onClose}>
-          Cancel
+          {uiConfig.taskEditorCancelText || 'Cancel'}
         </Button>,
         <Button key="submit" type="primary" onClick={() => form.submit()}>
-          Save Changes
+          {uiConfig.taskEditorSaveText || 'Save Changes'}
         </Button>,
       ]}
       width={600}
@@ -92,56 +93,56 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
       >
         <Form.Item
           name="text"
-          label="Task Name"
-          rules={[{ required: true, message: 'Please enter task name' }]}
+          label={uiConfig.taskNameLabel || "Task Name"}
+          rules={[{ required: true, message: uiConfig.taskNameRequired || 'Please enter task name' }]}
         >
-          <Input placeholder="Enter task name" />
+          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter task name"} />
         </Form.Item>
 
         <div style={{ display: 'flex', gap: 16 }}>
-          <Form.Item name="type" label="Type" style={{ flex: 1 }}>
+          <Form.Item name="type" label={uiConfig.typeLabel || "Type"} style={{ flex: 1 }}>
             <Select>
-              <Option value="task">Task</Option>
-              <Option value="milestone">Milestone</Option>
-              <Option value="project">Project</Option>
+              <Option value="task">{uiConfig.taskTypeOptions?.task || 'Task'}</Option>
+              <Option value="milestone">{uiConfig.taskTypeOptions?.milestone || 'Milestone'}</Option>
+              <Option value="project">{uiConfig.taskTypeOptions?.project || 'Project'}</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="priority" label="Priority" style={{ flex: 1 }}>
+          <Form.Item name="priority" label={uiConfig.priorityLabel || "Priority"} style={{ flex: 1 }}>
             <Select>
-              <Option value="low">Low</Option>
-              <Option value="medium">Medium</Option>
-              <Option value="high">High</Option>
+              <Option value="low">{uiConfig.priorityOptions?.low || 'Low'}</Option>
+              <Option value="medium">{uiConfig.priorityOptions?.medium || 'Medium'}</Option>
+              <Option value="high">{uiConfig.priorityOptions?.high || 'High'}</Option>
             </Select>
           </Form.Item>
         </div>
 
         <div style={{ display: 'flex', gap: 16 }}>
-          <Form.Item name="start" label="Start Date" style={{ flex: 1 }}>
+          <Form.Item name="start" label={uiConfig.startDateLabel || "Start Date"} style={{ flex: 1 }}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="duration" label="Duration (days)" style={{ flex: 1 }}>
+          <Form.Item name="duration" label={uiConfig.durationLabel || "Duration (days)"} style={{ flex: 1 }}>
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
         </div>
 
         <div style={{ display: 'flex', gap: 16 }}>
-          <Form.Item name="color" label="Color" style={{ flex: 1 }}>
+          <Form.Item name="color" label={uiConfig.colorLabel || "Color"} style={{ flex: 1 }}>
             <ColorPicker showText />
           </Form.Item>
 
-          <Form.Item name="progress" label="Progress (%)" style={{ flex: 1 }}>
+          <Form.Item name="progress" label={uiConfig.progressLabel || "Progress (%)"} style={{ flex: 1 }}>
             <InputNumber min={0} max={100} style={{ width: '100%' }} />
           </Form.Item>
         </div>
 
-        <Form.Item name="owner" label="Owner">
-          <Input placeholder="Assign to..." />
+        <Form.Item name="owner" label={uiConfig.ownerLabel || "Owner"}>
+          <Input placeholder={uiConfig.ownerPlaceholder || "Assign to..."} />
         </Form.Item>
 
-        <Form.Item name="details" label="Details">
-          <TextArea placeholder="Add task description..." rows={3} />
+        <Form.Item name="details" label={uiConfig.detailsLabel || "Details"}>
+          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add task description..."} rows={3} />
         </Form.Item>
       </Form>
     </Modal>

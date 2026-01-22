@@ -6,7 +6,7 @@ import { TaskCreator } from './TaskCreator';
 import { TaskEditor } from './TaskEditor';
 import { DependencyEditor } from './DependencyEditor';
 import { ContextMenu } from './ContextMenu';
-import type { GanttConfig, DropIndicator, ZoomLevel, Baseline, Column, Scale } from './types';
+import type { GanttConfig, DropIndicator, ZoomLevel, Baseline, Column, Scale, GanttUIConfig, GanttStyleConfig, GanttIconConfig } from './types';
 import { formatDate, addToDate, getStartOfDay } from './utils/dateUtils';
 import { useUndoRedo } from './UndoRedo';
 import * as AutoScheduler from './features/AutoScheduler';
@@ -19,10 +19,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGripVertical } from '@fortawesome/free-solid-svg-icons';
 import './gantt.css';
 
-interface GanttProps {
+export interface GanttProps {
   tasks: Task[];
   links?: Link[];
   config?: Partial<GanttConfig>;
+  uiConfig?: Partial<GanttUIConfig>;
+  styleConfig?: Partial<GanttStyleConfig>; // Colors, fonts, spacing
+  iconConfig?: Partial<GanttIconConfig>; // Custom icons
   onTaskUpdate?: (task: Task) => void;
   onTaskCreate?: (task: Task) => void;
   onTaskDelete?: (taskId: string) => void;
@@ -51,13 +54,13 @@ interface GanttProps {
   endDateFormat?: string;
 }
 
-const defaultColumns: Column[] = [
+const getDefaultColumns = (uiConfig?: Partial<GanttUIConfig>): Column[] => [
   { name: 'index', label: '', width: 40, align: 'center' },
-  { name: 'text', label: 'Name', width: 300, align: 'left', resize: true },
-  { name: 'predecessors', label: 'Depends on', width: 120, align: 'left' },
-  { name: 'duration', label: 'Duration', width: 100, align: 'left' },
-  { name: 'start', label: 'Start', width: 120, align: 'left' },
-  { name: 'add', label: '', width: 40, align: 'center' },
+  { name: 'text', label: uiConfig?.columnLabels?.name || 'Name', width: 250, align: 'left', resize: true },
+  { name: 'predecessors', label: uiConfig?.columnLabels?.dependsOn || 'Depends on', width: 120, align: 'left' },
+  { name: 'duration', label: uiConfig?.columnLabels?.duration || 'Duration', width: 110, align: 'left' },
+  { name: 'start', label: uiConfig?.columnLabels?.start || 'Start', width: 130, align: 'left' },
+  { name: 'add', label: '', width: 50, align: 'center' },
 ];
 
 const defaultScales: Scale[] = [
@@ -65,16 +68,147 @@ const defaultScales: Scale[] = [
   { unit: 'day', step: 1, format: 'D' },
 ];
 
+// Default UI configuration
+const defaultUIConfig: GanttUIConfig = {
+  headerTitle: 'Iris Gantt',
+  showHeader: true,
+  showAddTaskButton: true,
+  showBaselineButton: false, // Baselines are always visible, no button needed
+  showZoomButtons: true,
+  showExportButtons: true,
+  showFilterSearch: true,
+  addTaskButtonText: 'New Task',
+  baselineButtonText: 'Set Baseline',
+  baselineButtonTextActive: 'Baselines',
+  zoomOutTooltip: 'Zoom Out',
+  zoomInTooltip: 'Zoom In',
+  resetZoomTooltip: 'Reset Zoom',
+  exportCSVTooltip: 'Export to CSV',
+  exportExcelTooltip: 'Export to Excel',
+  exportJSONTooltip: 'Export to JSON',
+  exportPDFTooltip: 'Export to PDF',
+  hideBaselinesTooltip: 'Hide Baselines',
+  showBaselinesTooltip: 'Show Baselines',
+  taskCreatorTitle: 'Create New Task',
+  taskCreatorOkText: 'Create Task',
+  taskCreatorCancelText: 'Cancel',
+  taskNameLabel: 'Task Name',
+  taskNamePlaceholder: 'Enter task name',
+  typeLabel: 'Type',
+  priorityLabel: 'Priority',
+  startDateLabel: 'Start Date',
+  durationLabel: 'Duration (days)',
+  colorLabel: 'Color',
+  progressLabel: 'Progress (%)',
+  ownerLabel: 'Owner',
+  ownerPlaceholder: 'Assign to...',
+  detailsLabel: 'Details',
+  detailsPlaceholder: 'Add task description...',
+  taskTypeOptions: {
+    task: 'Task',
+    milestone: 'Milestone',
+    project: 'Project',
+  },
+  priorityOptions: {
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+  },
+  taskEditorTitle: 'Edit Task',
+  taskEditorSaveText: 'Save Changes',
+  taskEditorCancelText: 'Cancel',
+  taskEditorDeleteText: 'Delete',
+  deleteConfirmTitle: 'Delete Task',
+  deleteConfirmContent: 'This action cannot be undone.',
+  deleteConfirmOkText: 'Yes, Delete',
+  deleteConfirmCancelText: 'No',
+  searchPlaceholder: 'Search tasks...',
+  allOwnersText: 'All Owners',
+  allStatusText: 'All Status',
+  allPriorityText: 'All Priority',
+  clearFiltersText: 'Clear',
+  statusOptions: {
+    all: 'All Status',
+    notStarted: 'Not Started',
+    inProgress: 'In Progress',
+    completed: 'Completed',
+  },
+  priorityFilterOptions: {
+    all: 'All Priority',
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+  },
+  columnLabels: {
+    name: 'Name',
+    dependsOn: 'Depends on',
+    duration: 'Duration',
+    start: 'Start',
+  },
+  taskNameRequired: 'Please enter task name',
+};
+
 export const Gantt: React.FC<GanttProps> = ({
-  tasks: initialTasks,
+  tasks: initialTasks = [],
   links: initialLinks = [],
   config = {},
+  uiConfig = {},
+  styleConfig = {},
+  iconConfig = {},
   onTaskUpdate,
   onTaskCreate,
   onTaskDelete,
   onLinkCreate,
   onLinkDelete,
 }) => {
+  // Merge UI config with defaults
+  const ui: GanttUIConfig = { ...defaultUIConfig, ...uiConfig };
+  
+  // Apply style config via CSS variables
+  const styleVariables: React.CSSProperties = React.useMemo(() => {
+    const vars: Record<string, string> = {};
+    
+    if (styleConfig.primary) vars['--wx-gantt-primary'] = styleConfig.primary;
+    if (styleConfig.primarySelected) vars['--wx-gantt-primary-selected'] = styleConfig.primarySelected;
+    if (styleConfig.success) vars['--wx-gantt-success'] = styleConfig.success;
+    if (styleConfig.warning) vars['--wx-gantt-warning'] = styleConfig.warning;
+    if (styleConfig.danger) vars['--wx-gantt-danger'] = styleConfig.danger;
+    if (styleConfig.background) vars['--wx-gantt-background'] = styleConfig.background;
+    if (styleConfig.backgroundAlt) vars['--wx-gantt-background-alt'] = styleConfig.backgroundAlt;
+    if (styleConfig.backgroundHover) vars['--wx-gantt-background-hover'] = styleConfig.backgroundHover;
+    if (styleConfig.selectColor) vars['--wx-gantt-select-color'] = styleConfig.selectColor;
+    if (styleConfig.taskColor) vars['--wx-gantt-task-color'] = styleConfig.taskColor;
+    if (styleConfig.taskFillColor) vars['--wx-gantt-task-fill-color'] = styleConfig.taskFillColor;
+    if (styleConfig.projectColor) vars['--wx-gantt-project-color'] = styleConfig.projectColor;
+    if (styleConfig.milestoneColor) vars['--wx-gantt-milestone-color'] = styleConfig.milestoneColor;
+    if (styleConfig.fontColor) vars['--wx-gantt-font-color'] = styleConfig.fontColor;
+    if (styleConfig.fontColorAlt) vars['--wx-gantt-font-color-alt'] = styleConfig.fontColorAlt;
+    if (styleConfig.iconColor) vars['--wx-gantt-icon-color'] = styleConfig.iconColor;
+    if (styleConfig.borderColor) vars['--wx-gantt-border-color'] = styleConfig.borderColor;
+    
+    if (styleConfig.fontFamily) vars['--wx-gantt-font-family'] = styleConfig.fontFamily;
+    if (styleConfig.fontMono) vars['--wx-gantt-font-mono'] = styleConfig.fontMono;
+    if (styleConfig.fontSize) vars['--wx-gantt-font-size'] = styleConfig.fontSize;
+    if (styleConfig.fontWeight) vars['--wx-gantt-font-weight'] = String(styleConfig.fontWeight);
+    if (styleConfig.lineHeight) vars['--wx-gantt-line-height'] = String(styleConfig.lineHeight);
+    
+    if (styleConfig.spacingXS) vars['--gantt-spacing-xs'] = styleConfig.spacingXS;
+    if (styleConfig.spacingSM) vars['--gantt-spacing-sm'] = styleConfig.spacingSM;
+    if (styleConfig.spacingMD) vars['--gantt-spacing-md'] = styleConfig.spacingMD;
+    if (styleConfig.spacingLG) vars['--gantt-spacing-lg'] = styleConfig.spacingLG;
+    
+    // Custom CSS variables
+    if (styleConfig.customCSSVariables) {
+      Object.entries(styleConfig.customCSSVariables).forEach(([key, value]) => {
+        vars[key.startsWith('--') ? key : `--${key}`] = value;
+      });
+    }
+    
+    return vars as React.CSSProperties;
+  }, [styleConfig]);
+  // Defensive checks
+  const safeTasks = Array.isArray(initialTasks) ? initialTasks : [];
+  const safeLinks = Array.isArray(initialLinks) ? initialLinks : [];
   // Undo/Redo system
   const {
     tasks,
@@ -87,13 +221,15 @@ export const Gantt: React.FC<GanttProps> = ({
     createTask: createTaskWithHistory,
     deleteTask: deleteTaskWithHistory,
     saveState,
-  } = useUndoRedo(initialTasks, initialLinks);
+  } = useUndoRedo(safeTasks, safeLinks);
 
   // State management
   const [filteredTasks, setFilteredTasks] = useState<Task[]>(tasks);
   const [selectedTask, setSelectedTask] = useState<string | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [showTaskCreator, setShowTaskCreator] = useState(false);
+  const [taskCreatorParentId, setTaskCreatorParentId] = useState<string | undefined>(undefined);
+  const [taskCreatorParentName, setTaskCreatorParentName] = useState<string | undefined>(undefined);
   const [showDependencyEditor, setShowDependencyEditor] = useState(false);
   const [dependencyEditTask, setDependencyEditTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<string | null>(null);
@@ -101,8 +237,15 @@ export const Gantt: React.FC<GanttProps> = ({
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(1);
-  const [baselines, setBaselines] = useState<Map<string, Baseline>>(new Map());
-  const [showBaselines, setShowBaselines] = useState(false);
+  // Baselines are always visible - auto-created when tasks are set
+  const [baselines, setBaselines] = useState<Map<string, Baseline>>(() => {
+    // Initialize baselines from initial tasks
+    if (safeTasks.length > 0) {
+      return createBaseline(safeTasks);
+    }
+    return new Map();
+  });
+  const showBaselines = true;
   const [currentTheme] = useState<'light' | 'dark'>((config.theme as 'light' | 'dark') || 'light');
   const [filters, setFilters] = useState<FilterOptions>({
     searchText: '',
@@ -114,9 +257,11 @@ export const Gantt: React.FC<GanttProps> = ({
   const timelineRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
+  const isScrollingRef = useRef(false);
+  const scrollTimeoutRef = useRef<number | null>(null);
 
   const ganttConfig: GanttConfig = {
-    columns: defaultColumns,
+    columns: config.columns || getDefaultColumns(uiConfig),
     scales: defaultScales,
     readonly: false,
     editable: true,
@@ -127,11 +272,27 @@ export const Gantt: React.FC<GanttProps> = ({
     minColumnWidth: 60,
     autoSchedule: false,
     criticalPath: false,
-    baselines: showBaselines,
+    baselines: true, // Always enabled
     weekends: true,
     holidays: [],
     theme: currentTheme,
     locale: 'en',
+    // Today and Project Start lines - enabled by default, labels hidden by default (matching reference image)
+    showTodayLine: config.showTodayLine !== false, // Default: true
+    todayLineColor: config.todayLineColor || '#ff4d4f', // Red
+    todayLineLabel: config.todayLineLabel, // No default - labels hidden unless explicitly provided
+    todayLineWidth: config.todayLineWidth || 1, // Line width in pixels (default: 1px for thin line)
+    todayLineStyle: config.todayLineStyle || 'solid', // 'solid' | 'dashed' | 'dotted'
+    todayLineOpacity: config.todayLineOpacity !== undefined ? config.todayLineOpacity : 1, // 0-1
+    todayLineLabelStyle: config.todayLineLabelStyle, // Custom label styles
+    showProjectStartLine: config.showProjectStartLine !== false, // Default: true
+    projectStartDate: config.projectStartDate, // Will be calculated from tasks if not provided
+    projectStartLineColor: config.projectStartLineColor || '#40a9ff', // Light blue
+    projectStartLineLabel: config.projectStartLineLabel, // No default - labels hidden unless explicitly provided
+    projectStartLineWidth: config.projectStartLineWidth || 1, // Line width in pixels (default: 1px for thin line)
+    projectStartLineStyle: config.projectStartLineStyle || 'solid', // 'solid' | 'dashed' | 'dotted'
+    projectStartLineOpacity: config.projectStartLineOpacity !== undefined ? config.projectStartLineOpacity : 1, // 0-1
+    projectStartLineLabelStyle: config.projectStartLineLabelStyle, // Custom label styles
     ...config,
   };
 
@@ -159,7 +320,16 @@ export const Gantt: React.FC<GanttProps> = ({
     setFilteredTasks(getVisibleTasks(userFiltered));
   }, [tasks, filters]);
 
-  const owners = Array.from(new Set(tasks.map(t => t.owner).filter(Boolean))) as string[];
+  // Safely extract owners with defensive checks
+  const owners = React.useMemo(() => {
+    if (!tasks || !Array.isArray(tasks)) return [];
+    try {
+      return Array.from(new Set(tasks.map(t => t?.owner).filter(Boolean))) as string[];
+    } catch (error) {
+      console.warn('Error extracting owners:', error);
+      return [];
+    }
+  }, [tasks]);
 
   const getTimelineRange = () => {
     const activeTasks = filteredTasks.length > 0 ? filteredTasks : tasks;
@@ -282,39 +452,51 @@ export const Gantt: React.FC<GanttProps> = ({
     document.body.classList.remove('gantt-dragging');
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  // Throttle mouse move for performance
+  const mouseMoveTimeoutRef = useRef<number | null>(null);
+  const handleMouseMove = React.useCallback((e: React.MouseEvent) => {
     if (reorderTask) {
-      const rowHeight = ganttConfig.rowHeight || 44;
-      const gridBody = gridContainerRef.current?.querySelector('.gantt-grid-body');
-      if (!gridBody) return;
-      const rect = gridBody.getBoundingClientRect();
-      const relativeY = e.clientY - rect.top;
-      let index = Math.floor(relativeY / rowHeight);
-      index = Math.max(0, Math.min(index, filteredTasks.length - 1));
-      const taskAtPointer = filteredTasks[index];
-      if (taskAtPointer) {
-        const offsetInRow = relativeY - (index * rowHeight);
-        let position: 'above' | 'below' | 'inside' = 'above';
-        if (taskAtPointer.type === 'project') {
-          if (offsetInRow < rowHeight * 0.3) position = 'above';
-          else if (offsetInRow > rowHeight * 0.7) position = 'below';
-          else position = 'inside';
-        } else {
-          position = offsetInRow < rowHeight / 2 ? 'above' : 'below';
-        }
-        if (taskAtPointer.id !== reorderTask.id) setDropIndicator({ taskId: taskAtPointer.id, position });
-        else setDropIndicator(null);
+      // Throttle to 16ms (60fps) for smooth performance
+      if (mouseMoveTimeoutRef.current) {
+        cancelAnimationFrame(mouseMoveTimeoutRef.current);
       }
-      setReorderTask(prev => prev ? { ...prev, currentY: e.clientY } : null);
+      mouseMoveTimeoutRef.current = requestAnimationFrame(() => {
+        const rowHeight = ganttConfig.rowHeight || 44;
+        const gridBody = gridContainerRef.current?.querySelector('.gantt-grid-body');
+        if (!gridBody) return;
+        const rect = gridBody.getBoundingClientRect();
+        const relativeY = e.clientY - rect.top;
+        let index = Math.floor(relativeY / rowHeight);
+        index = Math.max(0, Math.min(index, filteredTasks.length - 1));
+        const taskAtPointer = filteredTasks[index];
+        if (taskAtPointer) {
+          const offsetInRow = relativeY - (index * rowHeight);
+          let position: 'above' | 'below' | 'inside' = 'above';
+          if (taskAtPointer.type === 'project') {
+            if (offsetInRow < rowHeight * 0.3) position = 'above';
+            else if (offsetInRow > rowHeight * 0.7) position = 'below';
+            else position = 'inside';
+          } else {
+            position = offsetInRow < rowHeight / 2 ? 'above' : 'below';
+          }
+          if (taskAtPointer.id !== reorderTask.id) setDropIndicator({ taskId: taskAtPointer.id, position });
+          else setDropIndicator(null);
+        }
+        setReorderTask(prev => prev ? { ...prev, currentY: e.clientY } : null);
+      });
     }
-  };
+  }, [reorderTask, filteredTasks, ganttConfig.rowHeight]);
 
   const handleMouseUp = () => {
     if (reorderTask) handleTaskDragEnd();
   };
 
-  const handleCreateTask = (newTaskData: Omit<Task, 'id'>) => {
-    const newTask: Task = { ...newTaskData, id: `task-${Date.now()}` };
+  const handleCreateTask = (newTaskData: Omit<Task, 'id'>, parentId?: string) => {
+    const newTask: Task = { 
+      ...newTaskData, 
+      id: `task-${Date.now()}`,
+      parent: parentId, // Set parent if provided (for subtasks)
+    };
     createTaskWithHistory(newTask);
     if (onTaskCreate) onTaskCreate(newTask);
   };
@@ -341,13 +523,17 @@ export const Gantt: React.FC<GanttProps> = ({
     if (onLinkDelete) onLinkDelete(linkId);
   };
 
-  const toggleBaselines = () => {
-    if (!showBaselines && baselines.size === 0) {
+  // Auto-create baselines when tasks are set or updated
+  // Baselines are always visible and automatically created from current task state
+  useEffect(() => {
+    if (tasks.length > 0) {
       const newBaselines = createBaseline(tasks);
       setBaselines(newBaselines);
-      setShowBaselines(true);
-    } else setShowBaselines(!showBaselines);
-  };
+    } else {
+      // Clear baselines if no tasks
+      setBaselines(new Map());
+    }
+  }, [tasks]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -361,18 +547,80 @@ export const Gantt: React.FC<GanttProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [undo, redo]);
 
+  // Synchronize vertical scrolling between Grid and Timeline
+  useEffect(() => {
+    const gridBody = gridContainerRef.current?.querySelector('.gantt-grid-body');
+    const timelineBody = timelineRef.current?.querySelector('.gantt-timeline-body');
+    
+    if (!gridBody || !timelineBody) return;
+
+    const handleGridScroll = () => {
+      if (!isScrollingRef.current) {
+        isScrollingRef.current = true;
+        timelineBody.scrollTop = gridBody.scrollTop;
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        scrollTimeoutRef.current = window.setTimeout(() => {
+          isScrollingRef.current = false;
+        }, 150);
+      }
+    };
+
+    const handleTimelineScroll = () => {
+      if (!isScrollingRef.current) {
+        isScrollingRef.current = true;
+        gridBody.scrollTop = timelineBody.scrollTop;
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+        scrollTimeoutRef.current = window.setTimeout(() => {
+          isScrollingRef.current = false;
+        }, 150);
+      }
+    };
+
+    gridBody.addEventListener('scroll', handleGridScroll, { passive: true });
+    timelineBody.addEventListener('scroll', handleTimelineScroll, { passive: true });
+
+    return () => {
+      gridBody.removeEventListener('scroll', handleGridScroll);
+      timelineBody.removeEventListener('scroll', handleTimelineScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [filteredTasks]);
+
+
+  // Apply responsive container styles
+  const containerStyle: React.CSSProperties = {
+    height: config.containerHeight || '100%',
+    minHeight: config.containerMinHeight || '400px',
+  };
+
+  // Apply grid width if specified
+  const gridWidthStyle = config.gridWidth ? { '--gantt-grid-width': config.gridWidth } as React.CSSProperties : {};
 
   return (
-    <div className={`gantt-page-wrapper theme-${currentTheme}`}>
-      <div className="gantt-page-header">
-        <div className="gantt-page-header-left"><h1 className="gantt-page-title">Iris Gantt</h1></div>
-      </div>
+    <div 
+      className={`gantt-page-wrapper theme-${currentTheme}`}
+      style={{ ...containerStyle, ...styleVariables }}
+    >
+      {ui.showHeader && (
+        <div className="gantt-page-header">
+          <div className="gantt-page-header-left"><h1 className="gantt-page-title">{ui.headerTitle}</h1></div>
+        </div>
+      )}
 
-      <div className={`gantt-container theme-${ganttConfig.theme}`}>
+      <div 
+        className={`gantt-container theme-${ganttConfig.theme}`}
+        style={gridWidthStyle}
+      >
         <Toolbar
           zoomLevel={zoomLevel}
           setZoomLevel={setZoomLevel}
-          onBaselineToggle={toggleBaselines}
+          onBaselineToggle={() => {}} // Not used anymore, baselines always visible
           showBaselines={showBaselines}
           onExport={(type) => {
             if (type === 'csv') ExportUtils.exportToCSV(tasks);
@@ -381,8 +629,20 @@ export const Gantt: React.FC<GanttProps> = ({
             if (type === 'pdf') ExportUtils.exportToPDF(tasks);
           }}
           onFilterChange={(f: FilterOptions) => setFilters(f)}
-          owners={owners}
-          onAddTask={() => setShowTaskCreator(true)}
+          owners={owners || []}
+            onAddTask={(parentId) => {
+              if (parentId) {
+                const parentTask = tasks.find(t => t.id === parentId);
+                setTaskCreatorParentId(parentId);
+                setTaskCreatorParentName(parentTask?.text);
+              } else {
+                setTaskCreatorParentId(undefined);
+                setTaskCreatorParentName(undefined);
+              }
+              setShowTaskCreator(true);
+            }}
+          uiConfig={ui}
+          iconConfig={iconConfig}
         />
 
         <div className="gantt-layout" ref={layoutRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
@@ -395,7 +655,17 @@ export const Gantt: React.FC<GanttProps> = ({
             onTaskContextMenu={handleContextMenu}
             onTaskUpdate={handleUpdateTask}
             onTaskDragStart={handleTaskDragStart}
-            onAddTask={() => setShowTaskCreator(true)}
+            onAddTask={(parentId) => {
+              if (parentId) {
+                const parentTask = tasks.find(t => t.id === parentId);
+                setTaskCreatorParentId(parentId);
+                setTaskCreatorParentName(parentTask?.text);
+              } else {
+                setTaskCreatorParentId(undefined);
+                setTaskCreatorParentName(undefined);
+              }
+              setShowTaskCreator(true);
+            }}
             onAddDependency={handleAddDependency}
             onDependencyClick={(taskId) => {
               const task = tasks.find(t => t.id === taskId);
@@ -408,6 +678,7 @@ export const Gantt: React.FC<GanttProps> = ({
             allTasks={tasks}
             dropIndicator={dropIndicator}
             reorderTask={reorderTask}
+            iconConfig={iconConfig}
           />
           <Chart
             ref={timelineRef}
@@ -426,12 +697,24 @@ export const Gantt: React.FC<GanttProps> = ({
               if (task) handleUpdateTask({ ...task, ...updates });
             }}
             zoomLevel={zoomLevel}
-            baselines={showBaselines ? baselines : new Map()}
+            baselines={baselines}
           />
         </div>
 
-        {showTaskCreator && <TaskCreator onCreateTask={handleCreateTask} onClose={() => setShowTaskCreator(false)} />}
-        {editingTask && <TaskEditor task={editingTask} onUpdate={handleUpdateTask} onDelete={handleDeleteTask} onClose={() => setEditingTask(null)} />}
+        {showTaskCreator && (
+          <TaskCreator 
+            onCreateTask={handleCreateTask} 
+            onClose={() => {
+              setShowTaskCreator(false);
+              setTaskCreatorParentId(undefined);
+              setTaskCreatorParentName(undefined);
+            }} 
+            uiConfig={ui}
+            parentId={taskCreatorParentId}
+            parentTaskName={taskCreatorParentName}
+          />
+        )}
+        {editingTask && <TaskEditor task={editingTask} onUpdate={handleUpdateTask} onDelete={handleDeleteTask} onClose={() => setEditingTask(null)} uiConfig={ui} />}
         {showDependencyEditor && dependencyEditTask && (
           <DependencyEditor
             task={dependencyEditTask}
@@ -463,6 +746,7 @@ export const Gantt: React.FC<GanttProps> = ({
                 setTasks(scheduled);
                 setContextMenu(null);
               }}
+              iconConfig={iconConfig}
             />
           </>
         )}

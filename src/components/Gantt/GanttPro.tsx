@@ -8,9 +8,10 @@
  * import { Gantt } from './components/Gantt';
  */
 
-import { Gantt } from './Gantt';
+import React from 'react';
+import { Gantt, type GanttProps } from './Gantt';
 
 /**
  * @deprecated Use Gantt component instead. All features are now in the unified Gantt component.
  */
-export const GanttPro = Gantt;
+export const GanttPro: React.FC<GanttProps> = Gantt;

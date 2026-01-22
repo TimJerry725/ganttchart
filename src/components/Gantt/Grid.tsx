@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, memo } from 'react';
 import type { Task, Column, Link } from './types';
 import { formatDate } from './utils/dateUtils';
 import { DependencyPopover } from './DependencyPopover';
@@ -25,8 +25,8 @@ interface GridProps {
   reorderTask?: { id: string; initialIndex: number; currentY: number; descendantIds: string[] } | null;
 }
 
-// Force rebuild
-export const Grid = forwardRef<HTMLDivElement, GridProps>(
+// Memoized Grid component for performance
+export const Grid = memo(forwardRef<HTMLDivElement, GridProps>(
   ({ tasks, allTasks = [], columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, onAddDependency, links = [], dropIndicator, reorderTask }, ref) => {
     const localRef = React.useRef<HTMLDivElement>(null);
 
@@ -131,14 +131,27 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
             </DependencyPopover>
           );
         case 'add':
+          // Show subtask button for all tasks
           return (
             <Button
-              type="text"
+              type="primary"
               size="small"
-              icon={<FontAwesomeIcon icon={faPlus} style={{ fontSize: 12, color: '#adb5bd' }} />}
+              icon={<FontAwesomeIcon icon={faPlus} style={{ fontSize: 12 }} />}
               onClick={(e) => {
                 e.stopPropagation();
+                // Add subtask - pass parent task ID
                 onAddTask?.(task.id);
+              }}
+              title="Add Subtask"
+              style={{
+                minWidth: '28px',
+                width: '28px',
+                height: '28px',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '4px',
               }}
             />
           );
@@ -163,22 +176,19 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
 
     return (
       <div className="gantt-grid" ref={localRef}>
-        <div className="gantt-grid-header">
+        <div className="gantt-grid-header" style={{ display: 'flex', minWidth: '100%' }}>
           {columns.map((column) => (
             <div
               key={column.name}
               className="gantt-grid-header-cell"
               style={{
                 width: column.width,
+                minWidth: column.width, /* Ensure column maintains width */
                 justifyContent: column.align === 'center' ? 'center' : 'flex-start',
               }}
             >
               {column.name === 'add' ? (
-                <FontAwesomeIcon
-                  icon={faPlus}
-                  style={{ fontSize: 12, color: '#64748b', cursor: 'pointer' }}
-                  onClick={() => onAddTask?.()}
-                />
+                <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>Add</span>
               ) : (
                 <>
                   {column.label}
@@ -201,19 +211,33 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
                 className={`gantt-grid-row ${selectedTask === task.id ? 'selected' : ''} ${isDragging ? 'dragging-row' : ''} ${isDescendantDragging ? 'descendant-dragging-row' : ''} ${dropIndicator?.taskId === task.id ? `drop-target-${dropIndicator.position}` : ''}`}
                 onClick={() => onTaskClick(task.id)}
                 onContextMenu={(e) => onTaskContextMenu?.(e, task.id)}
+                style={{
+                  display: 'flex',
+                  minWidth: '100%', /* Ensure row spans all columns */
+                }}
               >
-                {columns.map((column) => (
-                  <div
-                    key={`${task.id}-${column.name}`}
-                    className="gantt-grid-cell"
-                    style={{
-                      width: column.width,
-                      textAlign: column.align || 'left',
-                    }}
-                  >
-                    {getCellValue(task, column)}
-                  </div>
-                ))}
+                {columns.map((column) => {
+                  // Ensure add column is always visible
+                  const isAddColumn = column.name === 'add';
+                  return (
+                    <div
+                      key={`${task.id}-${column.name}`}
+                      className="gantt-grid-cell"
+                      style={{
+                        width: column.width,
+                        minWidth: column.width, /* Ensure column maintains width */
+                        textAlign: column.align || 'left',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: isAddColumn ? 'center' : (column.align || 'flex-start'),
+                        visibility: 'visible', /* Ensure column is visible */
+                        opacity: 1, /* Ensure column is not transparent */
+                      }}
+                    >
+                      {getCellValue(task, column)}
+                    </div>
+                  );
+                })}
                 {dropIndicator?.taskId === task.id && (
                   <div className={`gantt-drop-indicator ${dropIndicator.position}`} />
                 )}
@@ -224,6 +248,6 @@ export const Grid = forwardRef<HTMLDivElement, GridProps>(
       </div>
     );
   }
-);
+));
 
 Grid.displayName = 'Grid';

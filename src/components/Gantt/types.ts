@@ -65,6 +65,93 @@ export interface GanttConfig {
   holidays?: Date[];
   theme?: 'light' | 'dark';
   locale?: string;
+  containerHeight?: string; // Responsive: e.g., '100%', '600px', '100vh'
+  containerMinHeight?: string; // Responsive: e.g., '400px', '50vh'
+  gridWidth?: string; // Responsive: e.g., '720px', '30vw', 'clamp(280px, 30vw, 720px)'
+  // Today and Project Start lines
+  showTodayLine?: boolean; // Show vertical line for today's date
+  todayLineColor?: string; // Color for today line (default: red)
+  todayLineLabel?: string; // Label for today line (default: 'Today')
+  todayLineWidth?: number; // Width of today line in pixels (default: 2)
+  todayLineStyle?: 'solid' | 'dashed' | 'dotted'; // Line style (default: 'solid')
+  todayLineOpacity?: number; // Line opacity 0-1 (default: 1)
+  showProjectStartLine?: boolean; // Show vertical line for project start date
+  projectStartDate?: Date; // Project start date (default: earliest task start)
+  projectStartLineColor?: string; // Color for project start line (default: light blue)
+  projectStartLineLabel?: string; // Label for project start line (default: 'Start Project')
+  projectStartLineWidth?: number; // Width of project start line in pixels (default: 2)
+  projectStartLineStyle?: 'solid' | 'dashed' | 'dotted'; // Line style (default: 'solid')
+  projectStartLineOpacity?: number; // Line opacity 0-1 (default: 1)
+  // Label styling
+  todayLineLabelStyle?: React.CSSProperties; // Custom styles for today label
+  projectStartLineLabelStyle?: React.CSSProperties; // Custom styles for project start label
+}
+
+// Icon configuration - allows custom icon components or FontAwesome icon names
+export interface GanttIconConfig {
+  // Toolbar icons
+  addTask?: React.ReactNode | string; // React component or FontAwesome icon name
+  zoomIn?: React.ReactNode | string;
+  zoomOut?: React.ReactNode | string;
+  resetZoom?: React.ReactNode | string;
+  exportCSV?: React.ReactNode | string;
+  exportExcel?: React.ReactNode | string;
+  exportJSON?: React.ReactNode | string;
+  exportPDF?: React.ReactNode | string;
+  
+  // Grid icons
+  gripVertical?: React.ReactNode | string;
+  chevronRight?: React.ReactNode | string;
+  chevronDown?: React.ReactNode | string;
+  plus?: React.ReactNode | string;
+  
+  // Context menu icons
+  edit?: React.ReactNode | string;
+  delete?: React.ReactNode | string;
+  copy?: React.ReactNode | string;
+  link?: React.ReactNode | string;
+  flag?: React.ReactNode | string;
+  folder?: React.ReactNode | string;
+  tasks?: React.ReactNode | string;
+  rotateLeft?: React.ReactNode | string;
+}
+
+// Style configuration for colors, fonts, and theme
+export interface GanttStyleConfig {
+  // Colors
+  primary?: string;
+  primarySelected?: string;
+  success?: string;
+  warning?: string;
+  danger?: string;
+  background?: string;
+  backgroundAlt?: string;
+  backgroundHover?: string;
+  selectColor?: string;
+  taskColor?: string;
+  taskFillColor?: string;
+  projectColor?: string;
+  milestoneColor?: string;
+  fontColor?: string;
+  fontColorAlt?: string;
+  iconColor?: string;
+  borderColor?: string;
+  
+  // Fonts
+  fontFamily?: string;
+  fontMono?: string;
+  fontSize?: string;
+  fontWeight?: string | number;
+  lineHeight?: string | number;
+  
+  // Layout spacing
+  spacingXS?: string;
+  spacingSM?: string;
+  spacingMD?: string;
+  spacingLG?: string;
+  
+  // Custom CSS variables (for advanced customization)
+  customCSSVariables?: Record<string, string>;
 }
 
 export interface Marker {
@@ -85,4 +172,98 @@ export type ZoomLevel = number;
 export interface DropIndicator {
   taskId: string;
   position: 'above' | 'below' | 'inside';
+}
+
+export interface GanttUIConfig {
+  // Header
+  headerTitle?: string;
+  showHeader?: boolean;
+
+  // Toolbar Buttons Visibility
+  showAddTaskButton?: boolean;
+  showBaselineButton?: boolean;
+  showZoomButtons?: boolean;
+  showExportButtons?: boolean;
+  showFilterSearch?: boolean;
+
+  // Toolbar Button Labels
+  addTaskButtonText?: string;
+  baselineButtonText?: string;
+  baselineButtonTextActive?: string;
+  zoomOutTooltip?: string;
+  zoomInTooltip?: string;
+  resetZoomTooltip?: string;
+  exportCSVTooltip?: string;
+  exportExcelTooltip?: string;
+  exportJSONTooltip?: string;
+  exportPDFTooltip?: string;
+  hideBaselinesTooltip?: string;
+  showBaselinesTooltip?: string;
+
+  // Task Creator Modal
+  taskCreatorTitle?: string;
+  taskCreatorOkText?: string;
+  taskCreatorCancelText?: string;
+  taskNameLabel?: string;
+  taskNamePlaceholder?: string;
+  typeLabel?: string;
+  priorityLabel?: string;
+  startDateLabel?: string;
+  durationLabel?: string;
+  colorLabel?: string;
+  progressLabel?: string;
+  ownerLabel?: string;
+  ownerPlaceholder?: string;
+  detailsLabel?: string;
+  detailsPlaceholder?: string;
+  taskTypeOptions?: {
+    task?: string;
+    milestone?: string;
+    project?: string;
+  };
+  priorityOptions?: {
+    low?: string;
+    medium?: string;
+    high?: string;
+  };
+
+  // Task Editor Modal
+  taskEditorTitle?: string;
+  taskEditorSaveText?: string;
+  taskEditorCancelText?: string;
+  taskEditorDeleteText?: string;
+  deleteConfirmTitle?: string;
+  deleteConfirmContent?: string;
+  deleteConfirmOkText?: string;
+  deleteConfirmCancelText?: string;
+
+  // Filter Search
+  searchPlaceholder?: string;
+  allOwnersText?: string;
+  allStatusText?: string;
+  allPriorityText?: string;
+  clearFiltersText?: string;
+  statusOptions?: {
+    all?: string;
+    notStarted?: string;
+    inProgress?: string;
+    completed?: string;
+  };
+  priorityFilterOptions?: {
+    all?: string;
+    low?: string;
+    medium?: string;
+    high?: string;
+  };
+
+  // Column Labels (if not using custom columns)
+  columnLabels?: {
+    name?: string;
+    dependsOn?: string;
+    duration?: string;
+    start?: string;
+  };
+
+  // Validation Messages
+  taskNameRequired?: string;
 }

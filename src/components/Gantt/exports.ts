@@ -1,4 +1,7 @@
 export { Gantt } from './Gantt';
+export { Gantt as default } from './Gantt';
+export type { GanttProps } from './Gantt';
+export type { GanttStyleConfig, GanttIconConfig } from './types';
 export { Grid } from './Grid';
 export { Chart } from './Chart';
 export { Timeline } from './Timeline';
@@ -15,4 +18,5 @@ export { createBaseline } from './features/Baselines';
 export { FilterSearch, applyFilters } from './features/FilterSearch';
 export type { FilterOptions } from './features/FilterSearch';
 export * from './types';
+export type { GanttUIConfig } from './types';
 export * from './utils/dateUtils';

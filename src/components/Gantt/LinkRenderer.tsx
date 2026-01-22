@@ -12,6 +12,32 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     return tasks.find(t => t.id === id);
   };
 
+  // Calculate SVG dimensions from all task positions
+  const svgDimensions = React.useMemo(() => {
+    let maxWidth = 0;
+    let maxHeight = 0;
+    
+    tasks.forEach(task => {
+      try {
+        const pos = getTaskPosition(task);
+        if (pos && typeof pos.left === 'number' && typeof pos.width === 'number') {
+          maxWidth = Math.max(maxWidth, pos.left + pos.width);
+        }
+        if (pos && typeof pos.top === 'number' && typeof pos.height === 'number') {
+          maxHeight = Math.max(maxHeight, pos.top + pos.height);
+        }
+      } catch (e) {
+        // Skip tasks that can't be positioned
+        console.warn('Failed to position task for link rendering:', task.id, e);
+      }
+    });
+    
+    return { 
+      width: Math.max(maxWidth, 1000), 
+      height: Math.max(maxHeight, 100) 
+    };
+  }, [tasks, getTaskPosition]);
+
   const createPath = (link: Link): string => {
     const source = getTaskById(link.source);
     const target = getTaskById(link.target);
@@ -112,8 +138,21 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     }
   };
 
+  if (links.length === 0) return null;
+
   return (
-    <svg className="gantt-links-layer" style={{ overflow: 'visible' }}>
+    <svg 
+      className="gantt-links-layer" 
+      style={{ 
+        overflow: 'visible',
+        width: svgDimensions.width,
+        height: svgDimensions.height,
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        pointerEvents: 'none',
+      }}
+    >
       {links.map((link) => {
         const source = getTaskById(link.source);
         const target = getTaskById(link.target);
@@ -122,6 +161,8 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
 
         const pathD = createPath(link);
         const arrowD = createArrow(link);
+
+        if (!pathD || !arrowD) return null;
 
         return (
           <g key={link.id} className="gantt-link">

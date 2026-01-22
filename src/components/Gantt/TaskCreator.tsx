@@ -1,4 +1,4 @@
-import type { Task } from './types';
+import type { Task, GanttUIConfig } from './types';
 import { Modal, Form, Input, DatePicker, Select, InputNumber, ColorPicker } from 'antd';
 import dayjs from 'dayjs';
 
@@ -6,11 +6,14 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 interface TaskCreatorProps {
-  onCreateTask: (task: Omit<Task, 'id'>) => void;
+  onCreateTask: (task: Omit<Task, 'id'>, parentId?: string) => void;
   onClose: () => void;
+  uiConfig?: Partial<GanttUIConfig>;
+  parentId?: string; // For subtasks
+  parentTaskName?: string; // For display purposes
 }
 
-export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose }) => {
+export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose, uiConfig = {}, parentId, parentTaskName }) => {
   const [form] = Form.useForm();
 
   const handleFinish = (values: any) => {
@@ -29,19 +32,20 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose 
       owner: values.owner || '',
       priority: values.priority || 'medium',
       details: values.details || '',
-    });
+      parent: parentId, // Set parent for subtasks
+    }, parentId);
 
     onClose();
   };
 
   return (
     <Modal
-      title="Create New Task"
+      title={parentId ? (uiConfig.taskCreatorTitle || "Create Subtask") + (parentTaskName ? ` for "${parentTaskName}"` : '') : (uiConfig.taskCreatorTitle || "Create New Task")}
       open={true}
       onCancel={onClose}
       onOk={() => form.submit()}
-      okText="Create Task"
-      cancelText="Cancel"
+      okText={uiConfig.taskCreatorOkText || "Create Task"}
+      cancelText={uiConfig.taskCreatorCancelText || "Cancel"}
       width={600}
       className="gantt-modal-antd"
     >
@@ -60,56 +64,56 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose 
       >
         <Form.Item
           name="text"
-          label="Task Name"
-          rules={[{ required: true, message: 'Please enter task name' }]}
+          label={uiConfig.taskNameLabel || "Task Name"}
+          rules={[{ required: true, message: uiConfig.taskNameRequired || 'Please enter task name' }]}
         >
-          <Input placeholder="Enter task name" autoFocus />
+          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter task name"} autoFocus />
         </Form.Item>
 
         <div style={{ display: 'flex', gap: 16 }}>
-          <Form.Item name="type" label="Type" style={{ flex: 1 }}>
+          <Form.Item name="type" label={uiConfig.typeLabel || "Type"} style={{ flex: 1 }}>
             <Select>
-              <Option value="task">Task</Option>
-              <Option value="milestone">Milestone</Option>
-              <Option value="project">Project</Option>
+              <Option value="task">{uiConfig.taskTypeOptions?.task || 'Task'}</Option>
+              <Option value="milestone">{uiConfig.taskTypeOptions?.milestone || 'Milestone'}</Option>
+              <Option value="project">{uiConfig.taskTypeOptions?.project || 'Project'}</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item name="priority" label="Priority" style={{ flex: 1 }}>
+          <Form.Item name="priority" label={uiConfig.priorityLabel || "Priority"} style={{ flex: 1 }}>
             <Select>
-              <Option value="low">Low</Option>
-              <Option value="medium">Medium</Option>
-              <Option value="high">High</Option>
+              <Option value="low">{uiConfig.priorityOptions?.low || 'Low'}</Option>
+              <Option value="medium">{uiConfig.priorityOptions?.medium || 'Medium'}</Option>
+              <Option value="high">{uiConfig.priorityOptions?.high || 'High'}</Option>
             </Select>
           </Form.Item>
         </div>
 
         <div style={{ display: 'flex', gap: 16 }}>
-          <Form.Item name="start" label="Start Date" style={{ flex: 1 }}>
+          <Form.Item name="start" label={uiConfig.startDateLabel || "Start Date"} style={{ flex: 1 }}>
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
-          <Form.Item name="duration" label="Duration (days)" style={{ flex: 1 }}>
+          <Form.Item name="duration" label={uiConfig.durationLabel || "Duration (days)"} style={{ flex: 1 }}>
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
         </div>
 
         <div style={{ display: 'flex', gap: 16 }}>
-          <Form.Item name="color" label="Color" style={{ flex: 1 }}>
+          <Form.Item name="color" label={uiConfig.colorLabel || "Color"} style={{ flex: 1 }}>
             <ColorPicker showText />
           </Form.Item>
 
-          <Form.Item name="progress" label="Progress (%)" style={{ flex: 1 }}>
+          <Form.Item name="progress" label={uiConfig.progressLabel || "Progress (%)"} style={{ flex: 1 }}>
             <InputNumber min={0} max={100} style={{ width: '100%' }} />
           </Form.Item>
         </div>
 
-        <Form.Item name="owner" label="Owner">
-          <Input placeholder="Assign to..." />
+        <Form.Item name="owner" label={uiConfig.ownerLabel || "Owner"}>
+          <Input placeholder={uiConfig.ownerPlaceholder || "Assign to..."} />
         </Form.Item>
 
-        <Form.Item name="details" label="Details">
-          <TextArea placeholder="Add task description..." rows={3} />
+        <Form.Item name="details" label={uiConfig.detailsLabel || "Details"}>
+          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add task description..."} rows={3} />
         </Form.Item>
       </Form>
     </Modal>

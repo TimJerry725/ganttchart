@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { Task, Link } from './types';
 
 export interface HistoryState {
@@ -18,6 +18,15 @@ export const useUndoRedo = (initialTasks: Task[], initialLinks: Link[] = []) => 
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [links, setLinks] = useState<Link[]>(initialLinks);
+
+  // Sync state with props if they change externally
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
+
+  useEffect(() => {
+    setLinks(initialLinks);
+  }, [initialLinks]);
 
   const saveState = useCallback((
     type: HistoryAction['type'],
@@ -70,7 +79,7 @@ export const useUndoRedo = (initialTasks: Task[], initialLinks: Link[] = []) => 
     const beforeState = { tasks, links };
     const newTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
     const afterState = { tasks: newTasks, links };
-    
+
     saveState('task_update', beforeState, afterState);
     setTasks(newTasks);
   }, [tasks, links, saveState]);
@@ -79,7 +88,7 @@ export const useUndoRedo = (initialTasks: Task[], initialLinks: Link[] = []) => 
     const beforeState = { tasks, links };
     const newTasks = [...tasks, newTask];
     const afterState = { tasks: newTasks, links };
-    
+
     saveState('task_create', beforeState, afterState);
     setTasks(newTasks);
   }, [tasks, links, saveState]);
@@ -89,7 +98,7 @@ export const useUndoRedo = (initialTasks: Task[], initialLinks: Link[] = []) => 
     const newTasks = tasks.filter(t => t.id !== taskId);
     const newLinks = links.filter(l => l.source !== taskId && l.target !== taskId);
     const afterState = { tasks: newTasks, links: newLinks };
-    
+
     saveState('task_delete', beforeState, afterState);
     setTasks(newTasks);
     setLinks(newLinks);

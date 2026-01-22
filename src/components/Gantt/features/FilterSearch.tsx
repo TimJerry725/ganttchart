@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Input, Select, Button } from 'antd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimesCircle } from '@fortawesome/free-solid-svg-icons';
-import type { Task } from '../types';
+import type { Task, GanttUIConfig } from '../types';
 
 const { Search } = Input;
 
@@ -17,9 +17,10 @@ export interface FilterOptions {
 interface FilterSearchProps {
   onFilterChange: (filters: FilterOptions) => void;
   owners: string[];
+  uiConfig?: Partial<GanttUIConfig>;
 }
 
-export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owners }) => {
+export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owners = [], uiConfig = {} }) => {
   const [filters, setFilters] = useState<FilterOptions>({
     searchText: '',
     status: 'all',
@@ -56,7 +57,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
         {/* Left side - Search */}
         <div className="gantt-filter-left">
           <Search
-            placeholder="Search tasks..."
+            placeholder={uiConfig.searchPlaceholder || "Search tasks..."}
             value={filters.searchText}
             onChange={(e) => handleFilterChange({ searchText: e.target.value })}
             allowClear
@@ -74,10 +75,10 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
             className="gantt-filter-select-antd"
             style={{ width: 140 }}
             options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'not-started', label: 'Not Started' },
-              { value: 'in-progress', label: 'In Progress' },
-              { value: 'completed', label: 'Completed' },
+              { value: 'all', label: uiConfig.statusOptions?.all || 'All Status' },
+              { value: 'not-started', label: uiConfig.statusOptions?.notStarted || 'Not Started' },
+              { value: 'in-progress', label: uiConfig.statusOptions?.inProgress || 'In Progress' },
+              { value: 'completed', label: uiConfig.statusOptions?.completed || 'Completed' },
             ]}
           />
 
@@ -88,10 +89,10 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
             className="gantt-filter-select-antd"
             style={{ width: 130 }}
             options={[
-              { value: 'all', label: 'All Priority' },
-              { value: 'low', label: 'Low' },
-              { value: 'medium', label: 'Medium' },
-              { value: 'high', label: 'High' },
+              { value: 'all', label: uiConfig.priorityFilterOptions?.all || 'All Priority' },
+              { value: 'low', label: uiConfig.priorityFilterOptions?.low || 'Low' },
+              { value: 'medium', label: uiConfig.priorityFilterOptions?.medium || 'Medium' },
+              { value: 'high', label: uiConfig.priorityFilterOptions?.high || 'High' },
             ]}
           />
 
@@ -101,11 +102,11 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
             onChange={(value) => handleFilterChange({ owner: value || '' })}
             className="gantt-filter-select-antd"
             style={{ width: 130 }}
-            placeholder="All Owners"
+            placeholder={uiConfig.allOwnersText || "All Owners"}
             allowClear
             options={[
-              { value: '', label: 'All Owners' },
-              ...owners.map(owner => ({ value: owner, label: owner }))
+              { value: '', label: uiConfig.allOwnersText || 'All Owners' },
+              ...(owners || []).map(owner => ({ value: owner, label: owner }))
             ]}
           />
 
@@ -118,7 +119,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
               onClick={clearFilters}
               className="gantt-filter-clear-antd"
             >
-              Clear
+              {uiConfig.clearFiltersText || 'Clear'}
             </Button>
           )}
         </div>

@@ -18,6 +18,7 @@ export default defineConfig({
         'react',
         'react-dom',
         'antd',
+        'dayjs',
         '@fortawesome/react-fontawesome',
         '@fortawesome/fontawesome-svg-core',
         '@fortawesome/free-solid-svg-icons',
@@ -27,11 +28,20 @@ export default defineConfig({
           react: 'React',
           'react-dom': 'ReactDOM',
           antd: 'antd',
+          dayjs: 'dayjs',
           '@fortawesome/react-fontawesome': 'ReactFontawesome',
           '@fortawesome/fontawesome-svg-core': 'FontAwesomeCore',
           '@fortawesome/free-solid-svg-icons': 'FontAwesomeSolid',
         },
+        exports: 'auto', // Allow both named and default exports
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && (assetInfo.name.endsWith('.css') || assetInfo.name === 'style.css')) {
+            return 'gantt.css'
+          }
+          return assetInfo.name || 'asset'
+        },
       },
     },
+    cssCodeSplit: false,
   },
 })

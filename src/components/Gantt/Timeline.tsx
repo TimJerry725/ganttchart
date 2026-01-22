@@ -1,9 +1,10 @@
 import React, { forwardRef, useState, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import type { Task, Link, Scale, GanttConfig, Baseline } from './types';
 import { TaskBar } from './TaskBar';
 import { LinkRenderer } from './LinkRenderer';
 import { useDragDrop } from './DragDrop';
-import { addToDate, formatDate, isWeekend, isHoliday } from './utils/dateUtils';
+import { addToDate, formatDate, isWeekend, isHoliday, getStartOfDay } from './utils/dateUtils';
 
 interface TimelineProps {
   tasks: Task[];
@@ -48,13 +49,24 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       scales[1].step
     );
 
-    // Update local tasks when props change
+    // Update local tasks when props change - use shallow comparison for performance
     React.useEffect(() => {
-      setLocalTasks(tasks);
+      const tasksChanged = tasks.length !== localTasks.length || 
+        tasks.some((t, i) => {
+          const local = localTasks[i];
+          return !local || t.id !== local.id || 
+            t.start.getTime() !== local.start.getTime() ||
+            t.end.getTime() !== local.end.getTime();
+        });
+      
+      if (tasksChanged) {
+        setLocalTasks(tasks);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tasks]);
 
-    // Generate timeline cells
-    const generateCells = (scale: Scale) => {
+    // Generate timeline cells - memoized for performance
+    const generateCells = React.useCallback((scale: Scale) => {
       const cells: { date: Date; label: string }[] = [];
       let currentDate = new Date(range.start);
 
@@ -67,9 +79,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       }
 
       return cells;
-    };
+    }, [range.start.getTime(), range.end.getTime()]);
 
-    const getPixelPosition = (date: Date) => {
+    const getPixelPosition = React.useCallback((date: Date) => {
       const scale = scales[1]; // secondary scale
       const startMs = range.start.getTime();
       const dateMs = date.getTime();
@@ -86,7 +98,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
       const unitMs = unitMsMap[scale.unit] || 86400000;
       return (diffMs / (unitMs * scale.step)) * columnWidth;
-    };
+    }, [scales, range.start, columnWidth]);
 
     const getTaskPosition = (task: Task) => {
       const left = getPixelPosition(task.start);
@@ -123,14 +135,21 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       };
     };
 
+    const mouseMoveTimeoutRef = React.useRef<number | null>(null);
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
       if (dragState.taskId && dragState.type) {
-        const updatedTask = handleDrag(e.clientX, e.clientY);
-        if (updatedTask) {
-          setLocalTasks(prev =>
-            prev.map(t => t.id === updatedTask.id ? updatedTask : t)
-          );
+        // Throttle to 16ms (60fps) for smooth performance
+        if (mouseMoveTimeoutRef.current) {
+          cancelAnimationFrame(mouseMoveTimeoutRef.current);
         }
+        mouseMoveTimeoutRef.current = requestAnimationFrame(() => {
+          const updatedTask = handleDrag(e.clientX, e.clientY);
+          if (updatedTask) {
+            setLocalTasks(prev =>
+              prev.map(t => t.id === updatedTask.id ? updatedTask : t)
+            );
+          }
+        });
       }
     }, [dragState, handleDrag]);
 
@@ -143,10 +162,10 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     }, [dragState, localTasks, handleDragEnd, onTaskDragEnd]);
 
     const secondaryScale = scales[1];
-    const secondaryCells = generateCells(secondaryScale);
+    const secondaryCells = React.useMemo(() => generateCells(secondaryScale), [generateCells, secondaryScale]);
 
-    // Group cells for the top header (Month/Year)
-    const generateTopHeaderCells = () => {
+    // Group cells for the top header (Month/Year) - memoized
+    const generateTopHeaderCells = React.useCallback(() => {
       const cells: { label: string; width: number }[] = [];
       let currentMonth = -1;
       let currentYear = -1;
@@ -174,10 +193,10 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         cells.push({ label: currentLabel, width: currentWidth });
       }
       return cells;
-    };
+    }, [secondaryCells, columnWidth]);
 
-    // Group cells for the middle header (15-day ranges)
-    const generateMiddleHeaderCells = () => {
+    // Group cells for the middle header (15-day ranges) - memoized
+    const generateMiddleHeaderCells = React.useCallback(() => {
       const cells: { label: string; width: number }[] = [];
       let currentPeriod = -1; // 0 for 1-15, 1 for 16+
       let currentWidth = 0;
@@ -211,11 +230,52 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         cells.push({ label: currentLabel, width: currentWidth });
       }
       return cells;
-    };
+    }, [secondaryCells, columnWidth]);
 
-    const topHeaderCells = generateTopHeaderCells();
-    const middleHeaderCells = generateMiddleHeaderCells();
-    const totalWidth = secondaryCells.length * columnWidth;
+    const topHeaderCells = React.useMemo(() => generateTopHeaderCells(), [generateTopHeaderCells]);
+    const middleHeaderCells = React.useMemo(() => generateMiddleHeaderCells(), [generateMiddleHeaderCells]);
+    const totalWidth = React.useMemo(() => secondaryCells.length * columnWidth, [secondaryCells.length, columnWidth]);
+
+    // Calculate positions for Today and Project Start lines
+    const today = React.useMemo(() => {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }, []);
+
+    const todayPosition = React.useMemo(() => {
+      if (!config.showTodayLine) return null;
+      const pos = getPixelPosition(today);
+      // Only show if within visible range (with some margin)
+      // Position exactly on the grid line (no offset)
+      if (pos >= -columnWidth && pos <= totalWidth + columnWidth) {
+        return Math.max(0, Math.min(pos, totalWidth));
+      }
+      return null;
+    }, [config.showTodayLine, today, totalWidth, columnWidth, getPixelPosition]);
+
+    const projectStartDate = React.useMemo(() => {
+      if (config.projectStartDate) {
+        return getStartOfDay(config.projectStartDate);
+      }
+      // Default to earliest task start
+      if (tasks.length > 0) {
+        const starts = tasks.map(t => t.start.getTime());
+        return getStartOfDay(new Date(Math.min(...starts)));
+      }
+      return null;
+    }, [config.projectStartDate, tasks]);
+
+    const projectStartPosition = React.useMemo(() => {
+      if (!config.showProjectStartLine || !projectStartDate) return null;
+      const pos = getPixelPosition(projectStartDate);
+      // Only show if within visible range (with some margin)
+      // Position exactly on the grid line (no offset)
+      if (pos >= -columnWidth && pos <= totalWidth + columnWidth) {
+        return Math.max(0, Math.min(pos, totalWidth));
+      }
+      return null;
+    }, [config.showProjectStartLine, projectStartDate, totalWidth, columnWidth, getPixelPosition]);
 
     return (
       <div
@@ -223,9 +283,63 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         ref={ref}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        style={{ width: totalWidth }}
+        style={{ width: totalWidth, position: 'relative' }}
       >
-        <div className="gantt-timeline-header" style={{ width: totalWidth, minWidth: totalWidth }}>
+        {/* Today and Project Start line labels - only show if explicitly configured */}
+        {(config.todayLineLabel || config.projectStartLineLabel) && (
+          <div style={{ position: 'absolute', top: '-40px', left: 0, right: 0, height: '32px', zIndex: 100, pointerEvents: 'none' }}>
+            {todayPosition !== null && config.todayLineLabel && (
+              <div
+                className="gantt-today-line-label"
+                style={{
+                  position: 'absolute',
+                  top: '0',
+                  left: `${todayPosition}px`,
+                  transform: 'translateX(-50%)',
+                  backgroundColor: config.todayLineColor || '#ff4d4f',
+                  color: '#ffffff',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                  lineHeight: '1.2',
+                  ...config.todayLineLabelStyle, // Allow custom styling
+                }}
+              >
+                {config.todayLineLabel}
+              </div>
+            )}
+
+            {projectStartPosition !== null && config.projectStartLineLabel && (
+              <div
+                className="gantt-project-start-line-label"
+                style={{
+                  position: 'absolute',
+                  top: '0',
+                  left: `${projectStartPosition}px`,
+                  transform: 'translateX(-50%)',
+                  backgroundColor: config.projectStartLineColor || '#40a9ff',
+                  color: '#ffffff',
+                  padding: '4px 10px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                  lineHeight: '1.2',
+                  ...config.projectStartLineLabelStyle, // Allow custom styling
+                }}
+              >
+                {config.projectStartLineLabel}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="gantt-timeline-header" style={{ width: totalWidth, minWidth: totalWidth, position: 'relative' }}>
+
           {/* Level 1: Month/Year */}
           <div className="gantt-timeline-scale gantt-timeline-scale-month" style={{ width: totalWidth }}>
             {topHeaderCells.map((cell, index) => (
@@ -284,7 +398,56 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
           </div>
         </div>
 
-        <div className="gantt-timeline-body" style={{ width: totalWidth }}>
+        <div className="gantt-timeline-body" style={{ width: totalWidth, position: 'relative' }}>
+          {/* Today and Project Start vertical lines - rendered behind grid but above task bars */}
+          {todayPosition !== null && (
+            <div
+              className="gantt-today-line"
+              style={{
+                position: 'absolute',
+                left: `${todayPosition}px`,
+                top: 0,
+                bottom: 0,
+                width: `${config.todayLineWidth || 1}px`,
+                backgroundColor: config.todayLineColor || '#ff4d4f',
+                opacity: config.todayLineOpacity !== undefined ? config.todayLineOpacity : 1,
+                borderLeft: config.todayLineStyle === 'dashed' 
+                  ? `${config.todayLineWidth || 1}px dashed ${config.todayLineColor || '#ff4d4f'}`
+                  : config.todayLineStyle === 'dotted'
+                  ? `${config.todayLineWidth || 1}px dotted ${config.todayLineColor || '#ff4d4f'}`
+                  : 'none',
+                zIndex: 6,
+                pointerEvents: 'none',
+                // Clean thin line matching reference image - positioned exactly on grid boundary
+                // For crisp rendering, use left positioning without transform
+              }}
+            />
+          )}
+
+          {projectStartPosition !== null && (
+            <div
+              className="gantt-project-start-line"
+              style={{
+                position: 'absolute',
+                left: `${projectStartPosition}px`,
+                top: 0,
+                bottom: 0,
+                width: `${config.projectStartLineWidth || 1}px`,
+                backgroundColor: config.projectStartLineColor || '#40a9ff',
+                opacity: config.projectStartLineOpacity !== undefined ? config.projectStartLineOpacity : 1,
+                borderLeft: config.projectStartLineStyle === 'dashed' 
+                  ? `${config.projectStartLineWidth || 1}px dashed ${config.projectStartLineColor || '#40a9ff'}`
+                  : config.projectStartLineStyle === 'dotted'
+                  ? `${config.projectStartLineWidth || 1}px dotted ${config.projectStartLineColor || '#40a9ff'}`
+                  : 'none',
+                zIndex: 6,
+                pointerEvents: 'none',
+                // Clean thin line matching reference image - positioned exactly on grid boundary
+                // For crisp rendering, use left positioning without transform
+              }}
+            />
+          )}
+
           {/* Grid lines */}
           <div className="gantt-timeline-grid">
             {secondaryCells.map((cell, index) => {
