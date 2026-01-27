@@ -819,7 +819,7 @@ body.gantt-dragging {
   left: 50%;
   width: 14px;
   height: 14px;
-  background-color: var(--wx-gantt-milestone-color);
+  background-color: var(--wx-gantt-baseline-color);
   transform: translate(-50%, -50%) rotate(45deg);
   border-radius: var(--wx-gantt-milestone-border-radius);
   box-shadow: var(--wx-gantt-bar-shadow);
@@ -1398,6 +1398,12 @@ body.gantt-dragging {
   pointer-events: none;
   opacity: 0.7;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.gantt-baseline-bar.milestone {
+  background-color: var(--wx-gantt-milestone-color);
+  opacity: 1;
+  /* Make it more prominent since it's the 'purple' mark */
 }
 
 .gantt-variance-indicator {

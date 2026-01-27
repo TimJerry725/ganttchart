@@ -17,11 +17,11 @@ export const BaselineRenderer: React.FC<BaselineRendererProps> = ({
   if (!baseline) return null;
 
   const baselinePos = getBaselinePosition(baseline);
-  
+
   // Calculate variance
   const startVariance = (task.start.getTime() - baseline.start.getTime()) / (1000 * 60 * 60 * 24);
   const endVariance = (task.end.getTime() - baseline.end.getTime()) / (1000 * 60 * 60 * 24);
-  
+
   const isDelayed = startVariance > 0 || endVariance > 0;
   const isAhead = startVariance < 0 && endVariance < 0;
 
@@ -29,14 +29,14 @@ export const BaselineRenderer: React.FC<BaselineRendererProps> = ({
     <div className="gantt-baseline-container">
       {/* Baseline bar */}
       <div
-        className="gantt-baseline-bar"
+        className={`gantt-baseline-bar ${task.type === 'milestone' ? 'milestone' : ''}`}
         style={{
           left: `${baselinePos.left}%`,
           width: `${baselinePos.width}%`,
         }}
         title={`Baseline: ${baseline.start.toLocaleDateString()} - ${baseline.end.toLocaleDateString()}`}
       />
-      
+
       {/* Variance indicator */}
       {(isDelayed || isAhead) && (
         <div
@@ -58,7 +58,7 @@ export const BaselineRenderer: React.FC<BaselineRendererProps> = ({
 // Create baseline from current tasks
 export const createBaseline = (tasks: Task[]): Map<string, Baseline> => {
   const baselines = new Map<string, Baseline>();
-  
+
   tasks.forEach(task => {
     baselines.set(task.id, {
       taskId: task.id,
@@ -66,7 +66,7 @@ export const createBaseline = (tasks: Task[]): Map<string, Baseline> => {
       end: new Date(task.end),
     });
   });
-  
+
   return baselines;
 };
 
@@ -86,7 +86,7 @@ export const generateVarianceReport = (
 ): VarianceReport[] => {
   return tasks.map(task => {
     const baseline = baselines.get(task.id);
-    
+
     if (!baseline) {
       return {
         taskId: task.id,
@@ -97,25 +97,25 @@ export const generateVarianceReport = (
         status: 'on-track' as const,
       };
     }
-    
+
     const startVariance = Math.round(
       (task.start.getTime() - baseline.start.getTime()) / (1000 * 60 * 60 * 24)
     );
-    
+
     const endVariance = Math.round(
       (task.end.getTime() - baseline.end.getTime()) / (1000 * 60 * 60 * 24)
     );
-    
+
     const baselineDuration = Math.round(
       (baseline.end.getTime() - baseline.start.getTime()) / (1000 * 60 * 60 * 24)
     );
-    
+
     const durationVariance = task.duration - baselineDuration;
-    
+
     let status: 'on-track' | 'delayed' | 'ahead' = 'on-track';
     if (endVariance > 1) status = 'delayed';
     else if (endVariance < -1) status = 'ahead';
-    
+
     return {
       taskId: task.id,
       taskName: task.text,

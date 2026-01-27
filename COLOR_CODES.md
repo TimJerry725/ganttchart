@@ -22,7 +22,17 @@
 - **Hex Code**: `#9E9E9E`
 - **RGB**: `rgb(158, 158, 158)`
 
-## Baseline Bar
+## Milestones
+
+### Actual Milestone (Diamond)
+- **Color**: Gray
+- **Hex Code**: `#BDBDBD`
+
+### Milestone Baseline
+- **Color**: Purple
+- **Hex Code**: `#9C27B0`
+
+## Baseline Bar (Standard)
 
 ### Baseline (Original Plan)
 - **Color**: Gray

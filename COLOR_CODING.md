@@ -13,13 +13,15 @@ The Gantt chart uses a status-based color coding system to visually indicate the
 | **Delayed** | Red | `#F44336` | `--wx-gantt-status-delayed` |
 | **Not Started** | Gray | `#9E9E9E` | `--wx-gantt-status-not-started` |
 
-## Baseline Bar
+## Milestones and Baseline Bar
 
-The baseline bar (showing the original planned timeline) uses a gray color:
+Milestones have a special color rule:
+- **Actual Milestone (Diamond)**: Gray (`#BDBDBD`)
+- **Milestone Baseline**: Purple (`#9C27B0`)
 
-| Element | Color | Hex Code | CSS Variable |
-|---------|-------|----------|--------------|
-| **Baseline** | Gray | `#BDBDBD` | `--wx-gantt-baseline-color` |
+Other tasks use the default gray baseline:
+- **Standard Baseline**: Gray (`#BDBDBD`) | `--wx-gantt-baseline-color` |
+
 
 ## Usage
 
