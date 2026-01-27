@@ -980,6 +980,33 @@ body.gantt-dragging {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* On-hold period styling */
+.gantt-on-hold-period {
+  position: absolute;
+  height: 20px;
+  /* Internal height, task bar is 28px */
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: #f1f3f4;
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 5px,
+      #dadce0 5px,
+      #dadce0 10px);
+  border-radius: 4px;
+  opacity: 0.8;
+  z-index: 1;
+}
+
+.theme-dark .gantt-on-hold-period {
+  background-color: #3c4043;
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 5px,
+      #5f6368 5px,
+      #5f6368 10px);
+}
+
 /* Modern Scrollbar Styling */
 .gantt-layout::-webkit-scrollbar {
   width: 8px;

@@ -13,6 +13,7 @@ export interface Task {
   owner?: string;
   priority?: 'low' | 'medium' | 'high';
   status?: 'completed' | 'in-progress' | 'delayed' | 'not-started';
+  onHoldPeriods?: { start: Date; end: Date }[];
   dependencies?: string[]; // Array of task IDs this task depends on
   segments?: TaskSegment[]; // For split tasks
 }

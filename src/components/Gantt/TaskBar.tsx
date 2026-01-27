@@ -126,17 +126,32 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     </div>
   );
 
-  if (task.segments && task.segments.length > 0) {
+  if ((task.segments && task.segments.length > 0) || (task.onHoldPeriods && task.onHoldPeriods.length > 0)) {
+    const totalDuration = task.end.getTime() - task.start.getTime();
+
     return (
       <div className="gantt-task-group">
-        {task.segments.map((seg: TaskSegment, i) => (
-          <Tooltip key={i} title={tooltipContent} mouseEnterDelay={0.5}>
+        {/* Render on-hold periods first (usually background-like) */}
+        {task.onHoldPeriods?.map((hold, i) => (
+          <div
+            key={`hold-${i}`}
+            className="gantt-on-hold-period"
+            style={{
+              left: `${position.left + (hold.start.getTime() - task.start.getTime()) / totalDuration * position.width}px`,
+              width: `${(hold.end.getTime() - hold.start.getTime()) / totalDuration * position.width}px`,
+            }}
+          />
+        ))}
+
+        {/* Render active segments */}
+        {task.segments?.map((seg: TaskSegment, i) => (
+          <Tooltip key={`seg-${i}`} title={tooltipContent} mouseEnterDelay={0.5}>
             <div
               className={getTaskBarClass() + ' segment'}
               style={{
-                left: `${position.left + (seg.start.getTime() - task.start.getTime()) / (task.end.getTime() - task.start.getTime()) * position.width}px`,
-                width: `${(seg.end.getTime() - seg.start.getTime()) / (task.end.getTime() - task.start.getTime()) * position.width}px`,
-                backgroundColor: task.color || '#ADCFFE',
+                left: `${position.left + (seg.start.getTime() - task.start.getTime()) / totalDuration * position.width}px`,
+                width: `${(seg.end.getTime() - seg.start.getTime()) / totalDuration * position.width}px`,
+                backgroundColor: task.color || undefined,
               }}
               onClick={onClick}
               onMouseDown={(e) => handleMouseDown(e, 'move')}
@@ -145,6 +160,12 @@ export const TaskBar: React.FC<TaskBarProps> = ({
             </div>
           </Tooltip>
         ))}
+
+        {/* If no segments but has hold periods, we might need to render the "main" task bar parts 
+            or assume the user defines segments if they want gaps. 
+            However, the image shows on-hold as a STRIKE OUT AREA between periods.
+            If I have onHoldPeriods, I should probably also have segments for the active parts.
+        */}
       </div>
     );
   }

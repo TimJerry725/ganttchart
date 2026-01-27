@@ -13,6 +13,14 @@ The Gantt chart uses a status-based color coding system to visually indicate the
 | **Delayed** | Red | `#F44336` | `--wx-gantt-status-delayed` |
 | **Not Started** | Gray | `#9E9E9E` | `--wx-gantt-status-not-started` |
 
+## On-Hold Periods
+
+On-hold periods are rendered as gray diagonal hashed areas (strike-out effect) between active task segments.
+
+| Type | Pattern | Hex Code (Base) | CSS Class |
+|------|---------|-----------------|-----------|
+| **On-Hold**| Gray Hashed | `#F1F3F4` / `#DADCE0` | `.gantt-on-hold-period` |
+
 ## Milestones and Baseline Bar
 
 Milestones have a special color rule:

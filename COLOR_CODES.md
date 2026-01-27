@@ -22,6 +22,12 @@
 - **Hex Code**: `#9E9E9E`
 - **RGB**: `rgb(158, 158, 158)`
 
+## On-Hold Periods
+
+### On-Hold (Strike-out area)
+- **Color**: Gray Hashed
+- **Hex Code**: `#DADCE0` (Stripe) / `#F1F3F4` (Background)
+
 ## Milestones
 
 ### Actual Milestone (Diamond)
