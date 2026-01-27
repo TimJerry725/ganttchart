@@ -237,9 +237,11 @@ export const Gantt: React.FC<GanttProps> = ({
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(1);
-  // Baselines are always visible - auto-created when tasks are set
+  // Baselines are always visible - auto-created when tasks are first created
+  // Baselines represent the original plan and remain fixed even when tasks are moved/resized
   const [baselines, setBaselines] = useState<Map<string, Baseline>>(() => {
-    // Initialize baselines from initial tasks
+    // Initialize baselines from initial tasks (only for tasks that don't have baselines yet)
+    // This captures the original plan when tasks are first loaded
     if (safeTasks.length > 0) {
       return createBaseline(safeTasks);
     }
@@ -277,22 +279,28 @@ export const Gantt: React.FC<GanttProps> = ({
     holidays: [],
     theme: currentTheme,
     locale: 'en',
-    // Today and Project Start lines - enabled by default, labels hidden by default (matching reference image)
+    // Today and Project Start lines - enabled by default, labels visible by default
     showTodayLine: config.showTodayLine !== false, // Default: true
     todayLineColor: config.todayLineColor || '#ff4d4f', // Red
-    todayLineLabel: config.todayLineLabel, // No default - labels hidden unless explicitly provided
+    todayLineLabel: config.todayLineLabel !== undefined ? config.todayLineLabel : 'Today', // Default: 'Today'
     todayLineWidth: config.todayLineWidth || 1, // Line width in pixels (default: 1px for thin line)
     todayLineStyle: config.todayLineStyle || 'solid', // 'solid' | 'dashed' | 'dotted'
     todayLineOpacity: config.todayLineOpacity !== undefined ? config.todayLineOpacity : 1, // 0-1
     todayLineLabelStyle: config.todayLineLabelStyle, // Custom label styles
+    showTodayLineMarker: config.showTodayLineMarker !== false, // Default: true
+    todayLineMarkerSize: config.todayLineMarkerSize || 8, // Marker size in pixels
+    todayLineMarkerStyle: config.todayLineMarkerStyle || 'triangle', // Marker style
     showProjectStartLine: config.showProjectStartLine !== false, // Default: true
     projectStartDate: config.projectStartDate, // Will be calculated from tasks if not provided
     projectStartLineColor: config.projectStartLineColor || '#40a9ff', // Light blue
-    projectStartLineLabel: config.projectStartLineLabel, // No default - labels hidden unless explicitly provided
+    projectStartLineLabel: config.projectStartLineLabel !== undefined ? config.projectStartLineLabel : 'Start Project', // Default: 'Start Project'
     projectStartLineWidth: config.projectStartLineWidth || 1, // Line width in pixels (default: 1px for thin line)
     projectStartLineStyle: config.projectStartLineStyle || 'solid', // 'solid' | 'dashed' | 'dotted'
     projectStartLineOpacity: config.projectStartLineOpacity !== undefined ? config.projectStartLineOpacity : 1, // 0-1
     projectStartLineLabelStyle: config.projectStartLineLabelStyle, // Custom label styles
+    showProjectStartLineMarker: config.showProjectStartLineMarker !== false, // Default: true
+    projectStartLineMarkerSize: config.projectStartLineMarkerSize || 8, // Marker size in pixels
+    projectStartLineMarkerStyle: config.projectStartLineMarkerStyle || 'triangle', // Marker style
     ...config,
   };
 
@@ -498,6 +506,21 @@ export const Gantt: React.FC<GanttProps> = ({
       parent: parentId, // Set parent if provided (for subtasks)
     };
     createTaskWithHistory(newTask);
+    
+    // Automatically create baseline for new task with its initial dates
+    // This baseline will remain fixed even when the task is moved/resized
+    // The baseline represents the "original plan" and only the actual task bar will change
+    const newBaseline: Baseline = {
+      taskId: newTask.id,
+      start: new Date(newTask.start), // Capture original start date
+      end: new Date(newTask.end), // Capture original end date
+    };
+    setBaselines(prev => {
+      const updated = new Map(prev);
+      updated.set(newTask.id, newBaseline);
+      return updated;
+    });
+    
     if (onTaskCreate) onTaskCreate(newTask);
   };
 
@@ -508,6 +531,12 @@ export const Gantt: React.FC<GanttProps> = ({
 
   const handleDeleteTask = (taskId: string) => {
     deleteTaskWithHistory(taskId);
+    // Remove baseline when task is deleted
+    setBaselines(prev => {
+      const updated = new Map(prev);
+      updated.delete(taskId);
+      return updated;
+    });
     if (onTaskDelete) onTaskDelete(taskId);
   };
 
@@ -523,17 +552,40 @@ export const Gantt: React.FC<GanttProps> = ({
     if (onLinkDelete) onLinkDelete(linkId);
   };
 
-  // Auto-create baselines when tasks are set or updated
-  // Baselines are always visible and automatically created from current task state
+  // Auto-create baselines ONLY for new tasks when they are first created
+  // Baselines represent the original plan and should NOT change when tasks are moved/resized
+  // Only create baselines for tasks that don't have one yet
   useEffect(() => {
-    if (tasks.length > 0) {
-      const newBaselines = createBaseline(tasks);
+    const newBaselines = new Map(baselines);
+    let hasNewBaselines = false;
+
+    tasks.forEach(task => {
+      // Only create baseline if task doesn't have one yet
+      if (!baselines.has(task.id)) {
+        newBaselines.set(task.id, {
+          taskId: task.id,
+          start: new Date(task.start), // Capture original start date
+          end: new Date(task.end), // Capture original end date
+        });
+        hasNewBaselines = true;
+      }
+      // Do NOT update existing baselines - they remain fixed at original task dates
+    });
+
+    // Remove baselines for deleted tasks
+    const taskIds = new Set(tasks.map(t => t.id));
+    baselines.forEach((_baseline, taskId) => {
+      if (!taskIds.has(taskId)) {
+        newBaselines.delete(taskId);
+        hasNewBaselines = true;
+      }
+    });
+
+    if (hasNewBaselines) {
       setBaselines(newBaselines);
-    } else {
-      // Clear baselines if no tasks
-      setBaselines(new Map());
     }
-  }, [tasks]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasks]); // Only depend on tasks, not baselines to avoid loops
 
   // Keyboard shortcuts
   useEffect(() => {

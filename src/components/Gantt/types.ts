@@ -12,6 +12,7 @@ export interface Task {
   details?: string;
   owner?: string;
   priority?: 'low' | 'medium' | 'high';
+  status?: 'completed' | 'in-progress' | 'delayed' | 'not-started';
   dependencies?: string[]; // Array of task IDs this task depends on
   segments?: TaskSegment[]; // For split tasks
 }
@@ -85,6 +86,13 @@ export interface GanttConfig {
   // Label styling
   todayLineLabelStyle?: React.CSSProperties; // Custom styles for today label
   projectStartLineLabelStyle?: React.CSSProperties; // Custom styles for project start label
+  // Marker styling
+  showTodayLineMarker?: boolean; // Show marker at top of today line (default: true)
+  todayLineMarkerSize?: number; // Size of marker in pixels (default: 8)
+  todayLineMarkerStyle?: 'triangle' | 'arrow' | 'dot'; // Marker style (default: 'triangle')
+  showProjectStartLineMarker?: boolean; // Show marker at top of project start line (default: true)
+  projectStartLineMarkerSize?: number; // Size of marker in pixels (default: 8)
+  projectStartLineMarkerStyle?: 'triangle' | 'arrow' | 'dot'; // Marker style (default: 'triangle')
 }
 
 // Icon configuration - allows custom icon components or FontAwesome icon names
@@ -98,13 +106,13 @@ export interface GanttIconConfig {
   exportExcel?: React.ReactNode | string;
   exportJSON?: React.ReactNode | string;
   exportPDF?: React.ReactNode | string;
-  
+
   // Grid icons
   gripVertical?: React.ReactNode | string;
   chevronRight?: React.ReactNode | string;
   chevronDown?: React.ReactNode | string;
   plus?: React.ReactNode | string;
-  
+
   // Context menu icons
   edit?: React.ReactNode | string;
   delete?: React.ReactNode | string;
@@ -136,20 +144,20 @@ export interface GanttStyleConfig {
   fontColorAlt?: string;
   iconColor?: string;
   borderColor?: string;
-  
+
   // Fonts
   fontFamily?: string;
   fontMono?: string;
   fontSize?: string;
   fontWeight?: string | number;
   lineHeight?: string | number;
-  
+
   // Layout spacing
   spacingXS?: string;
   spacingSM?: string;
   spacingMD?: string;
   spacingLG?: string;
-  
+
   // Custom CSS variables (for advanced customization)
   customCSSVariables?: Record<string, string>;
 }

@@ -41,6 +41,11 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     if (selected) classes.push('selected');
     if (dragging) classes.push('dragging');
 
+    // Add status-based class if status is defined
+    if (task.status) {
+      classes.push(`status-${task.status}`);
+    }
+
     return classes.join(' ');
   };
 

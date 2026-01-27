@@ -284,60 +284,59 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         onMouseUp={handleMouseUp}
         style={{ width: totalWidth, position: 'relative' }}
       >
-        {/* Today and Project Start line labels - only show if explicitly configured */}
-        {(config.todayLineLabel || config.projectStartLineLabel) && (
-          <div style={{ position: 'absolute', top: '-40px', left: 0, right: 0, height: '32px', zIndex: 100, pointerEvents: 'none' }}>
-            {todayPosition !== null && config.todayLineLabel && (
-              <div
-                className="gantt-today-line-label"
-                style={{
-                  position: 'absolute',
-                  top: '0',
-                  left: `${todayPosition}px`,
-                  transform: 'translateX(-50%)',
-                  backgroundColor: config.todayLineColor || '#ff4d4f',
-                  color: '#ffffff',
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
-                  lineHeight: '1.2',
-                  ...config.todayLineLabelStyle, // Allow custom styling
-                }}
-              >
-                {config.todayLineLabel}
-              </div>
-            )}
-
-            {projectStartPosition !== null && config.projectStartLineLabel && (
-              <div
-                className="gantt-project-start-line-label"
-                style={{
-                  position: 'absolute',
-                  top: '0',
-                  left: `${projectStartPosition}px`,
-                  transform: 'translateX(-50%)',
-                  backgroundColor: config.projectStartLineColor || '#40a9ff',
-                  color: '#ffffff',
-                  padding: '4px 10px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
-                  lineHeight: '1.2',
-                  ...config.projectStartLineLabelStyle, // Allow custom styling
-                }}
-              >
-                {config.projectStartLineLabel}
-              </div>
-            )}
-          </div>
-        )}
-
         <div className="gantt-timeline-header" style={{ width: totalWidth, minWidth: totalWidth, position: 'relative' }}>
+          {/* Today and Project Start line labels - visible by default, positioned at the day row (first calendar row with dates) */}
+          {todayPosition !== null && config.showTodayLine && config.todayLineLabel && config.todayLineLabel !== '' && (
+            <div
+              className="gantt-today-line-label"
+              style={{
+                position: 'absolute',
+                top: `calc(var(--gantt-scale-height, 24px) * 2)`, // Position at the start of the day row (after month and range rows)
+                left: `${todayPosition}px`,
+                transform: 'translateX(-50%)',
+                backgroundColor: config.todayLineColor || '#ff4d4f',
+                color: '#ffffff',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                lineHeight: '1.2',
+                zIndex: 101,
+                pointerEvents: 'none',
+                ...config.todayLineLabelStyle, // Allow custom styling
+              }}
+            >
+              {config.todayLineLabel}
+            </div>
+          )}
+
+          {projectStartPosition !== null && config.showProjectStartLine && config.projectStartLineLabel && config.projectStartLineLabel !== '' && (
+            <div
+              className="gantt-project-start-line-label"
+              style={{
+                position: 'absolute',
+                top: `calc(var(--gantt-scale-height, 24px) * 2)`, // Position at the start of the day row (after month and range rows)
+                left: `${projectStartPosition}px`,
+                transform: 'translateX(-50%)',
+                backgroundColor: config.projectStartLineColor || '#40a9ff',
+                color: '#ffffff',
+                padding: '4px 10px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: 600,
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.2)',
+                lineHeight: '1.2',
+                zIndex: 101,
+                pointerEvents: 'none',
+                ...config.projectStartLineLabelStyle, // Allow custom styling
+              }}
+            >
+              {config.projectStartLineLabel}
+            </div>
+          )}
 
           {/* Level 1: Month/Year */}
           <div className="gantt-timeline-scale gantt-timeline-scale-month" style={{ width: totalWidth }}>
@@ -400,51 +399,195 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         <div className="gantt-timeline-body" style={{ width: totalWidth, position: 'relative' }}>
           {/* Today and Project Start vertical lines - rendered behind grid but above task bars */}
           {todayPosition !== null && (
-            <div
-              className="gantt-today-line"
-              style={{
-                position: 'absolute',
-                left: `${todayPosition}px`,
-                top: 0,
-                bottom: 0,
-                width: `${config.todayLineWidth || 1}px`,
-                backgroundColor: config.todayLineColor || '#ff4d4f',
-                opacity: config.todayLineOpacity !== undefined ? config.todayLineOpacity : 1,
-                borderLeft: config.todayLineStyle === 'dashed' 
-                  ? `${config.todayLineWidth || 1}px dashed ${config.todayLineColor || '#ff4d4f'}`
-                  : config.todayLineStyle === 'dotted'
-                  ? `${config.todayLineWidth || 1}px dotted ${config.todayLineColor || '#ff4d4f'}`
-                  : 'none',
-                zIndex: 6,
-                pointerEvents: 'none',
-                // Clean thin line matching reference image - positioned exactly on grid boundary
-                // For crisp rendering, use left positioning without transform
-              }}
-            />
+            <>
+              {/* Today line marker at top */}
+              {config.showTodayLineMarker !== false && (() => {
+                const markerSize = config.todayLineMarkerSize || 8;
+                const markerColor = config.todayLineColor || '#ff4d4f';
+                const markerStyle = config.todayLineMarkerStyle || 'triangle';
+                const opacity = config.todayLineOpacity !== undefined ? config.todayLineOpacity : 1;
+
+                if (markerStyle === 'triangle') {
+                  return (
+                    <div
+                      className="gantt-today-line-marker"
+                      style={{
+                        position: 'absolute',
+                        left: `${todayPosition}px`,
+                        top: '-4px',
+                        transform: 'translateX(-50%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: `${markerSize}px solid transparent`,
+                        borderRight: `${markerSize}px solid transparent`,
+                        borderBottom: `${markerSize}px solid ${markerColor}`,
+                        zIndex: 7,
+                        pointerEvents: 'none',
+                        opacity,
+                      }}
+                    />
+                  );
+                } else if (markerStyle === 'arrow') {
+                  return (
+                    <div
+                      className="gantt-today-line-marker"
+                      style={{
+                        position: 'absolute',
+                        left: `${todayPosition}px`,
+                        top: '-6px',
+                        transform: 'translateX(-50%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: `${markerSize}px solid transparent`,
+                        borderRight: `${markerSize}px solid transparent`,
+                        borderBottom: `${markerSize * 0.7}px solid ${markerColor}`,
+                        zIndex: 7,
+                        pointerEvents: 'none',
+                        opacity,
+                      }}
+                    />
+                  );
+                } else if (markerStyle === 'dot') {
+                  return (
+                    <div
+                      className="gantt-today-line-marker"
+                      style={{
+                        position: 'absolute',
+                        left: `${todayPosition}px`,
+                        top: `-${markerSize / 2}px`,
+                        transform: 'translateX(-50%)',
+                        width: `${markerSize}px`,
+                        height: `${markerSize}px`,
+                        borderRadius: '50%',
+                        backgroundColor: markerColor,
+                        zIndex: 7,
+                        pointerEvents: 'none',
+                        opacity,
+                      }}
+                    />
+                  );
+                }
+                return null;
+              })()}
+              {/* Today line */}
+              <div
+                className="gantt-today-line"
+                style={{
+                  position: 'absolute',
+                  left: `${todayPosition}px`,
+                  top: 0,
+                  bottom: 0,
+                  width: `${config.todayLineWidth || 1}px`,
+                  backgroundColor: config.todayLineColor || '#ff4d4f',
+                  opacity: config.todayLineOpacity !== undefined ? config.todayLineOpacity : 1,
+                  borderLeft: config.todayLineStyle === 'dashed' 
+                    ? `${config.todayLineWidth || 1}px dashed ${config.todayLineColor || '#ff4d4f'}`
+                    : config.todayLineStyle === 'dotted'
+                    ? `${config.todayLineWidth || 1}px dotted ${config.todayLineColor || '#ff4d4f'}`
+                    : 'none',
+                  zIndex: 6,
+                  pointerEvents: 'none',
+                  // Clean thin line matching reference image - positioned exactly on grid boundary
+                  // For crisp rendering, use left positioning without transform
+                }}
+              />
+            </>
           )}
 
           {projectStartPosition !== null && (
-            <div
-              className="gantt-project-start-line"
-              style={{
-                position: 'absolute',
-                left: `${projectStartPosition}px`,
-                top: 0,
-                bottom: 0,
-                width: `${config.projectStartLineWidth || 1}px`,
-                backgroundColor: config.projectStartLineColor || '#40a9ff',
-                opacity: config.projectStartLineOpacity !== undefined ? config.projectStartLineOpacity : 1,
-                borderLeft: config.projectStartLineStyle === 'dashed' 
-                  ? `${config.projectStartLineWidth || 1}px dashed ${config.projectStartLineColor || '#40a9ff'}`
-                  : config.projectStartLineStyle === 'dotted'
-                  ? `${config.projectStartLineWidth || 1}px dotted ${config.projectStartLineColor || '#40a9ff'}`
-                  : 'none',
-                zIndex: 6,
-                pointerEvents: 'none',
-                // Clean thin line matching reference image - positioned exactly on grid boundary
-                // For crisp rendering, use left positioning without transform
-              }}
-            />
+            <>
+              {/* Project Start line marker at top */}
+              {config.showProjectStartLineMarker !== false && (() => {
+                const markerSize = config.projectStartLineMarkerSize || 8;
+                const markerColor = config.projectStartLineColor || '#40a9ff';
+                const markerStyle = config.projectStartLineMarkerStyle || 'triangle';
+                const opacity = config.projectStartLineOpacity !== undefined ? config.projectStartLineOpacity : 1;
+
+                if (markerStyle === 'triangle') {
+                  return (
+                    <div
+                      className="gantt-project-start-line-marker"
+                      style={{
+                        position: 'absolute',
+                        left: `${projectStartPosition}px`,
+                        top: '-4px',
+                        transform: 'translateX(-50%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: `${markerSize}px solid transparent`,
+                        borderRight: `${markerSize}px solid transparent`,
+                        borderBottom: `${markerSize}px solid ${markerColor}`,
+                        zIndex: 7,
+                        pointerEvents: 'none',
+                        opacity,
+                      }}
+                    />
+                  );
+                } else if (markerStyle === 'arrow') {
+                  return (
+                    <div
+                      className="gantt-project-start-line-marker"
+                      style={{
+                        position: 'absolute',
+                        left: `${projectStartPosition}px`,
+                        top: '-6px',
+                        transform: 'translateX(-50%)',
+                        width: 0,
+                        height: 0,
+                        borderLeft: `${markerSize}px solid transparent`,
+                        borderRight: `${markerSize}px solid transparent`,
+                        borderBottom: `${markerSize * 0.7}px solid ${markerColor}`,
+                        zIndex: 7,
+                        pointerEvents: 'none',
+                        opacity,
+                      }}
+                    />
+                  );
+                } else if (markerStyle === 'dot') {
+                  return (
+                    <div
+                      className="gantt-project-start-line-marker"
+                      style={{
+                        position: 'absolute',
+                        left: `${projectStartPosition}px`,
+                        top: `-${markerSize / 2}px`,
+                        transform: 'translateX(-50%)',
+                        width: `${markerSize}px`,
+                        height: `${markerSize}px`,
+                        borderRadius: '50%',
+                        backgroundColor: markerColor,
+                        zIndex: 7,
+                        pointerEvents: 'none',
+                        opacity,
+                      }}
+                    />
+                  );
+                }
+                return null;
+              })()}
+              {/* Project Start line */}
+              <div
+                className="gantt-project-start-line"
+                style={{
+                  position: 'absolute',
+                  left: `${projectStartPosition}px`,
+                  top: 0,
+                  bottom: 0,
+                  width: `${config.projectStartLineWidth || 1}px`,
+                  backgroundColor: config.projectStartLineColor || '#40a9ff',
+                  opacity: config.projectStartLineOpacity !== undefined ? config.projectStartLineOpacity : 1,
+                  borderLeft: config.projectStartLineStyle === 'dashed' 
+                    ? `${config.projectStartLineWidth || 1}px dashed ${config.projectStartLineColor || '#40a9ff'}`
+                    : config.projectStartLineStyle === 'dotted'
+                    ? `${config.projectStartLineWidth || 1}px dotted ${config.projectStartLineColor || '#40a9ff'}`
+                    : 'none',
+                  zIndex: 6,
+                  pointerEvents: 'none',
+                  // Clean thin line matching reference image - positioned exactly on grid boundary
+                  // For crisp rendering, use left positioning without transform
+                }}
+              />
+            </>
           )}
 
           {/* Grid lines */}
