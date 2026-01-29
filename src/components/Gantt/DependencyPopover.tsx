@@ -210,7 +210,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
         <div style={{
             display: 'flex',
             width: 620,
-            height: 540,
+            height: 600,
             backgroundColor: styles.popover?.backgroundColor || '#fff',
             borderRadius: styles.popover?.borderRadius || '8px',
             overflow: 'hidden',
@@ -260,7 +260,13 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
             </div>
 
             {/* Right Panel: Preview and settings */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px' }}>
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '20px 24px',
+                overflowY: 'auto'
+            }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <Text strong style={{ fontSize: '15px', color: styles.font?.color }}>Dependency preview</Text>
                     <AntdLink
@@ -279,9 +285,9 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                 <Paragraph style={{
                     fontSize: '13px',
                     color: styles.font?.color || '#262626',
-                    marginBottom: 20,
-                    minHeight: 48,
-                    lineHeight: '1.6'
+                    marginBottom: 16,
+                    minHeight: 40,
+                    lineHeight: '1.5'
                 }}>
                     {getDescription()}
                 </Paragraph>
@@ -289,7 +295,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                 <Radio.Group
                     value={dependencyType}
                     onChange={e => setDependencyType(e.target.value)}
-                    style={{ width: '100%', marginBottom: 20 }}
+                    style={{ width: '100%', marginBottom: 16 }}
                 >
                     <Space direction="vertical" style={{ width: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
@@ -311,7 +317,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                     </Space>
                 </Radio.Group>
 
-                <div style={{ display: 'flex', gap: '10px', marginBottom: 20 }}>
+                <div style={{ display: 'flex', gap: '10px', marginBottom: 16 }}>
                     <div style={{ flex: 1 }}>
                         <Text style={{
                             fontSize: '14px',
