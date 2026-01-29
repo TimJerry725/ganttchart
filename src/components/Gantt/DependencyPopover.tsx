@@ -118,24 +118,24 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
 
         if (isFS) {
             t2x = 50; t3x = 350;
-            guideX = 250; // T2 End
-            secondaryGuideX = 350; // T3 Start
-            pathD = "M 250 60 L 300 60 C 350 60, 350 140, 300 140 L 350 140";
+            guideX = 250;
+            secondaryGuideX = 350;
+            pathD = "M 250 60 L 300 60 L 300 140 L 348 140";
         } else if (isFF) {
             t2x = 100; t3x = 100;
-            guideX = 300; // Both End
+            guideX = 300;
             secondaryGuideX = -1;
-            pathD = "M 300 60 L 350 60 L 350 140 L 300 140";
+            pathD = "M 300 60 L 350 60 L 350 140 L 302 140";
         } else if (isSS) {
             t2x = 250; t3x = 250;
-            guideX = 250; // Both Start
+            guideX = 250;
             secondaryGuideX = -1;
-            pathD = "M 250 60 L 200 60 L 200 140 L 250 140";
+            pathD = "M 250 60 L 200 60 L 200 140 L 248 140";
         } else if (isSF) {
             t2x = 350; t3x = 50;
-            guideX = 350; // T2 Start
-            secondaryGuideX = 250; // T3 End
-            pathD = "M 350 60 L 300 60 C 250 60, 250 140, 300 140 L 250 140";
+            guideX = 350;
+            secondaryGuideX = 250;
+            pathD = "M 350 60 L 300 60 L 300 140 L 252 140";
         }
 
         return (
@@ -152,7 +152,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
             }}>
                 <svg viewBox="0 0 600 200" style={{ width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid meet">
                     <defs>
-                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
                             <polygon points="0 0, 10 3.5, 0 7" fill="#8c8c8c" />
                         </marker>
                     </defs>
