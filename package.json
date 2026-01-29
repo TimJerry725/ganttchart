@@ -1,6 +1,6 @@
 {
   "name": "iris-gantt",
-  "version": "1.2.0",
+  "version": "1.2.2",
   "description": "A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use.",
   "keywords": [
     "gantt",
@@ -24,15 +24,13 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": {
-        "types": "./dist/index.d.ts",
         "default": "./dist/iris-gantt.js"
       },
       "require": {
-        "types": "./dist/index.d.ts",
         "default": "./dist/iris-gantt.umd.cjs"
-      },
-      "types": "./dist/index.d.ts"
+      }
     },
     "./gantt.css": {
       "import": "./dist/gantt.css",

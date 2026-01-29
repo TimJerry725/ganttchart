@@ -50,14 +50,14 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
     // Update local tasks when props change - use shallow comparison for performance
     React.useEffect(() => {
-      const tasksChanged = tasks.length !== localTasks.length || 
+      const tasksChanged = tasks.length !== localTasks.length ||
         tasks.some((t, i) => {
           const local = localTasks[i];
-          return !local || t.id !== local.id || 
+          return !local || t.id !== local.id ||
             t.start.getTime() !== local.start.getTime() ||
             t.end.getTime() !== local.end.getTime();
         });
-      
+
       if (tasksChanged) {
         setLocalTasks(tasks);
       }
@@ -78,7 +78,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       }
 
       return cells;
-    }, [range.start.getTime(), range.end.getTime()]);
+    }, [range.start, range.end]);
 
     const getPixelPosition = React.useCallback((date: Date) => {
       const scale = scales[1]; // secondary scale
@@ -480,11 +480,11 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                   width: `${config.todayLineWidth || 1}px`,
                   backgroundColor: config.todayLineColor || '#ff4d4f',
                   opacity: config.todayLineOpacity !== undefined ? config.todayLineOpacity : 1,
-                  borderLeft: config.todayLineStyle === 'dashed' 
+                  borderLeft: config.todayLineStyle === 'dashed'
                     ? `${config.todayLineWidth || 1}px dashed ${config.todayLineColor || '#ff4d4f'}`
                     : config.todayLineStyle === 'dotted'
-                    ? `${config.todayLineWidth || 1}px dotted ${config.todayLineColor || '#ff4d4f'}`
-                    : 'none',
+                      ? `${config.todayLineWidth || 1}px dotted ${config.todayLineColor || '#ff4d4f'}`
+                      : 'none',
                   zIndex: 6,
                   pointerEvents: 'none',
                   // Clean thin line matching reference image - positioned exactly on grid boundary
@@ -576,11 +576,11 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                   width: `${config.projectStartLineWidth || 1}px`,
                   backgroundColor: config.projectStartLineColor || '#40a9ff',
                   opacity: config.projectStartLineOpacity !== undefined ? config.projectStartLineOpacity : 1,
-                  borderLeft: config.projectStartLineStyle === 'dashed' 
+                  borderLeft: config.projectStartLineStyle === 'dashed'
                     ? `${config.projectStartLineWidth || 1}px dashed ${config.projectStartLineColor || '#40a9ff'}`
                     : config.projectStartLineStyle === 'dotted'
-                    ? `${config.projectStartLineWidth || 1}px dotted ${config.projectStartLineColor || '#40a9ff'}`
-                    : 'none',
+                      ? `${config.projectStartLineWidth || 1}px dotted ${config.projectStartLineColor || '#40a9ff'}`
+                      : 'none',
                   zIndex: 6,
                   pointerEvents: 'none',
                   // Clean thin line matching reference image - positioned exactly on grid boundary

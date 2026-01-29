@@ -6,11 +6,10 @@ import {
   faTrash,
   faPlus,
   faInfoCircle,
-  faArrowDown,
-  faArrowUp
 } from '@fortawesome/free-solid-svg-icons';
-import type { Task, Link } from './types';
+import type { Task, Link, GanttStyleConfig } from './types';
 import { parseDependencyString, convertDependencyType, convertLagToDays } from './utils/dependencyParser';
+import { applyStyleConfig } from './utils/styleUtils';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -22,6 +21,7 @@ interface DependencyEditorProps {
   onAddDependency: (sourceId: string, targetId: string, type: Link['type'], lag?: number) => void;
   onRemoveDependency: (linkId: string) => void;
   onClose: () => void;
+  styleConfig?: Partial<GanttStyleConfig>;
 }
 
 export const DependencyEditor: React.FC<DependencyEditorProps> = ({
@@ -31,7 +31,9 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
   onAddDependency,
   onRemoveDependency,
   onClose,
+  styleConfig,
 }) => {
+  const styles = applyStyleConfig(styleConfig);
   const [selectedTask, setSelectedTask] = useState<string>('');
   const [dependencyType, setDependencyType] = useState<Link['type']>('e2s');
   const [lagTime, setLagTime] = useState<number>(0);
@@ -40,7 +42,6 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
 
   // Get existing dependencies
   const existingDependencies = links.filter(link => link.target === task.id);
-  const existingDependents = links.filter(link => link.source === task.id);
 
   // Get available tasks (exclude self and parent chain)
   const availableTasks = allTasks.filter(t => t.id !== task.id && t.id !== task.parent);
@@ -64,7 +65,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
       return;
     }
 
-    // Find task by number (assuming task text starts with a number or has an index)
+    // Find task by number
     const taskIndex = parsed.taskNumber - 1;
     const sourceTask = allTasks[taskIndex];
 
@@ -98,331 +99,214 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
     }
   };
 
-  const getLagTag = (lag?: number) => {
-    if (!lag || lag === 0) return null;
-    if (lag > 0) {
-      return <Tag color="warning">+{lag}d lag</Tag>;
-    }
-    return <Tag color="processing">{lag}d lead</Tag>;
-  };
-
-  const renderDependencyItem = (link: Link, sourceOrTarget: 'source' | 'target') => {
-    const relatedTask = allTasks.find(t => t.id === (sourceOrTarget === 'source' ? link.source : link.target));
-
-    return (
-      <List.Item
-        actions={[
-          <Button
-            type="text"
-            danger
-            icon={<FontAwesomeIcon icon={faTrash} />}
-            onClick={() => onRemoveDependency(link.id)}
-          >
-            Remove
-          </Button>
-        ]}
-      >
-        <List.Item.Meta
-          title={
-            <Space>
-              <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                {relatedTask?.text || (sourceOrTarget === 'source' ? link.source : link.target)}
-              </Text>
-              <Tag color={getDependencyColor(link.type)}>
-                {getDependencyLabel(link.type)}
-              </Tag>
-              {getLagTag(link.lag)}
-            </Space>
-          }
-          description={
-            <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '12px' }}>
-              {relatedTask?.owner && `Owner: ${relatedTask.owner}`}
-              {relatedTask?.priority && ` • Priority: ${relatedTask.priority}`}
-            </Text>
-          }
-        />
-      </List.Item>
-    );
-  };
-
   return (
     <Modal
-      title={
-        <Space>
-          <FontAwesomeIcon icon={faLink} style={{ fontSize: '20px' }} />
-          <Title level={4} style={{ margin: 0, fontFamily: 'IBM Plex Mono, monospace' }}>
-            Task Dependencies
-          </Title>
-        </Space>
-      }
+      title={<Title level={4} style={{ margin: 0, color: styles.font?.color }}>Dependency Editor</Title>}
       open={true}
       onCancel={onClose}
-      width={900}
       footer={null}
-      className="gantt-dependency-modal"
+      width={700}
       styles={{
-        body: { maxHeight: '70vh', overflowY: 'auto', fontFamily: 'IBM Plex Sans, sans-serif' },
+        content: styles.modal,
+        header: { borderBottom: `1px solid ${styles.modal?.borderColor || '#f0f0f0'}` }
       }}
     >
-      {/* Task Info */}
-      <Card
-        size="small"
-        style={{ marginBottom: 24, backgroundColor: '#f5f5f5', borderColor: '#d9d9d9' }}
-      >
-        <Space direction="vertical" size={4}>
-          <Text strong style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '16px' }}>
-            {task.text}
-          </Text>
-          <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '13px' }}>
-            {task.start.toLocaleDateString()} → {task.end.toLocaleDateString()}
-            {task.owner && ` • Owner: ${task.owner}`}
-            {task.priority && ` • Priority: ${task.priority}`}
-          </Text>
-        </Space>
-      </Card>
+      <div style={{ padding: '8px 0' }}>
+        <Alert
+          message="Managing dependencies helps in auto-scheduling and critical path calculation."
+          type="info"
+          showIcon
+          style={{ marginBottom: 20, ...styles.font }}
+        />
 
-      {/* Predecessors Section */}
-      <div style={{ marginBottom: 32 }}>
-        <Title
-          level={5}
-          style={{
-            fontFamily: 'IBM Plex Mono, monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            fontSize: '13px',
-            color: '#595959'
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowDown} style={{ marginRight: '8px' }} />
-          Depends On (Predecessors)
-        </Title>
-        {existingDependencies.length === 0 ? (
-          <Alert
-            message="No dependencies"
-            description="This task doesn't depend on any other tasks."
-            type="info"
-            showIcon
-            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
-          />
-        ) : (
-          <List
-            dataSource={existingDependencies}
-            renderItem={link => renderDependencyItem(link, 'source')}
-            bordered
-            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
-          />
-        )}
-      </div>
-
-      {/* Successors Section */}
-      <div style={{ marginBottom: 32 }}>
-        <Title
-          level={5}
-          style={{
-            fontFamily: 'IBM Plex Mono, monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            fontSize: '13px',
-            color: '#595959'
-          }}
-        >
-          <FontAwesomeIcon icon={faArrowUp} style={{ marginRight: '8px' }} />
-          Dependents (Successors)
-        </Title>
-        {existingDependents.length === 0 ? (
-          <Alert
-            message="No dependent tasks"
-            description="No other tasks depend on this task."
-            type="info"
-            showIcon
-            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
-          />
-        ) : (
-          <List
-            dataSource={existingDependents}
-            renderItem={link => renderDependencyItem(link, 'target')}
-            bordered
-            style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
-          />
-        )}
-      </div>
-
-      <Divider />
-
-      {/* Add New Dependency Section */}
-      <Card
-        title={
-          <Title
-            level={5}
-            style={{
-              margin: 0,
-              fontFamily: 'IBM Plex Mono, monospace',
-              fontSize: '14px'
-            }}
+        <div style={{ display: 'flex', gap: 20, marginBottom: 24 }}>
+          <Card
+            title={<Title level={5} style={{ margin: 0, fontSize: 14, color: styles.font?.color }}>Settings</Title>}
+            size="small"
+            style={{ flex: 1, ...styles.modal }}
+            headStyle={{ borderBottom: `1px solid ${styles.modal?.borderColor || '#f0f0f0'}` }}
           >
-            <FontAwesomeIcon icon={faPlus} style={{ marginRight: '8px' }} />
-            Add New Dependency
-          </Title>
-        }
-        style={{ marginBottom: 24 }}
-      >
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          {/* Quick Add Section */}
-          <div>
-            <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif', display: 'block', marginBottom: 8 }}>
-              Quick Add (Keyboard Shortcut):
-            </Text>
-            <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '12px', display: 'block', marginBottom: 8 }}>
-              Format: [TaskNumber][Type][+/-][Lag][Unit] • Example: 3FS+10d, 5SS-2w
-            </Text>
-            <Space.Compact style={{ width: '100%' }}>
-              <Input
-                placeholder="e.g., 3FS+10d"
-                value={quickAddValue}
-                onChange={(e) => setQuickAddValue(e.target.value)}
-                onPressEnter={handleQuickAdd}
-                size="large"
-                style={{ fontFamily: 'IBM Plex Mono, monospace' }}
-              />
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <div>
+                <Text style={{ display: 'block', marginBottom: 8, fontSize: 13, color: styles.font?.color }}>Predecessor</Text>
+                <Select
+                  showSearch
+                  placeholder="Select a task"
+                  optionFilterProp="children"
+                  style={{ width: '100%', ...styles.input }}
+                  value={selectedTask}
+                  onChange={setSelectedTask}
+                >
+                  {availableTasks.map(t => (
+                    <Option key={t.id} value={t.id}>[{allTasks.indexOf(t) + 1}] {t.text}</Option>
+                  ))}
+                </Select>
+              </div>
+
+              <div>
+                <Text style={{ display: 'block', marginBottom: 8, fontSize: 13, color: styles.font?.color }}>Type</Text>
+                <Select
+                  style={{ width: '100%', ...styles.input }}
+                  value={dependencyType}
+                  onChange={setDependencyType}
+                >
+                  <Option value="e2s">Finish-to-Start (FS)</Option>
+                  <Option value="s2s">Start-to-Start (SS)</Option>
+                  <Option value="e2e">Finish-to-Finish (FF)</Option>
+                  <Option value="s2e">Start-to-Finish (SF)</Option>
+                </Select>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <Text style={{ display: 'block', marginBottom: 8, fontSize: 13, color: styles.font?.color }}>Lag/Lead</Text>
+                  <InputNumber
+                    style={{ width: '100%', ...styles.input }}
+                    value={lagTime}
+                    onChange={(v) => setLagTime(v || 0)}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <Text style={{ display: 'block', marginBottom: 8, fontSize: 13, color: styles.font?.color }}>Units</Text>
+                  <Select
+                    style={{ width: '100%', ...styles.input }}
+                    value={lagUnit}
+                    onChange={setLagUnit}
+                  >
+                    <Option value="day">Days</Option>
+                    <Option value="hour">Hours</Option>
+                    <Option value="week">Weeks</Option>
+                    <Option value="month">Months</Option>
+                  </Select>
+                </div>
+              </div>
+
               <Button
                 type="primary"
-                size="large"
-                onClick={handleQuickAdd}
-                style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}
+                icon={<FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />}
+                block
+                onClick={handleAdd}
+                disabled={!selectedTask}
+                style={{
+                  height: 40,
+                  marginTop: 8,
+                  ...styles.buttonPrimary
+                }}
               >
-                Add
+                Add Dependency
               </Button>
-            </Space.Compact>
-          </div>
-
-          <Divider style={{ margin: '8px 0' }}>OR</Divider>
-
-          <div>
-            <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif', display: 'block', marginBottom: 8 }}>
-              Select Task:
-            </Text>
-            <Select
-              placeholder="Choose a task..."
-              value={selectedTask || undefined}
-              onChange={setSelectedTask}
-              style={{ width: '100%', fontFamily: 'IBM Plex Sans, sans-serif' }}
-              size="large"
-              showSearch
-              filterOption={(input, option) =>
-                String(option?.children || '').toLowerCase().includes(input.toLowerCase())
-              }
-            >
-              {availableTasks.map(t => (
-                <Option key={t.id} value={t.id}>
-                  {t.text}
-                </Option>
-              ))}
-            </Select>
-          </div>
-
-          <div>
-            <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif', display: 'block', marginBottom: 8 }}>
-              Dependency Type:
-            </Text>
-            <Select
-              value={dependencyType}
-              onChange={setDependencyType}
-              style={{ width: '100%', fontFamily: 'IBM Plex Sans, sans-serif' }}
-              size="large"
-            >
-              <Option value="e2s">
-                <Tag color="blue">FS</Tag> Finish-to-Start
-              </Option>
-              <Option value="s2s">
-                <Tag color="green">SS</Tag> Start-to-Start
-              </Option>
-              <Option value="e2e">
-                <Tag color="purple">FF</Tag> Finish-to-Finish
-              </Option>
-              <Option value="s2e">
-                <Tag color="orange">SF</Tag> Start-to-Finish
-              </Option>
-            </Select>
-          </div>
-
-          <div>
-            <Space direction="vertical" size={4} style={{ width: '100%' }}>
-              <Text strong style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-                Lead/Lag Time:
-              </Text>
-              <Text type="secondary" style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontSize: '12px' }}>
-                Negative = lead time (overlap), Positive = lag time (delay)
-              </Text>
-              <Space.Compact style={{ width: '100%' }}>
-                <InputNumber
-                  value={lagTime}
-                  onChange={(value) => setLagTime(value || 0)}
-                  style={{ flex: 1, fontFamily: 'IBM Plex Sans, sans-serif' }}
-                  size="large"
-                  placeholder="0"
-                  min={-365}
-                  max={365}
-                />
-                <Select
-                  value={lagUnit}
-                  onChange={setLagUnit}
-                  style={{ width: 120, fontFamily: 'IBM Plex Sans, sans-serif' }}
-                  size="large"
-                >
-                  <Option value="day">Days</Option>
-                  <Option value="hour">Hours</Option>
-                  <Option value="week">Weeks</Option>
-                  <Option value="month">Months</Option>
-                </Select>
-              </Space.Compact>
             </Space>
-          </div>
+          </Card>
 
-          <Button
-            type="primary"
-            size="large"
-            icon={<FontAwesomeIcon icon={faPlus} />}
-            onClick={handleAdd}
-            disabled={!selectedTask}
-            block
-            style={{ fontFamily: 'IBM Plex Sans, sans-serif', fontWeight: 600 }}
+          <Card
+            title={<Title level={5} style={{ margin: 0, fontSize: 14, color: styles.font?.color }}>Quick Add</Title>}
+            size="small"
+            style={{ width: 250, ...styles.modal }}
+            headStyle={{ borderBottom: `1px solid ${styles.modal?.borderColor || '#f0f0f0'}` }}
           >
-            Add Dependency
-          </Button>
-        </Space>
-      </Card>
+            <Paragraph type="secondary" style={{ fontSize: 12, marginBottom: 16, color: styles.font?.color, opacity: 0.7 }}>
+              Format: [TaskNumber][Type][+/-][Lag][Unit]
+              <br />
+              Example: 3FS+10d
+            </Paragraph>
+            <Input
+              placeholder="e.g. 5FS+2d"
+              value={quickAddValue}
+              onChange={(e) => setQuickAddValue(e.target.value)}
+              onPressEnter={handleQuickAdd}
+              style={{
+                marginBottom: 16,
+                height: 40,
+                ...styles.input
+              }}
+            />
+            <Button
+              block
+              onClick={handleQuickAdd}
+              style={{
+                height: 40,
+                ...styles.buttonSecondary
+              }}
+            >
+              Apply
+            </Button>
+          </Card>
+        </div>
 
-      {/* Help Section */}
-      <Alert
-        message={
-          <Text strong style={{ fontFamily: 'IBM Plex Mono, monospace' }}>
-            <FontAwesomeIcon icon={faInfoCircle} style={{ marginRight: '8px' }} />
-            Dependency Types Explained
+        <Divider style={{ margin: '0 0 24px 0', borderColor: styles.modal?.borderColor }} />
+
+        <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+          <Title level={5} style={{ fontSize: 14, marginBottom: 16, color: styles.font?.color }}>Current Dependencies</Title>
+          <List
+            dataSource={existingDependencies}
+            locale={{ emptyText: <Text type="secondary" style={{ color: styles.font?.color, opacity: 0.5 }}>No dependencies added yet.</Text> }}
+            renderItem={(link) => {
+              const sourceTask = allTasks.find(t => t.id === link.source);
+              return (
+                <List.Item
+                  style={{
+                    padding: '12px 16px',
+                    background: '#fafafa',
+                    borderRadius: 8,
+                    marginBottom: 12,
+                    border: `1px solid ${styles.listItem?.borderColor || '#f0f0f0'}`
+                  }}
+                  actions={[
+                    <Button
+                      key="delete"
+                      type="text"
+                      danger
+                      icon={<FontAwesomeIcon icon={faTrash} />}
+                      onClick={() => onRemoveDependency(link.id)}
+                    />
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={<div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 16,
+                      background: '#1890ff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#fff',
+                      fontSize: 12,
+                      fontWeight: 'bold'
+                    }}>{sourceTask ? allTasks.indexOf(sourceTask) + 1 : '?'}</div>}
+                    title={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span style={{ fontWeight: 600, color: styles.font?.color }}>{sourceTask?.text || 'Unknown Task'}</span>
+                        <Tag color={getDependencyColor(link.type)} style={{ margin: 0 }}>
+                          {getDependencyLabel(link.type)}
+                        </Tag>
+                      </div>
+                    }
+                    description={
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4 }}>
+                        <span style={{ fontSize: 12, color: styles.font?.color, opacity: 0.7 }}>
+                          <FontAwesomeIcon icon={faLink} style={{ marginRight: 6 }} />
+                          Lag: {link.lag || 0} days
+                        </span>
+                      </div>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
+          />
+        </div>
+
+        <div style={{ marginTop: 24, padding: '16px', background: '#fff7e6', borderRadius: 8, border: '1px solid #ffe7ba' }}>
+          <Title level={5} style={{ fontSize: 13, marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+            <FontAwesomeIcon icon={faInfoCircle} style={{ marginRight: 8, color: '#fa8c16' }} />
+            Coming soon
+          </Title>
+          <Text style={{ fontSize: 12, color: 'rgba(0,0,0,0.65)' }}>
+            Dependency visualization on the chart and automatic lag calculations based on working hours.
           </Text>
-        }
-        description={
-          <div style={{ fontFamily: 'IBM Plex Sans, sans-serif' }}>
-            <ul style={{ marginBottom: 12, paddingLeft: 20 }}>
-              <li><strong>Finish-to-Start (FS):</strong> Successor starts after predecessor finishes</li>
-              <li><strong>Start-to-Start (SS):</strong> Both tasks start at the same time</li>
-              <li><strong>Finish-to-Finish (FF):</strong> Both tasks finish at the same time</li>
-              <li><strong>Start-to-Finish (SF):</strong> Successor finishes when predecessor starts</li>
-            </ul>
-            <Divider style={{ margin: '12px 0' }} />
-            <Text strong style={{ display: 'block', marginBottom: 4 }}>Keyboard Shortcuts:</Text>
-            <Paragraph style={{ margin: 0, fontSize: '12px' }} code>
-              [TaskID][Type]+/-[Days]d
-            </Paragraph>
-            <Paragraph style={{ margin: 0, fontSize: '12px' }}>
-              Example: <code>3FS+10d</code> = Task 3, Finish-to-Start, 10 days lag
-            </Paragraph>
-          </div>
-        }
-        type="info"
-        showIcon
-        icon={<FontAwesomeIcon icon={faInfoCircle} />}
-        style={{ marginTop: 16 }}
-      />
+        </div>
+      </div>
     </Modal>
   );
 };

@@ -46,7 +46,7 @@ export interface Column {
   align?: 'left' | 'center' | 'right';
   resize?: boolean;
   sort?: boolean;
-  template?: (task: Task) => string | any;
+  template?: (task: Task) => React.ReactNode;
 }
 
 export interface GanttConfig {
@@ -158,6 +158,69 @@ export interface GanttStyleConfig {
   spacingSM?: string;
   spacingMD?: string;
   spacingLG?: string;
+
+  // Popover & Modal Styling
+  popoverBackground?: string;
+  popoverBorderColor?: string;
+  popoverBorderRadius?: string;
+  popoverShadow?: string;
+  popoverPadding?: string;
+  popoverMaxWidth?: string;
+  popoverFontFamily?: string;
+  popoverFontSize?: string;
+
+  modalBackground?: string;
+  modalBorderColor?: string;
+  modalBorderRadius?: string;
+  modalShadow?: string;
+  modalOverlayBackground?: string;
+
+  // Button Styling
+  buttonPrimaryBackground?: string;
+  buttonPrimaryColor?: string;
+  buttonPrimaryHoverBackground?: string;
+  buttonPrimaryBorderRadius?: string;
+  buttonPrimaryFontWeight?: string | number;
+  buttonPrimaryFontFamily?: string;
+
+  buttonDangerBackground?: string;
+  buttonDangerColor?: string;
+  buttonDangerHoverBackground?: string;
+
+  buttonSecondaryBackground?: string;
+  buttonSecondaryColor?: string;
+  buttonSecondaryBorderColor?: string;
+
+  // Input Styling
+  inputBackground?: string;
+  inputBorderColor?: string;
+  inputBorderRadius?: string;
+  inputFocusBorderColor?: string;
+  inputFontFamily?: string;
+  inputFontSize?: string;
+  inputPadding?: string;
+
+  // List & Menu Styling
+  listItemHoverBackground?: string;
+  listItemSelectedBackground?: string;
+  listItemBorderColor?: string;
+
+  menuBackground?: string;
+  menuBorderColor?: string;
+  menuItemHoverBackground?: string;
+
+  // Badge & Tag Styling
+  badgeBackground?: string;
+  badgeBorderColor?: string;
+  badgeColor?: string;
+  badgeFontSize?: string;
+  badgePadding?: string;
+  badgeBorderRadius?: string;
+
+  // Link Styling
+  linkColor?: string;
+  linkHoverColor?: string;
+  linkFontWeight?: string | number;
 
   // Custom CSS variables (for advanced customization)
   customCSSVariables?: Record<string, string>;

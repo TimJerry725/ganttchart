@@ -137,14 +137,14 @@ export const importFromJSON = (file: File): Promise<{ tasks: Task[], links: Link
         const data = JSON.parse(content);
 
         // Convert date strings back to Date objects
-        const tasks = data.tasks.map((task: any) => ({
+        const tasks = data.tasks.map((task: Task) => ({
           ...task,
           start: new Date(task.start),
           end: new Date(task.end),
         }));
 
         resolve({ tasks, links: data.links || [] });
-      } catch (error) {
+      } catch {
         reject(new Error('Invalid JSON file'));
       }
     };

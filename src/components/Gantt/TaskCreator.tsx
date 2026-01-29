@@ -1,4 +1,5 @@
-import type { Task, GanttUIConfig } from './types';
+import type { Task, GanttUIConfig, GanttStyleConfig } from './types';
+import { applyStyleConfig } from './utils/styleUtils';
 import { Modal, Form, Input, DatePicker, Select, InputNumber, ColorPicker } from 'antd';
 import dayjs from 'dayjs';
 
@@ -11,12 +12,26 @@ interface TaskCreatorProps {
   uiConfig?: Partial<GanttUIConfig>;
   parentId?: string; // For subtasks
   parentTaskName?: string; // For display purposes
+  styleConfig?: Partial<GanttStyleConfig>;
 }
 
-export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose, uiConfig = {}, parentId, parentTaskName }) => {
-  const [form] = Form.useForm();
+interface TaskFormValues {
+  text: string;
+  type: Task['type'];
+  priority: Task['priority'];
+  start: dayjs.Dayjs;
+  duration: number;
+  progress: number;
+  color: string | { toHexString?: () => string }; // Ant Design ColorPicker value handle as any temporarily or use specific type
+  owner: string;
+  details: string;
+}
 
-  const handleFinish = (values: any) => {
+export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose, uiConfig = {}, parentId, parentTaskName, styleConfig }) => {
+  const [form] = Form.useForm<TaskFormValues>();
+  const styles = applyStyleConfig(styleConfig);
+
+  const handleFinish = (values: TaskFormValues) => {
     const start = values.start.toDate();
     const end = new Date(start);
     end.setDate(end.getDate() + (values.duration || 1));
@@ -48,6 +63,12 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
       cancelText={uiConfig.taskCreatorCancelText || "Cancel"}
       width={600}
       className="gantt-modal-antd"
+      styles={{
+        content: styles.modal,
+        header: { borderBottom: `1px solid ${styles.modal?.borderColor || '#f0f0f0'}`, marginBottom: 16 }
+      }}
+      okButtonProps={{ style: styles.buttonPrimary }}
+      cancelButtonProps={{ style: styles.buttonSecondary }}
     >
       <Form
         form={form}
@@ -67,12 +88,12 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
           label={uiConfig.taskNameLabel || "Task Name"}
           rules={[{ required: true, message: uiConfig.taskNameRequired || 'Please enter task name' }]}
         >
-          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter task name"} autoFocus />
+          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter task name"} autoFocus style={styles.input} />
         </Form.Item>
 
         <div style={{ display: 'flex', gap: 16 }}>
           <Form.Item name="type" label={uiConfig.typeLabel || "Type"} style={{ flex: 1 }}>
-            <Select>
+            <Select style={styles.input}>
               <Option value="task">{uiConfig.taskTypeOptions?.task || 'Task'}</Option>
               <Option value="milestone">{uiConfig.taskTypeOptions?.milestone || 'Milestone'}</Option>
               <Option value="project">{uiConfig.taskTypeOptions?.project || 'Project'}</Option>
@@ -80,7 +101,7 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
           </Form.Item>
 
           <Form.Item name="priority" label={uiConfig.priorityLabel || "Priority"} style={{ flex: 1 }}>
-            <Select>
+            <Select style={styles.input}>
               <Option value="low">{uiConfig.priorityOptions?.low || 'Low'}</Option>
               <Option value="medium">{uiConfig.priorityOptions?.medium || 'Medium'}</Option>
               <Option value="high">{uiConfig.priorityOptions?.high || 'High'}</Option>
@@ -90,11 +111,11 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
 
         <div style={{ display: 'flex', gap: 16 }}>
           <Form.Item name="start" label={uiConfig.startDateLabel || "Start Date"} style={{ flex: 1 }}>
-            <DatePicker style={{ width: '100%' }} />
+            <DatePicker style={{ width: '100%', ...styles.input }} />
           </Form.Item>
 
           <Form.Item name="duration" label={uiConfig.durationLabel || "Duration (days)"} style={{ flex: 1 }}>
-            <InputNumber min={0} style={{ width: '100%' }} />
+            <InputNumber min={0} style={{ width: '100%', ...styles.input }} />
           </Form.Item>
         </div>
 
@@ -104,16 +125,16 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
           </Form.Item>
 
           <Form.Item name="progress" label={uiConfig.progressLabel || "Progress (%)"} style={{ flex: 1 }}>
-            <InputNumber min={0} max={100} style={{ width: '100%' }} />
+            <InputNumber min={0} max={100} style={{ width: '100%', ...styles.input }} />
           </Form.Item>
         </div>
 
         <Form.Item name="owner" label={uiConfig.ownerLabel || "Owner"}>
-          <Input placeholder={uiConfig.ownerPlaceholder || "Assign to..."} />
+          <Input placeholder={uiConfig.ownerPlaceholder || "Assign to..."} style={styles.input} />
         </Form.Item>
 
         <Form.Item name="details" label={uiConfig.detailsLabel || "Details"}>
-          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add task description..."} rows={3} />
+          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add task description..."} rows={3} style={styles.input} />
         </Form.Item>
       </Form>
     </Modal>

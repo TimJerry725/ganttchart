@@ -1,9 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Popover, Input, List, Radio, Select, InputNumber, Button, Space, Typography } from 'antd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import type { Task, Link } from './types';
+import type { Task, Link, GanttStyleConfig } from './types';
 import { convertLagToDays } from './utils/dependencyParser';
+import { applyStyleConfig } from './utils/styleUtils';
 
 const { Text, Paragraph, Link: AntdLink } = Typography;
 const { Option } = Select;
@@ -13,15 +14,21 @@ interface DependencyPopoverProps {
     allTasks: Task[];
     links: Link[];
     onAddDependency: (sourceId: string, targetId: string, type: Link['type'], lag?: number) => void;
+    onRemoveDependency?: (linkId: string) => void;
     children: React.ReactNode;
+    styleConfig?: Partial<GanttStyleConfig>;
 }
 
 export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
     task,
     allTasks,
+    links,
     onAddDependency,
+    onRemoveDependency,
     children,
+    styleConfig,
 }) => {
+    const styles = applyStyleConfig(styleConfig);
     const [visible, setVisible] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
@@ -30,6 +37,10 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
     const [spanValue, setSpanValue] = useState<number>(0);
     const [showPreview, setShowPreview] = useState(true);
     const spanUnit = 'day';
+
+    // Check if task already has a dependency
+    const existingDependency = links.find(l => l.target === task.id);
+    const hasDependency = !!existingDependency;
 
     const filteredTasks = useMemo(() => {
         if (!searchText) return allTasks.filter(t => t.id !== task.id);
@@ -58,6 +69,37 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
         setSpanValue(0);
     };
 
+    const handleRemove = () => {
+        if (existingDependency && onRemoveDependency) {
+            onRemoveDependency(existingDependency.id);
+            setVisible(false);
+            resetState();
+        }
+    };
+
+    // Load existing dependency values when popover opens
+    useEffect(() => {
+        if (visible) {
+            // Always show preview when opening
+            setShowPreview(true);
+
+            if (existingDependency) {
+                setSelectedSourceId(existingDependency.source);
+                setDependencyType(existingDependency.type);
+
+                // Handle lag/lead
+                const lag = existingDependency.lag || 0;
+                if (lag >= 0) {
+                    setDelayType('lag');
+                    setSpanValue(lag);
+                } else {
+                    setDelayType('lead');
+                    setSpanValue(Math.abs(lag));
+                }
+            }
+        }
+    }, [visible, existingDependency]);
+
     const renderDiagram = () => {
         if (!showPreview) return null;
 
@@ -66,67 +108,72 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
         const isFF = dependencyType === 'e2e';
         const isSF = dependencyType === 's2e';
 
-        // Coordinates based on 300x120 viewBox
-        // T2 center Y: 40, T3 center Y: 90
-        // Bars are 120 wide, 24 high.
+        // Coordinates based on 600x200 viewBox
+        // T2 center Y: 60, T3 center Y: 140
+        // Bars are 200 wide, 40 high.
         let t2x = 0, t3x = 0;
         let pathD = "";
         let guideX = 0;
         let secondaryGuideX = -1;
 
         if (isFS) {
-            t2x = 20; t3x = 160;
-            guideX = 140; // T2 End
-            secondaryGuideX = 160; // T3 Start
-            pathD = "M 140 40 L 150 40 C 160 40, 160 90, 150 90 L 160 90";
+            t2x = 50; t3x = 350;
+            guideX = 250; // T2 End
+            secondaryGuideX = 350; // T3 Start
+            pathD = "M 250 60 L 300 60 C 350 60, 350 140, 300 140 L 350 140";
         } else if (isFF) {
-            t2x = 60; t3x = 60;
-            guideX = 180; // Both End
-            secondaryGuideX = -1;
-            pathD = "M 180 40 L 200 40 L 200 90 L 180 90";
-        } else if (isSS) {
             t2x = 100; t3x = 100;
-            guideX = 100; // Both Start
+            guideX = 300; // Both End
             secondaryGuideX = -1;
-            pathD = "M 100 40 L 80 40 L 80 90 L 100 90";
+            pathD = "M 300 60 L 350 60 L 350 140 L 300 140";
+        } else if (isSS) {
+            t2x = 250; t3x = 250;
+            guideX = 250; // Both Start
+            secondaryGuideX = -1;
+            pathD = "M 250 60 L 200 60 L 200 140 L 250 140";
         } else if (isSF) {
-            t2x = 160; t3x = 20;
-            guideX = 160; // T2 Start
-            secondaryGuideX = 140; // T3 End
-            pathD = "M 160 40 L 150 40 C 140 40, 140 90, 150 90 L 140 90";
+            t2x = 350; t3x = 50;
+            guideX = 350; // T2 Start
+            secondaryGuideX = 250; // T3 End
+            pathD = "M 350 60 L 300 60 C 250 60, 250 140, 300 140 L 250 140";
         }
 
         return (
             <div style={{
                 width: '100%',
                 height: 120,
-                backgroundColor: '#fff',
+                backgroundColor: '#fbfbfb',
                 borderRadius: 4,
-                marginBottom: 10,
-                border: '1px solid #e9ecef',
+                marginBottom: 16,
+                border: '1px solid #f0f0f0',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                flexShrink: 0
             }}>
-                <svg viewBox="0 0 300 120" style={{ width: '100%', height: '100%' }}>
-                    {/* Vertical guide lines (dashed) */}
-                    <line x1={guideX} x2={guideX} y1="0" y2="120" stroke="#f0f0f0" strokeDasharray="3,3" />
-                    {secondaryGuideX !== -1 && <line x1={secondaryGuideX} x2={secondaryGuideX} y1="0" y2="120" stroke="#f0f0f0" strokeDasharray="3,3" />}
-
-                    {/* Task bars */}
-                    <rect x={t2x} y="28" width="120" height="24" rx="4" fill="#bae7ff" stroke="#69c0ff" />
-                    <text x={t2x + 60} y="44" fontSize="11" textAnchor="middle" fill="#0050b3">Task 2</text>
-
-                    <rect x={t3x} y="78" width="120" height="24" rx="4" fill="#bae7ff" stroke="#69c0ff" />
-                    <text x={t3x + 60} y="94" fontSize="11" textAnchor="middle" fill="#0050b3">Task 3</text>
-
-                    {/* Connector Path */}
-                    <path d={pathD} fill="none" stroke="#8c8c8c" strokeWidth="1.5" markerEnd="url(#arrowhead)" />
-
+                <svg viewBox="0 0 600 200" style={{ width: '100%', height: '100%' }} preserveAspectRatio="xMidYMid meet">
                     <defs>
                         <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
                             <polygon points="0 0, 10 3.5, 0 7" fill="#8c8c8c" />
                         </marker>
                     </defs>
+
+                    {/* Vertical guide lines (dashed) */}
+                    <line x1={guideX} x2={guideX} y1="0" y2="200" stroke="#f0f0f0" strokeDasharray="3,3" />
+                    {secondaryGuideX !== -1 && <line x1={secondaryGuideX} x2={secondaryGuideX} y1="0" y2="200" stroke="#f0f0f0" strokeDasharray="3,3" />}
+
+                    {/* Task bars */}
+                    <rect x={t2x} y="40" width="200" height="40" rx="4" fill="#e6f4ff" stroke="#91caff" strokeWidth="1.5" />
+                    <text x={t2x + 100} y="66" fontSize="13" textAnchor="middle" fill="#003a8c" fontWeight="500">
+                        {selectedSourceId ? `Task ${allTasks.indexOf(allTasks.find(t => t.id === selectedSourceId)!) + 1}` : 'Predecessor'}
+                    </text>
+
+                    <rect x={t3x} y="120" width="200" height="40" rx="4" fill="#e6f4ff" stroke="#91caff" strokeWidth="1.5" />
+                    <text x={t3x + 100} y="146" fontSize="13" textAnchor="middle" fill="#003a8c" fontWeight="500">
+                        Task {allTasks.indexOf(task) + 1}
+                    </text>
+
+                    {/* Connector Path */}
+                    <path d={pathD} fill="none" stroke="#8c8c8c" strokeWidth="2" markerEnd="url(#arrowhead)" />
                 </svg>
             </div>
         );
@@ -160,17 +207,28 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
     };
 
     const content = (
-        <div style={{ display: 'flex', width: 620, height: 480, backgroundColor: '#fff', borderRadius: '8px', overflow: 'hidden' }}>
+        <div style={{
+            display: 'flex',
+            width: 620,
+            height: 540,
+            backgroundColor: styles.popover?.backgroundColor || '#fff',
+            borderRadius: styles.popover?.borderRadius || '8px',
+            overflow: 'hidden',
+            boxShadow: styles.popover?.boxShadow,
+            fontFamily: styles.popover?.fontFamily
+        }}>
             {/* Left Panel: Search and List */}
-            <div style={{ flex: 1, borderRight: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', padding: 0 }}>
+            <div style={{ flex: 1, borderRight: `1px solid ${styles.popover?.borderColor || '#f0f0f0'}`, display: 'flex', flexDirection: 'column', padding: 0 }}>
                 <div style={{ padding: '12px' }}>
                     <Input
                         placeholder="Search task..."
                         value={searchText}
                         onChange={e => setSearchText(e.target.value)}
-                        style={{ marginBottom: 8 }}
+                        style={{
+                            marginBottom: 12,
+                            ...styles.input
+                        }}
                         autoFocus
-                        size="large"
                     />
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -184,14 +242,15 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                                 style={{
                                     cursor: 'pointer',
                                     padding: '8px 16px',
-                                    backgroundColor: selectedSourceId === t.id ? '#f0f7ff' : 'transparent',
+                                    backgroundColor: selectedSourceId === t.id ? (styles.listItem?.selectedBackground || '#f0f7ff') : 'transparent',
                                     display: 'flex',
-                                    justifyContent: 'space-between'
+                                    justifyContent: 'space-between',
+                                    borderBottom: `1px solid ${styles.listItem?.borderColor || '#f0f0f0'}`
                                 }}
                             >
                                 <div style={{ display: 'flex', gap: 12 }}>
-                                    <Text type="secondary" style={{ width: 20 }}>{allTasks.indexOf(t) + 1}</Text>
-                                    <Text>{t.text}</Text>
+                                    <Text type="secondary" style={{ width: 20, color: styles.font?.color }}>{allTasks.indexOf(t) + 1}</Text>
+                                    <Text style={{ color: styles.font?.color }}>{t.text}</Text>
                                 </div>
                                 <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: 10, color: '#bfbfbf' }} />
                             </List.Item>
@@ -200,12 +259,15 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                 </div>
             </div>
 
-            {/* Right Panel: Settings */}
-            <div style={{ width: 340, padding: '24px', display: 'flex', flexDirection: 'column', borderLeft: '1px solid #f0f0f0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 }}>
-                    <Text strong>Dependency type</Text>
+            {/* Right Panel: Preview and settings */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <Text strong style={{ fontSize: '15px', color: styles.font?.color }}>Dependency preview</Text>
                     <AntdLink
-                        style={{ fontSize: '12px' }}
+                        style={{
+                            fontSize: '12px',
+                            color: styles.link?.color
+                        }}
                         onClick={() => setShowPreview(!showPreview)}
                     >
                         {showPreview ? 'Hide preview' : 'Show preview'}
@@ -214,7 +276,13 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
 
                 {renderDiagram()}
 
-                <Paragraph style={{ fontSize: '13px', color: '#262626', marginBottom: 20, minHeight: 48, lineHeight: '1.6' }}>
+                <Paragraph style={{
+                    fontSize: '13px',
+                    color: styles.font?.color || '#262626',
+                    marginBottom: 20,
+                    minHeight: 48,
+                    lineHeight: '1.6'
+                }}>
                     {getDescription()}
                 </Paragraph>
 
@@ -225,56 +293,87 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                 >
                     <Space direction="vertical" style={{ width: '100%' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <Radio value="e2s">Finish to Start</Radio>
-                            <Text type="secondary">FS</Text>
+                            <Radio value="e2s" style={{ color: styles.font?.color }}>Finish to Start</Radio>
+                            <Text type="secondary" style={{ color: styles.font?.color, opacity: 0.6 }}>FS</Text>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <Radio value="e2e">Finish to Finish</Radio>
-                            <Text type="secondary">FF</Text>
+                            <Radio value="e2e" style={{ color: styles.font?.color }}>Finish to Finish</Radio>
+                            <Text type="secondary" style={{ color: styles.font?.color, opacity: 0.6 }}>FF</Text>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <Radio value="s2s">Start to Start</Radio>
-                            <Text type="secondary">SS</Text>
+                            <Radio value="s2s" style={{ color: styles.font?.color }}>Start to Start</Radio>
+                            <Text type="secondary" style={{ color: styles.font?.color, opacity: 0.6 }}>SS</Text>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                            <Radio value="s2e">Start to Finish</Radio>
-                            <Text type="secondary">SF</Text>
+                            <Radio value="s2e" style={{ color: styles.font?.color }}>Start to Finish</Radio>
+                            <Text type="secondary" style={{ color: styles.font?.color, opacity: 0.6 }}>SF</Text>
                         </div>
                     </Space>
                 </Radio.Group>
 
                 <div style={{ display: 'flex', gap: '10px', marginBottom: 20 }}>
                     <div style={{ flex: 1 }}>
-                        <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: 4 }}>Delay type</Text>
-                        <Select value={delayType} onChange={v => setDelayType(v)} style={{ width: '100%' }} size="large">
+                        <Text style={{
+                            fontSize: '14px',
+                            display: 'block',
+                            marginBottom: 8,
+                            color: styles.font?.color,
+                        }}>Delay type</Text>
+                        <Select
+                            value={delayType}
+                            onChange={v => setDelayType(v)}
+                            style={{ width: '100%', ...styles.input }}
+                        >
                             <Option value="lag">Lag by</Option>
                             <Option value="lead">Lead by</Option>
                         </Select>
                     </div>
                     <div style={{ width: 100 }}>
-                        <Text type="secondary" style={{ fontSize: '11px', display: 'block', marginBottom: 4 }}>Days</Text>
+                        <Text style={{
+                            fontSize: '14px',
+                            display: 'block',
+                            marginBottom: 8,
+                            color: styles.font?.color,
+                        }}>Days</Text>
                         <Space.Compact style={{ width: '100%' }}>
                             <InputNumber
                                 min={0}
                                 value={spanValue}
                                 onChange={v => setSpanValue(v || 0)}
-                                style={{ width: '100%' }}
+                                style={{ width: '100%', ...styles.input }}
                                 placeholder="0"
-                                size="large"
                             />
                         </Space.Compact>
                     </div>
                 </div>
 
-                <Button
-                    type="primary"
-                    block
-                    onClick={handleAdd}
-                    disabled={!selectedSourceId}
-                    style={{ marginTop: 'auto', backgroundColor: '#5c67f2', height: 44, borderRadius: '6px' }}
-                >
-                    Add
-                </Button>
+                <Space direction="vertical" style={{ width: '100%', marginTop: 'auto' }}>
+                    <Button
+                        type="primary"
+                        block
+                        onClick={handleAdd}
+                        disabled={!selectedSourceId}
+                        style={{
+                            ...styles.buttonPrimary,
+                            height: 36,
+                        }}
+                    >
+                        {hasDependency ? 'Update' : 'Add'}
+                    </Button>
+                    {hasDependency && (
+                        <Button
+                            danger
+                            block
+                            onClick={handleRemove}
+                            style={{
+                                ...styles.buttonDanger,
+                                height: 36,
+                            }}
+                        >
+                            Remove Dependency
+                        </Button>
+                    )}
+                </Space>
             </div>
         </div>
     );

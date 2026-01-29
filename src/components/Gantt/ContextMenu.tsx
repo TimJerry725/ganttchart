@@ -11,7 +11,8 @@ import {
   faTasks,
   faRotateLeft,
 } from '@fortawesome/free-solid-svg-icons';
-import type { Task } from './types';
+import type { Task, GanttStyleConfig } from './types';
+import { applyStyleConfig } from './utils/styleUtils';
 
 interface ContextMenuProps {
   x: number;
@@ -27,6 +28,7 @@ interface ContextMenuProps {
   onAutoSchedule?: () => void;
   onClose: () => void;
   iconConfig?: Partial<import('./types').GanttIconConfig>;
+  styleConfig?: Partial<GanttStyleConfig>;
 }
 
 export const ContextMenu: React.FC<ContextMenuProps> = ({
@@ -42,8 +44,9 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   onConvertToProject,
   onAutoSchedule,
   onClose,
-  iconConfig: _iconConfig,
+  styleConfig,
 }) => {
+  const styles = applyStyleConfig(styleConfig);
   if (!task) return null;
 
   const menuItems = [
@@ -152,9 +155,12 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
       <Menu
         items={menuItems}
         style={{
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          borderRadius: '6px',
-          border: '1px solid #e0e0e0',
+          boxShadow: styles.popover?.boxShadow || '0 4px 12px rgba(0, 0, 0, 0.15)',
+          borderRadius: styles.popover?.borderRadius || '6px',
+          border: `1px solid ${styles.popover?.borderColor || '#e0e0e0'}`,
+          backgroundColor: styles.popover?.backgroundColor,
+          color: styles.font?.color,
+          fontFamily: styles.font?.fontFamily
         }}
       />
     </div>

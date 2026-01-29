@@ -2,17 +2,10 @@ import React, { useState } from 'react';
 import { Input, Select, Button } from 'antd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimesCircle } from '@fortawesome/free-solid-svg-icons';
-import type { Task, GanttUIConfig } from '../types';
+import type { GanttUIConfig } from '../types';
+import type { FilterOptions } from './filterUtils';
 
 const { Search } = Input;
-
-export interface FilterOptions {
-  searchText: string;
-  status: 'all' | 'not-started' | 'in-progress' | 'completed';
-  priority: 'all' | 'low' | 'medium' | 'high';
-  owner: string;
-  dateRange?: { start: Date; end: Date };
-}
 
 interface FilterSearchProps {
   onFilterChange: (filters: FilterOptions) => void;
@@ -71,7 +64,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
           {/* Status filter */}
           <Select
             value={filters.status}
-            onChange={(value) => handleFilterChange({ status: value as any })}
+            onChange={(value) => handleFilterChange({ status: value as FilterOptions['status'] })}
             className="gantt-filter-select-antd"
             style={{ width: 140 }}
             options={[
@@ -85,7 +78,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
           {/* Priority filter */}
           <Select
             value={filters.priority}
-            onChange={(value) => handleFilterChange({ priority: value as any })}
+            onChange={(value) => handleFilterChange({ priority: value as FilterOptions['priority'] })}
             className="gantt-filter-select-antd"
             style={{ width: 130 }}
             options={[
@@ -126,56 +119,4 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
       </div>
     </div>
   );
-};
-
-// Filter function
-export const applyFilters = (tasks: Task[], filters: FilterOptions): Task[] => {
-  return tasks.filter(task => {
-    // Search text filter
-    if (filters.searchText) {
-      const searchLower = filters.searchText.toLowerCase();
-      const matchesText = task.text.toLowerCase().includes(searchLower);
-      const matchesOwner = task.owner?.toLowerCase().includes(searchLower);
-      const matchesDetails = task.details?.toLowerCase().includes(searchLower);
-
-      if (!matchesText && !matchesOwner && !matchesDetails) {
-        return false;
-      }
-    }
-
-    // Status filter
-    if (filters.status !== 'all') {
-      const status =
-        task.progress === 0 ? 'not-started' :
-          task.progress === 100 ? 'completed' :
-            'in-progress';
-
-      if (status !== filters.status) {
-        return false;
-      }
-    }
-
-    // Priority filter
-    if (filters.priority !== 'all' && task.priority !== filters.priority) {
-      return false;
-    }
-
-    // Owner filter
-    if (filters.owner && task.owner !== filters.owner) {
-      return false;
-    }
-
-    // Date range filter
-    if (filters.dateRange) {
-      const taskStart = task.start.getTime();
-      const rangeStart = filters.dateRange.start.getTime();
-      const rangeEnd = filters.dateRange.end.getTime();
-
-      if (taskStart < rangeStart || taskStart > rangeEnd) {
-        return false;
-      }
-    }
-
-    return true;
-  });
 };

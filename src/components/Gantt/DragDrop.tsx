@@ -13,11 +13,13 @@ export interface DragState {
   dragDeltaY: number;
 }
 
+type ScaleUnit = 'day' | 'hour' | 'week' | 'month' | 'quarter' | 'year';
+
 export const useDragDrop = (
   tasks: Task[],
   onTaskUpdate?: (id: string, updates: Partial<Task>) => void,
   columnWidth: number = 60,
-  unit: string = 'day',
+  unit: ScaleUnit = 'day',
   step: number = 1
 ) => {
   const [dragState, setDragState] = useState<DragState>({
@@ -78,23 +80,23 @@ export const useDragDrop = (
 
     switch (dragState.type) {
       case 'move':
-        newStart = addToDate(dragState.initialStart, stepsMoved * step, unit as any);
-        newEnd = addToDate(dragState.initialEnd, stepsMoved * step, unit as any);
+        newStart = addToDate(dragState.initialStart, stepsMoved * step, unit);
+        newEnd = addToDate(dragState.initialEnd, stepsMoved * step, unit);
         break;
 
       case 'resize-left':
-        newStart = addToDate(dragState.initialStart, stepsMoved * step, unit as any);
+        newStart = addToDate(dragState.initialStart, stepsMoved * step, unit);
         // Ensure start doesn't go past end
         if (newStart >= newEnd) {
-          newStart = addToDate(newEnd, -step, unit as any);
+          newStart = addToDate(newEnd, -step, unit);
         }
         break;
 
       case 'resize-right':
-        newEnd = addToDate(dragState.initialEnd, stepsMoved * step, unit as any);
+        newEnd = addToDate(dragState.initialEnd, stepsMoved * step, unit);
         // Ensure end doesn't go before start
         if (newEnd <= newStart) {
-          newEnd = addToDate(newStart, step, unit as any);
+          newEnd = addToDate(newStart, step, unit);
         }
         break;
     }
@@ -107,7 +109,7 @@ export const useDragDrop = (
       end: newEnd,
       duration,
     };
-  }, [dragState, tasks, columnWidth]);
+  }, [dragState, tasks, columnWidth, step, unit]);
 
   const handleDragEnd = useCallback((updatedTask: Task | null) => {
     if (updatedTask && onTaskUpdate) {

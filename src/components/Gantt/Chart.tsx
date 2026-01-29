@@ -1,12 +1,12 @@
 import { forwardRef } from 'react';
 import { Timeline } from './Timeline';
-import type { Task, Link, GanttConfig, Baseline } from './types';
+import type { Task, Link, GanttConfig, Baseline, Scale } from './types';
 
 interface ChartProps {
     tasks: Task[];
     links: Link[];
     range: { start: Date; end: Date };
-    scales: any[];
+    scales: Scale[];
     config: GanttConfig;
     selectedTask: string | null;
     draggedTask: string | null;

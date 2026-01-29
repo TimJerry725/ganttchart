@@ -10,10 +10,10 @@ import type { GanttConfig, DropIndicator, ZoomLevel, Baseline, Column, Scale, Ga
 import { formatDate, addToDate, getStartOfDay } from './utils/dateUtils';
 import { useUndoRedo } from './UndoRedo';
 import * as AutoScheduler from './features/AutoScheduler';
-import { createBaseline } from './features/Baselines';
+import { createBaseline } from './features/baselineUtils';
 import * as ExportUtils from './features/ExportUtils';
-import { applyFilters } from './features/FilterSearch';
-import type { FilterOptions } from './features/FilterSearch';
+import { applyFilters } from './features/filterUtils';
+import type { FilterOptions } from './features/filterUtils';
 import type { Task, Link } from './types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGripVertical } from '@fortawesome/free-solid-svg-icons';
@@ -163,11 +163,11 @@ export const Gantt: React.FC<GanttProps> = ({
 }) => {
   // Merge UI config with defaults
   const ui: GanttUIConfig = { ...defaultUIConfig, ...uiConfig };
-  
+
   // Apply style config via CSS variables
   const styleVariables: React.CSSProperties = React.useMemo(() => {
     const vars: Record<string, string> = {};
-    
+
     if (styleConfig.primary) vars['--wx-gantt-primary'] = styleConfig.primary;
     if (styleConfig.primarySelected) vars['--wx-gantt-primary-selected'] = styleConfig.primarySelected;
     if (styleConfig.success) vars['--wx-gantt-success'] = styleConfig.success;
@@ -185,25 +185,25 @@ export const Gantt: React.FC<GanttProps> = ({
     if (styleConfig.fontColorAlt) vars['--wx-gantt-font-color-alt'] = styleConfig.fontColorAlt;
     if (styleConfig.iconColor) vars['--wx-gantt-icon-color'] = styleConfig.iconColor;
     if (styleConfig.borderColor) vars['--wx-gantt-border-color'] = styleConfig.borderColor;
-    
+
     if (styleConfig.fontFamily) vars['--wx-gantt-font-family'] = styleConfig.fontFamily;
     if (styleConfig.fontMono) vars['--wx-gantt-font-mono'] = styleConfig.fontMono;
     if (styleConfig.fontSize) vars['--wx-gantt-font-size'] = styleConfig.fontSize;
     if (styleConfig.fontWeight) vars['--wx-gantt-font-weight'] = String(styleConfig.fontWeight);
     if (styleConfig.lineHeight) vars['--wx-gantt-line-height'] = String(styleConfig.lineHeight);
-    
+
     if (styleConfig.spacingXS) vars['--gantt-spacing-xs'] = styleConfig.spacingXS;
     if (styleConfig.spacingSM) vars['--gantt-spacing-sm'] = styleConfig.spacingSM;
     if (styleConfig.spacingMD) vars['--gantt-spacing-md'] = styleConfig.spacingMD;
     if (styleConfig.spacingLG) vars['--gantt-spacing-lg'] = styleConfig.spacingLG;
-    
+
     // Custom CSS variables
     if (styleConfig.customCSSVariables) {
       Object.entries(styleConfig.customCSSVariables).forEach(([key, value]) => {
         vars[key.startsWith('--') ? key : `--${key}`] = value;
       });
     }
-    
+
     return vars as React.CSSProperties;
   }, [styleConfig]);
   // Defensive checks
@@ -247,7 +247,7 @@ export const Gantt: React.FC<GanttProps> = ({
     }
     return new Map();
   });
-  const showBaselines = true;
+
   const [currentTheme] = useState<'light' | 'dark'>((config.theme as 'light' | 'dark') || 'light');
   const [filters, setFilters] = useState<FilterOptions>({
     searchText: '',
@@ -423,7 +423,7 @@ export const Gantt: React.FC<GanttProps> = ({
         const groupToMoveIds = [sourceTask.id, ...reorderTask.descendantIds];
         if (!groupToMoveIds.includes(targetTask.id)) {
           const newTasks = [...tasks];
-          let newParentId: string | undefined = dropIndicator.position === 'inside' ? targetTask.id : targetTask.parent;
+          const newParentId: string | undefined = dropIndicator.position === 'inside' ? targetTask.id : targetTask.parent;
           const sourceIdxInFull = newTasks.findIndex(t => t.id === sourceTask.id);
           if (sourceIdxInFull !== -1) newTasks[sourceIdxInFull] = { ...newTasks[sourceIdxInFull], parent: newParentId };
           const currentGroupTasks = newTasks.filter(t => groupToMoveIds.includes(t.id));
@@ -500,13 +500,13 @@ export const Gantt: React.FC<GanttProps> = ({
   };
 
   const handleCreateTask = (newTaskData: Omit<Task, 'id'>, parentId?: string) => {
-    const newTask: Task = { 
-      ...newTaskData, 
+    const newTask: Task = {
+      ...newTaskData,
       id: `task-${Date.now()}`,
       parent: parentId, // Set parent if provided (for subtasks)
     };
     createTaskWithHistory(newTask);
-    
+
     // Automatically create baseline for new task with its initial dates
     // This baseline will remain fixed even when the task is moved/resized
     // The baseline represents the "original plan" and only the actual task bar will change
@@ -520,7 +520,7 @@ export const Gantt: React.FC<GanttProps> = ({
       updated.set(newTask.id, newBaseline);
       return updated;
     });
-    
+
     if (onTaskCreate) onTaskCreate(newTask);
   };
 
@@ -603,7 +603,7 @@ export const Gantt: React.FC<GanttProps> = ({
   useEffect(() => {
     const gridBody = gridContainerRef.current?.querySelector('.gantt-grid-body');
     const timelineBody = timelineRef.current?.querySelector('.gantt-timeline-body');
-    
+
     if (!gridBody || !timelineBody) return;
 
     const handleGridScroll = () => {
@@ -655,7 +655,7 @@ export const Gantt: React.FC<GanttProps> = ({
   const gridWidthStyle = config.gridWidth ? { '--gantt-grid-width': config.gridWidth } as React.CSSProperties : {};
 
   return (
-    <div 
+    <div
       className={`gantt-page-wrapper theme-${currentTheme}`}
       style={{ ...containerStyle, ...styleVariables }}
     >
@@ -665,15 +665,13 @@ export const Gantt: React.FC<GanttProps> = ({
         </div>
       )}
 
-      <div 
+      <div
         className={`gantt-container theme-${ganttConfig.theme}`}
         style={gridWidthStyle}
       >
         <Toolbar
           zoomLevel={zoomLevel}
           setZoomLevel={setZoomLevel}
-          onBaselineToggle={() => {}} // Not used anymore, baselines always visible
-          showBaselines={showBaselines}
           onExport={(type) => {
             if (type === 'csv') ExportUtils.exportToCSV(tasks);
             if (type === 'excel') ExportUtils.exportToExcel(tasks);
@@ -682,19 +680,20 @@ export const Gantt: React.FC<GanttProps> = ({
           }}
           onFilterChange={(f: FilterOptions) => setFilters(f)}
           owners={owners || []}
-            onAddTask={(parentId) => {
-              if (parentId) {
-                const parentTask = tasks.find(t => t.id === parentId);
-                setTaskCreatorParentId(parentId);
-                setTaskCreatorParentName(parentTask?.text);
-              } else {
-                setTaskCreatorParentId(undefined);
-                setTaskCreatorParentName(undefined);
-              }
-              setShowTaskCreator(true);
-            }}
+          onAddTask={(parentId) => {
+            if (parentId) {
+              const parentTask = tasks.find(t => t.id === parentId);
+              setTaskCreatorParentId(parentId);
+              setTaskCreatorParentName(parentTask?.text);
+            } else {
+              setTaskCreatorParentId(undefined);
+              setTaskCreatorParentName(undefined);
+            }
+            setShowTaskCreator(true);
+          }}
           uiConfig={ui}
           iconConfig={iconConfig}
+          styleConfig={styleConfig}
         />
 
         <div className="gantt-layout" ref={layoutRef} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
@@ -719,6 +718,7 @@ export const Gantt: React.FC<GanttProps> = ({
               setShowTaskCreator(true);
             }}
             onAddDependency={handleAddDependency}
+            onRemoveDependency={handleRemoveDependency}
             onDependencyClick={(taskId) => {
               const task = tasks.find(t => t.id === taskId);
               if (task) {
@@ -731,6 +731,7 @@ export const Gantt: React.FC<GanttProps> = ({
             dropIndicator={dropIndicator}
             reorderTask={reorderTask}
             iconConfig={iconConfig}
+            styleConfig={styleConfig}
           />
           <Chart
             ref={timelineRef}
@@ -754,19 +755,20 @@ export const Gantt: React.FC<GanttProps> = ({
         </div>
 
         {showTaskCreator && (
-          <TaskCreator 
-            onCreateTask={handleCreateTask} 
+          <TaskCreator
+            onCreateTask={handleCreateTask}
             onClose={() => {
               setShowTaskCreator(false);
               setTaskCreatorParentId(undefined);
               setTaskCreatorParentName(undefined);
-            }} 
+            }}
             uiConfig={ui}
             parentId={taskCreatorParentId}
             parentTaskName={taskCreatorParentName}
+            styleConfig={styleConfig}
           />
         )}
-        {editingTask && <TaskEditor task={editingTask} onUpdate={handleUpdateTask} onDelete={handleDeleteTask} onClose={() => setEditingTask(null)} uiConfig={ui} />}
+        {editingTask && <TaskEditor task={editingTask} onUpdate={handleUpdateTask} onDelete={handleDeleteTask} onClose={() => setEditingTask(null)} uiConfig={ui} styleConfig={styleConfig} />}
         {showDependencyEditor && dependencyEditTask && (
           <DependencyEditor
             task={dependencyEditTask}
@@ -775,6 +777,7 @@ export const Gantt: React.FC<GanttProps> = ({
             onAddDependency={handleAddDependency}
             onRemoveDependency={handleRemoveDependency}
             onClose={() => { setShowDependencyEditor(false); setDependencyEditTask(null); }}
+            styleConfig={styleConfig}
           />
         )}
 
@@ -799,6 +802,7 @@ export const Gantt: React.FC<GanttProps> = ({
                 setContextMenu(null);
               }}
               iconConfig={iconConfig}
+              styleConfig={styleConfig}
             />
           </>
         )}
@@ -837,7 +841,7 @@ export const Gantt: React.FC<GanttProps> = ({
                       );
                     case 'start': return formatDate(task.start, 'DD MMM YYYY');
                     case 'duration': return `${task.duration}`;
-                    default: return (task as any)[column.name] || '';
+                    default: return (task as unknown as Record<string, unknown>)[column.name] as string || '';
                   }
                 })()}
               </div>

@@ -162,7 +162,7 @@ export const levelResources = (tasks: Task[]): Task[] => {
   const leveledTasks = [...tasks];
 
   // For each owner, check for overlapping tasks
-  tasksByOwner.forEach((ownerTasks, _owner) => {
+  tasksByOwner.forEach((ownerTasks) => {
     const sorted = ownerTasks.sort((a, b) => a.start.getTime() - b.start.getTime());
 
     for (let i = 1; i < sorted.length; i++) {

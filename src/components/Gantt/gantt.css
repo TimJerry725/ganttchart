@@ -3,19 +3,19 @@
 @import "@fontsource/ibm-plex-mono/400.css";
 
 :root {
-  /* Iris Willow Theme Foundations - Can be overridden by parent project */
-  --wx-gantt-primary: #37a9ef;
-  --wx-gantt-primary-selected: #d5eaf7;
-  --wx-gantt-success: #77d257;
-  --wx-gantt-warning: #fcba2e;
-  --wx-gantt-danger: #fe6158;
+  /* Ant Design v5 Foundations */
+  --wx-gantt-primary: #1677ff;
+  --wx-gantt-primary-selected: #e6f4ff;
+  --wx-gantt-success: #52c41a;
+  --wx-gantt-warning: #faad14;
+  --wx-gantt-danger: #ff4d4f;
 
-  /* Fonts - Inherit from parent if available, fallback to defaults */
-  --wx-gantt-font-family: inherit, "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-  --wx-gantt-font-mono: inherit, "IBM Plex Mono", monospace;
-  --wx-gantt-font-size: inherit;
-  --wx-gantt-font-weight: inherit;
-  --wx-gantt-line-height: inherit;
+  /* Fonts - Align with Ant Design default stack */
+  --wx-gantt-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --wx-gantt-font-mono: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  --wx-gantt-font-size: 14px;
+  --wx-gantt-font-weight: 400;
+  --wx-gantt-line-height: 1.5714285714285714;
 
   /* Layout & Spacing - Responsive units */
   --gantt-header-height: clamp(60px, 8vh, 84px);
@@ -26,22 +26,22 @@
   --gantt-container-height: 100%;
   --gantt-container-min-height: 400px;
 
-  /* Authentic Iris Gantt Tokens - Can be overridden */
-  --wx-gantt-border: 1px solid var(--wx-gantt-border-color, #e6e6e6);
-  --wx-gantt-border-color: #e6e6e6;
-  --wx-gantt-background: inherit;
-  --wx-gantt-background-alt: #f2f3f7;
-  --wx-gantt-background-hover: #eaedf5;
-  --wx-gantt-select-color: #eaedf5;
+  /* Authentic Ant Design Tokens */
+  --wx-gantt-border: 1px solid var(--wx-gantt-border-color, #f0f0f0);
+  --wx-gantt-border-color: #f0f0f0;
+  --wx-gantt-background: #ffffff;
+  --wx-gantt-background-alt: #fafafa;
+  --wx-gantt-background-hover: #f5f5f5;
+  --wx-gantt-select-color: #f5f5f5;
 
   /* Gantt Task Specifics */
-  --wx-gantt-task-color: var(--wx-gantt-primary, #37a9ef);
-  --wx-gantt-task-fill-color: rgba(0, 0, 0, 0.15);
-  --wx-gantt-project-color: #81C784;
-  --wx-gantt-milestone-color: #9c27b0;
-  --wx-gantt-milestone-border-radius: 2px;
-  --wx-gantt-bar-border-radius: 3px;
-  --wx-gantt-bar-shadow: 0 1px 2px rgba(44, 47, 60, 0.06), 0 3px 10px rgba(44, 47, 60, 0.12);
+  --wx-gantt-task-color: var(--wx-gantt-primary, #1677ff);
+  --wx-gantt-task-fill-color: rgba(22, 119, 255, 0.1);
+  --wx-gantt-project-color: #1677ff;
+  --wx-gantt-milestone-color: #ff4d4f;
+  --wx-gantt-milestone-border-radius: 4px;
+  --wx-gantt-bar-border-radius: 4px;
+  --wx-gantt-bar-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
 
   /* Status-based colors for task bars */
   --wx-gantt-status-completed: #2196F3;
@@ -55,10 +55,10 @@
   --wx-gantt-baseline-color: #BDBDBD;
   /* Gray for baseline */
 
-  /* Typography - Inherit from parent */
-  --wx-gantt-font-color: inherit;
-  --wx-gantt-font-color-alt: #9fa1ae;
-  --wx-gantt-icon-color: #9fa1ae;
+  /* Typography - Align with Ant Design */
+  --wx-gantt-font-color: rgba(0, 0, 0, 0.88);
+  --wx-gantt-font-color-alt: rgba(0, 0, 0, 0.45);
+  --wx-gantt-icon-color: rgba(0, 0, 0, 0.45);
 
   /* Spacing - Responsive */
   --gantt-spacing-xs: clamp(4px, 0.5vw, 8px);
@@ -152,7 +152,7 @@
 
 .gantt-layout::-webkit-scrollbar-thumb {
   background: #cbd5e1;
-  border-radius: 10px;
+  border-radius: 4px;
   border: 2px solid #ffffff;
 }
 
@@ -199,7 +199,7 @@
   height: var(--gantt-header-height);
   display: flex;
   border-bottom: var(--wx-gantt-border);
-  background-color: #ffffff;
+  background-color: #fafafa;
   box-shadow: none;
   overflow-x: visible;
   /* Ensure header cells are visible */
@@ -216,12 +216,11 @@
   height: 100%;
   padding: 0 12px;
   font-weight: 600;
-  font-size: 14px;
-  font-family: var(--font-body);
+  font-family: inherit;
   border-right: var(--wx-gantt-border);
-  background-color: var(--wx-gantt-background);
+  background-color: #fafafa;
   /* Pure white per visual spec */
-  color: var(--wx-gantt-font-color);
+  color: rgba(0, 0, 0, 0.88);
   white-space: nowrap;
   overflow: visible;
   /* Changed from hidden to visible */
@@ -275,8 +274,7 @@
 }
 
 .gantt-grid-row:hover {
-  background-color: #f8fafc;
-  border-left: 2px solid var(--color-primary);
+  background-color: #fafafa;
 }
 
 .theme-dark .gantt-grid-row {
@@ -300,7 +298,7 @@
   background: #2196F3;
   color: white;
   padding: 2px 6px;
-  border-radius: 10px;
+  border-radius: 4px;
   font-size: 11px;
   font-weight: normal;
 }
@@ -345,8 +343,7 @@ body.gantt-dragging {
 }
 
 .gantt-grid-row.selected {
-  background-color: #eff6ff;
-  border-left: 3px solid var(--color-primary);
+  background-color: #e6f4ff;
 }
 
 .theme-dark .gantt-grid-row.selected {
@@ -1633,7 +1630,7 @@ body.gantt-dragging {
   color: #666;
   padding: 2px 8px;
   background-color: #e3f2fd;
-  border-radius: 12px;
+  border-radius: 4px;
   display: inline-block;
   width: fit-content;
 }
@@ -1644,7 +1641,7 @@ body.gantt-dragging {
   font-weight: 600;
   padding: 2px 6px;
   background-color: #fff3e0;
-  border-radius: 10px;
+  border-radius: 4px;
   display: inline-block;
   width: fit-content;
 }

@@ -12,17 +12,19 @@ import {
     faPlus,
 } from '@fortawesome/free-solid-svg-icons';
 import { FilterSearch } from './features/FilterSearch';
-import type { FilterOptions } from './features/FilterSearch';
-import type { GanttUIConfig, GanttIconConfig } from './types';
+import type { FilterOptions } from './features/filterUtils';
+import type { GanttUIConfig, GanttIconConfig, GanttStyleConfig } from './types';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { applyStyleConfig } from './utils/styleUtils';
 
 // Helper to render icon (custom component or FontAwesome)
-const renderIcon = (icon: React.ReactNode | string | undefined, defaultIcon: any): React.ReactNode => {
-  if (!icon) return <FontAwesomeIcon icon={defaultIcon} />;
-  if (typeof icon === 'string') {
-    // If string, try to find FontAwesome icon by name (simplified - you may want to use a mapping)
-    return <FontAwesomeIcon icon={defaultIcon} />;
-  }
-  return icon as React.ReactNode;
+const renderIcon = (icon: React.ReactNode | string | undefined, defaultIcon: IconDefinition): React.ReactNode => {
+    if (!icon) return <FontAwesomeIcon icon={defaultIcon} />;
+    if (typeof icon === 'string') {
+        // If string, try to find FontAwesome icon by name (simplified - you may want to use a mapping)
+        return <FontAwesomeIcon icon={defaultIcon} />;
+    }
+    return icon as React.ReactNode;
 };
 
 interface ToolbarProps {
@@ -36,6 +38,7 @@ interface ToolbarProps {
     onAddTask?: (parentId?: string) => void;
     uiConfig: GanttUIConfig;
     iconConfig?: Partial<GanttIconConfig>;
+    styleConfig?: Partial<GanttStyleConfig>;
 }
 
 export const Toolbar: React.FC<ToolbarProps> = ({
@@ -47,7 +50,9 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     onAddTask,
     uiConfig,
     iconConfig = {},
+    styleConfig,
 }) => {
+    const styles = applyStyleConfig(styleConfig);
     const showZoom = uiConfig.showZoomButtons !== false;
     const showExport = uiConfig.showExportButtons !== false;
     const showDivider = showZoom && showExport;
@@ -62,6 +67,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                                 type="primary"
                                 icon={renderIcon(iconConfig.addTask, faPlus)}
                                 onClick={() => onAddTask?.()}
+                                style={styles.buttonPrimary}
                             >
                                 {uiConfig.addTaskButtonText || 'New Task'}
                             </Button>
@@ -78,18 +84,21 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                                     <Button
                                         icon={renderIcon(iconConfig.zoomOut, faSearchMinus)}
                                         onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.25))}
+                                        style={styles.buttonSecondary}
                                     />
                                 </Tooltip>
                                 <Tooltip title={uiConfig.zoomInTooltip || "Zoom In"}>
                                     <Button
                                         icon={renderIcon(iconConfig.zoomIn, faSearchPlus)}
                                         onClick={() => setZoomLevel(Math.min(2, zoomLevel + 0.25))}
+                                        style={styles.buttonSecondary}
                                     />
                                 </Tooltip>
                                 <Tooltip title={uiConfig.resetZoomTooltip || "Reset Zoom"}>
                                     <Button
                                         icon={renderIcon(iconConfig.resetZoom, faRotateLeft)}
                                         onClick={() => setZoomLevel(1)}
+                                        style={styles.buttonSecondary}
                                     />
                                 </Tooltip>
                             </>
@@ -103,24 +112,28 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                                     <Button
                                         icon={renderIcon(iconConfig.exportCSV, faFileCsv)}
                                         onClick={() => onExport('csv')}
+                                        style={styles.buttonSecondary}
                                     />
                                 </Tooltip>
                                 <Tooltip title={uiConfig.exportExcelTooltip || "Export to Excel"}>
                                     <Button
                                         icon={renderIcon(iconConfig.exportExcel, faFileExcel)}
                                         onClick={() => onExport('excel')}
+                                        style={styles.buttonSecondary}
                                     />
                                 </Tooltip>
                                 <Tooltip title={uiConfig.exportJSONTooltip || "Export to JSON"}>
                                     <Button
                                         icon={renderIcon(iconConfig.exportJSON, faFileCode)}
                                         onClick={() => onExport('json')}
+                                        style={styles.buttonSecondary}
                                     />
                                 </Tooltip>
                                 <Tooltip title={uiConfig.exportPDFTooltip || "Export to PDF"}>
                                     <Button
                                         icon={renderIcon(iconConfig.exportPDF, faFilePdf)}
                                         onClick={() => onExport('pdf')}
+                                        style={styles.buttonSecondary}
                                     />
                                 </Tooltip>
                             </>

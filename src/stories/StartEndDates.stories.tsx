@@ -2,7 +2,8 @@
 import { Gantt } from '../components/Gantt/Gantt';
 import type { Task, Column } from '../components/types';
 import { basicTasks } from './data';
-import { formatDateCustom, CustomDateGrid } from './common';
+import { CustomDateGrid } from './common';
+import { formatDateCustom } from './storyUtils';
 
 export default {
   title: 'Gantt/Start And End Dates',
