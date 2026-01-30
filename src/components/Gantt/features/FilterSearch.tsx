@@ -50,7 +50,7 @@ export const FilterSearch: React.FC<FilterSearchProps> = ({ onFilterChange, owne
         {/* Left side - Search */}
         <div className="gantt-filter-left">
           <Search
-            placeholder={uiConfig.searchPlaceholder || "Search tasks..."}
+            placeholder={uiConfig.searchPlaceholder || "Search stages..."}
             value={filters.searchText}
             onChange={(e) => handleFilterChange({ searchText: e.target.value })}
             allowClear

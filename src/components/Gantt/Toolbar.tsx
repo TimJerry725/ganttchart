@@ -69,7 +69,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
                                 onClick={() => onAddTask?.()}
                                 style={styles.buttonPrimary}
                             >
-                                {uiConfig.addTaskButtonText || 'New Task'}
+                                {uiConfig.addTaskButtonText || 'New Stage'}
                             </Button>
                         )}
                         {/* Baseline button removed - baselines are always visible and auto-created */}

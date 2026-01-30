@@ -55,11 +55,11 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
 
   return (
     <Modal
-      title={parentId ? (uiConfig.taskCreatorTitle || "Create Subtask") + (parentTaskName ? ` for "${parentTaskName}"` : '') : (uiConfig.taskCreatorTitle || "Create New Task")}
+      title={parentId ? (uiConfig.taskCreatorTitle || "Create Checklist") + (parentTaskName ? ` for "${parentTaskName}"` : '') : (uiConfig.taskCreatorTitle || "Create New Stage")}
       open={true}
       onCancel={onClose}
       onOk={() => form.submit()}
-      okText={uiConfig.taskCreatorOkText || "Create Task"}
+      okText={uiConfig.taskCreatorOkText || "Create Stage"}
       cancelText={uiConfig.taskCreatorCancelText || "Cancel"}
       width={600}
       className="gantt-modal-antd"
@@ -85,16 +85,16 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
       >
         <Form.Item
           name="text"
-          label={uiConfig.taskNameLabel || "Task Name"}
-          rules={[{ required: true, message: uiConfig.taskNameRequired || 'Please enter task name' }]}
+          label={uiConfig.taskNameLabel || "Stage Name"}
+          rules={[{ required: true, message: uiConfig.taskNameRequired || 'Please enter stage name' }]}
         >
-          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter task name"} autoFocus style={styles.input} />
+          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter stage name"} autoFocus style={styles.input} />
         </Form.Item>
 
         <div style={{ display: 'flex', gap: 16 }}>
           <Form.Item name="type" label={uiConfig.typeLabel || "Type"} style={{ flex: 1 }}>
             <Select style={styles.input}>
-              <Option value="task">{uiConfig.taskTypeOptions?.task || 'Task'}</Option>
+              <Option value="task">{uiConfig.taskTypeOptions?.task || 'Stage'}</Option>
               <Option value="milestone">{uiConfig.taskTypeOptions?.milestone || 'Milestone'}</Option>
               <Option value="project">{uiConfig.taskTypeOptions?.project || 'Project'}</Option>
             </Select>
@@ -134,7 +134,7 @@ export const TaskCreator: React.FC<TaskCreatorProps> = ({ onCreateTask, onClose,
         </Form.Item>
 
         <Form.Item name="details" label={uiConfig.detailsLabel || "Details"}>
-          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add task description..."} rows={3} style={styles.input} />
+          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add stage description..."} rows={3} style={styles.input} />
         </Form.Item>
       </Form>
     </Modal>

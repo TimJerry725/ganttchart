@@ -49,8 +49,8 @@ const tasks: Task[] = [
 ];
 
 const links: Link[] = [
-  { id: 'l1', source: '1', target: '2', type: 'e2s' },
-  { id: 'l2', source: '2', target: '3', type: 'e2s' },
+  { id: 'l1', sourceId: '1', targetId: '2', type: 'e2s' },
+  { id: 'l2', sourceId: '2', targetId: '3', type: 'e2s' },
 ];
 
 /**

@@ -196,13 +196,13 @@ const tasks: Task[] = [
 ];
 
 const links: Link[] = [
-  { id: 'l1', source: '1.1', target: '1.2', type: 'e2s' },
-  { id: 'l2', source: '1.2', target: '1.3', type: 'e2s' },
-  { id: 'l3', source: '2.1', target: '2.2', type: 'e2s' },
-  { id: 'l4', source: '2.2', target: '2.3', type: 'e2s' },
-  { id: 'l5', source: '2.3', target: '2.4', type: 'e2s' },
-  { id: 'l6', source: '3.1', target: '3.2', type: 'e2s' },
-  { id: 'l7', source: '3.2', target: '3.3', type: 'e2s' },
+  { id: 'l1', sourceId: '1.1', targetId: '1.2', type: 'e2s' },
+  { id: 'l2', sourceId: '1.2', targetId: '1.3', type: 'e2s' },
+  { id: 'l3', sourceId: '2.1', targetId: '2.2', type: 'e2s' },
+  { id: 'l4', sourceId: '2.2', targetId: '2.3', type: 'e2s' },
+  { id: 'l5', sourceId: '2.3', targetId: '2.4', type: 'e2s' },
+  { id: 'l6', sourceId: '3.1', targetId: '3.2', type: 'e2s' },
+  { id: 'l7', sourceId: '3.2', targetId: '3.3', type: 'e2s' },
 ];
 
 /**

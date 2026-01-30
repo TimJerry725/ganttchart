@@ -16,7 +16,7 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
   const svgDimensions = React.useMemo(() => {
     let maxWidth = 0;
     let maxHeight = 0;
-    
+
     tasks.forEach(task => {
       try {
         const pos = getTaskPosition(task);
@@ -31,10 +31,10 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
         console.warn('Failed to position task for link rendering:', task.id, e);
       }
     });
-    
-    return { 
-      width: Math.max(maxWidth, 1000), 
-      height: Math.max(maxHeight, 100) 
+
+    return {
+      width: Math.max(maxWidth, 1000),
+      height: Math.max(maxHeight, 100)
     };
   }, [tasks, getTaskPosition]);
 
@@ -141,9 +141,9 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
   if (links.length === 0) return null;
 
   return (
-    <svg 
-      className="gantt-links-layer" 
-      style={{ 
+    <svg
+      className="gantt-links-layer"
+      style={{
         overflow: 'visible',
         width: svgDimensions.width,
         height: svgDimensions.height,

@@ -101,13 +101,13 @@ export const statusTasks: Task[] = [
 ];
 
 export const statusLinks: Link[] = [
-    { id: 'l1', source: '1', target: '2', type: 'e2s' },
-    { id: 'l2', source: '2', target: '3', type: 'e2s' },
-    { id: 'l3', source: '3', target: '4', type: 'e2s' },
-    { id: 'l4', source: '4', target: '5', type: 'e2s' },
-    { id: 'l5', source: '5.1', target: '5.2', type: 'e2s' },
-    { id: 'l6', source: '5.2', target: '5.3', type: 'e2s' },
-    { id: 'l7', source: '5.3', target: '6', type: 'e2s' },
+    { id: 'l1', sourceId: '1', targetId: '2', type: 'e2s' },
+    { id: 'l2', sourceId: '2', targetId: '3', type: 'e2s' },
+    { id: 'l3', sourceId: '3', targetId: '4', type: 'e2s' },
+    { id: 'l4', sourceId: '4', targetId: '5', type: 'e2s' },
+    { id: 'l5', sourceId: '5.1', targetId: '5.2', type: 'e2s' },
+    { id: 'l6', sourceId: '5.2', targetId: '5.3', type: 'e2s' },
+    { id: 'l7', sourceId: '5.3', targetId: '6', type: 'e2s' },
 ];
 
 export const StatusBasedColors = {

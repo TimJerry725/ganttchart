@@ -73,7 +73,7 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
 
   return (
     <Modal
-      title={uiConfig.taskEditorTitle || "Edit Task"}
+      title={uiConfig.taskEditorTitle || "Edit Stage"}
       open={true}
       onCancel={onClose}
       footer={[
@@ -112,16 +112,16 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
       >
         <Form.Item
           name="text"
-          label={uiConfig.taskNameLabel || "Task Name"}
-          rules={[{ required: true, message: uiConfig.taskNameRequired || 'Please enter task name' }]}
+          label={uiConfig.taskNameLabel || "Stage Name"}
+          rules={[{ required: true, message: uiConfig.taskNameRequired || 'Please enter stage name' }]}
         >
-          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter task name"} style={styles.input} />
+          <Input placeholder={uiConfig.taskNamePlaceholder || "Enter stage name"} style={styles.input} />
         </Form.Item>
 
         <div style={{ display: 'flex', gap: 16 }}>
           <Form.Item name="type" label={uiConfig.typeLabel || "Type"} style={{ flex: 1 }}>
             <Select style={styles.input}>
-              <Option value="task">{uiConfig.taskTypeOptions?.task || 'Task'}</Option>
+              <Option value="task">{uiConfig.taskTypeOptions?.task || 'Stage'}</Option>
               <Option value="milestone">{uiConfig.taskTypeOptions?.milestone || 'Milestone'}</Option>
               <Option value="project">{uiConfig.taskTypeOptions?.project || 'Project'}</Option>
             </Select>
@@ -161,7 +161,7 @@ export const TaskEditor: React.FC<TaskEditorProps> = ({ task, onUpdate, onDelete
         </Form.Item>
 
         <Form.Item name="details" label={uiConfig.detailsLabel || "Details"}>
-          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add task description..."} rows={3} style={styles.input} />
+          <TextArea placeholder={uiConfig.detailsPlaceholder || "Add stage description..."} rows={3} style={styles.input} />
         </Form.Item>
       </Form>
     </Modal>

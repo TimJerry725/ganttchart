@@ -1,6 +1,8 @@
+import type { Meta, StoryObj } from '@storybook/react';
 import { Gantt } from '../components/Gantt/Gantt';
+import type { Task, Link } from '../components/Gantt/types';
 
-export default {
+const meta: Meta<typeof Gantt> = {
   title: 'Gantt/Task Dependencies',
   component: Gantt,
   parameters: {
@@ -9,7 +11,10 @@ export default {
   tags: ['autodocs'],
 };
 
-const tasks = [
+export default meta;
+type Story = StoryObj<typeof Gantt>;
+
+const tasks: Task[] = [
   {
     id: '1',
     text: 'Project Planning',
@@ -28,16 +33,16 @@ const tasks = [
   },
 ];
 
-const links = [
+const links: Link[] = [
   {
     id: 'link-1',
     source: '1',
     target: '2',
-    type: 'e2s',
+    type: 'e2s' as const,
   },
 ];
 
-export const FinishToStart = {
+export const FinishToStart: Story = {
   args: {
     tasks: tasks,
     links: links,
@@ -48,7 +53,7 @@ export const FinishToStart = {
   },
 };
 
-export const AutoScheduling = {
+export const AutoScheduling: Story = {
   args: {
     tasks: tasks,
     links: links,
