@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Popover, Select, InputNumber, Button, Typography } from 'antd';
 import type { Task, Link, GanttStyleConfig } from './types';
 import { convertLagToDays } from './utils/dependencyParser';
@@ -71,17 +71,14 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
         }
     };
 
-    // Load existing dependency values when popover opens
-    useEffect(() => {
-        if (visible) {
-            // Always show preview when opening
+    // Initialize state when popover opens
+    const handleOpenChange = (v: boolean) => {
+        setVisible(v);
+        if (v) {
             setShowPreview(true);
-
             if (existingDependency) {
                 setSelectedSourceId(existingDependency.source);
                 setDependencyType(existingDependency.type);
-
-                // Handle lag/lead
                 const lag = existingDependency.lag || 0;
                 if (lag >= 0) {
                     setDelayType('lag');
@@ -90,9 +87,11 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                     setDelayType('lead');
                     setSpanValue(Math.abs(lag));
                 }
+            } else {
+                resetState();
             }
         }
-    }, [visible, existingDependency]);
+    };
 
     const renderDiagram = () => {
         if (!showPreview) return null;
@@ -389,7 +388,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
             content={content}
             trigger="click"
             open={visible}
-            onOpenChange={setVisible}
+            onOpenChange={handleOpenChange}
             placement="bottomLeft"
             overlayClassName="dependency-popover"
             overlayInnerStyle={{ padding: 0 }}

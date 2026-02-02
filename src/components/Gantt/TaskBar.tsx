@@ -125,6 +125,11 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   if ((task.segments && task.segments.length > 0) || (task.onHoldPeriods && task.onHoldPeriods.length > 0)) {
     const totalDuration = task.end.getTime() - task.start.getTime();
 
+    // Fallback to a single segment if no segments provided but we have on-hold periods
+    const effectiveSegments = (task.segments && task.segments.length > 0)
+      ? task.segments
+      : [{ start: task.start, end: task.end, duration: task.duration || 0 }];
+
     return (
       <div className="gantt-task-group">
         {/* Render on-hold periods first (usually background-like) */}
@@ -140,7 +145,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
         ))}
 
         {/* Render active segments */}
-        {task.segments?.map((seg: TaskSegment, i) => (
+        {effectiveSegments.map((seg: TaskSegment, i) => (
           <Tooltip key={`seg-${i}`} title={tooltipContent} mouseEnterDelay={0.5}>
             <div
               className={getTaskBarClass() + ' segment'}
@@ -152,16 +157,11 @@ export const TaskBar: React.FC<TaskBarProps> = ({
               onClick={onClick}
               onMouseDown={(e) => handleMouseDown(e, 'move')}
             >
-              {renderTaskBarContent(true)}
+              {/* Show text only in the first segment or if it's the only one */}
+              {renderTaskBarContent(i > 0)}
             </div>
           </Tooltip>
         ))}
-
-        {/* If no segments but has hold periods, we might need to render the "main" task bar parts 
-            or assume the user defines segments if they want gaps. 
-            However, the image shows on-hold as a STRIKE OUT AREA between periods.
-            If I have onHoldPeriods, I should probably also have segments for the active parts.
-        */}
       </div>
     );
   }
