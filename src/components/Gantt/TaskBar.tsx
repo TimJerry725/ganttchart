@@ -75,38 +75,34 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   const renderTaskBarContent = (isSegment = false) => (
     <>
       {/* Resize handle - left */}
-      {!readonly && task.type !== 'milestone' && !isSegment && (
+      {!readonly && !isSegment && (
         <div
           className="gantt-task-resize-handle gantt-task-resize-left"
           onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
         />
       )}
 
-      {/* Progress bar */}
+      {/* Progress bar - not shown for milestones */}
       {!isSegment && task.type !== 'milestone' && (
         <div
           className="gantt-task-progress"
           style={{ width: `${task.progress}%` }}
-        />
+        >
+          {task.progress > 5 && task.progress < 100 && (
+            <span className="gantt-task-progress-text">{task.progress}%</span>
+          )}
+        </div>
       )}
 
       {/* Task content container */}
       <div className="gantt-task-content">
-        {!isSegment && task.type !== 'milestone' && (
+        {!isSegment && (
           <span className="gantt-task-text">{task.text}</span>
         )}
       </div>
 
-      {/* Milestone rendering (Independent of content clipping) */}
-      {task.type === 'milestone' && (
-        <>
-          <div className="gantt-milestone-diamond" />
-          <span className="gantt-milestone-text">{task.text}</span>
-        </>
-      )}
-
       {/* Resize handle - right */}
-      {!readonly && task.type !== 'milestone' && !isSegment && (
+      {!readonly && !isSegment && (
         <div
           className="gantt-task-resize-handle gantt-task-resize-right"
           onMouseDown={(e) => handleMouseDown(e, 'resize-right')}

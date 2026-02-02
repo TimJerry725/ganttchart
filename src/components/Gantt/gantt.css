@@ -39,7 +39,6 @@
   --wx-gantt-task-fill-color: rgba(22, 119, 255, 0.1);
   --wx-gantt-project-color: #1677ff;
   --wx-gantt-milestone-color: #ff4d4f;
-  --wx-gantt-milestone-border-radius: 4px;
   --wx-gantt-bar-border-radius: 4px;
   --wx-gantt-bar-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
 
@@ -784,13 +783,13 @@ body.gantt-dragging {
 }
 
 .gantt-task-bar.milestone {
-  width: 0 !important;
-  /* Base width is 0 for 0-duration */
-  height: 0 !important;
-  overflow: visible;
-  border: none;
-  background: none !important;
-  box-shadow: none;
+  /* Milestone now renders as a regular bar */
+  height: 28px;
+  min-width: 80px !important;
+  /* Ensure milestones are visible even with 0 duration */
+  background-color: var(--wx-gantt-milestone-color) !important;
+  border-radius: var(--wx-gantt-bar-border-radius);
+  font-weight: 600;
 }
 
 /* Status-based task bar colors */
@@ -810,31 +809,14 @@ body.gantt-dragging {
   background-color: var(--wx-gantt-status-not-started) !important;
 }
 
+/* Milestone diamond - no longer used */
 .gantt-milestone-diamond {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 14px;
-  height: 14px;
-  background-color: var(--wx-gantt-baseline-color);
-  transform: translate(-50%, -50%) rotate(45deg);
-  border-radius: var(--wx-gantt-milestone-border-radius);
-  box-shadow: var(--wx-gantt-bar-shadow);
-  z-index: 2;
-  cursor: pointer;
+  display: none;
 }
 
+/* Milestone text - no longer positioned separately */
 .gantt-milestone-text {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  white-space: nowrap;
-  color: var(--wx-gantt-font-color);
-  font-size: 13px;
-  font-weight: 400;
-  pointer-events: none;
-  font-family: var(--font-body);
+  display: none;
 }
 
 .gantt-task-progress {
@@ -846,6 +828,17 @@ body.gantt-dragging {
   pointer-events: none;
   z-index: 1;
   border-radius: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gantt-task-progress-text {
+  font-size: 10px;
+  color: white;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
 }
 
 .gantt-task-content {
@@ -867,9 +860,19 @@ body.gantt-dragging {
   align-items: center;
 }
 
+/* Milestone content styling */
 .milestone .gantt-task-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   overflow: visible;
   /* Milestones must not clip their children */
+}
+
+.milestone .gantt-task-text {
+  color: white;
+  font-weight: 600;
 }
 
 .gantt-task-text {
@@ -1425,9 +1428,10 @@ body.gantt-dragging {
 }
 
 .gantt-baseline-bar.milestone {
-  background-color: var(--wx-gantt-milestone-color);
+  background-color: #9b59b6;
+  /* Purple color for milestone baselines */
   opacity: 1;
-  /* Make it more prominent since it's the 'purple' mark */
+  /* Make it more prominent */
 }
 
 .gantt-variance-indicator {
@@ -1472,31 +1476,6 @@ body.gantt-dragging {
 
 .gantt-toolbar button.active {
   background-color: #1976D2;
-}
-
-.gantt-milestone-marker {
-  width: 14px;
-  height: 14px;
-  background-color: #9C27B0;
-  transform: rotate(45deg);
-  margin: 0 auto;
-}
-
-.gantt-milestone-text {
-  position: absolute;
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 10px;
-  white-space: nowrap;
-  font-size: 11px;
-  color: #555;
-  font-family: var(--font-body);
-  pointer-events: none;
-}
-
-.theme-dark .gantt-milestone-text {
-  color: #ccc;
 }
 
 .gantt-toolbar-separator {

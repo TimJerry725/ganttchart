@@ -629,9 +629,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                   className="gantt-timeline-row"
                 >
                   {/* Baseline bar (shown below task bar) */}
-                  {baseline && baselinePosition && task.type !== 'milestone' && (
+                  {baseline && baselinePosition && (
                     <div
-                      className="gantt-baseline-bar"
+                      className={`gantt-baseline-bar ${task.type === 'milestone' ? 'milestone' : ''}`}
                       style={{
                         left: `${baselinePosition.left}px`,
                         width: `${baselinePosition.width}px`,

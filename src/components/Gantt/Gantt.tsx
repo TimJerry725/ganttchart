@@ -52,6 +52,7 @@ export interface GanttProps {
   endDateWidth?: number;
   startDateFormat?: string;
   endDateFormat?: string;
+  baselines?: Map<string, Baseline>;
 }
 
 const getDefaultColumns = (uiConfig?: Partial<GanttUIConfig>): Column[] => [
@@ -160,6 +161,7 @@ export const Gantt: React.FC<GanttProps> = ({
   onTaskDelete,
   onLinkCreate,
   onLinkDelete,
+  baselines: externalBaselines,
 }) => {
   // Merge UI config with defaults
   const ui: GanttUIConfig = { ...defaultUIConfig, ...uiConfig };
@@ -240,13 +242,24 @@ export const Gantt: React.FC<GanttProps> = ({
   // Baselines are always visible - auto-created when tasks are first created
   // Baselines represent the original plan and remain fixed even when tasks are moved/resized
   const [baselines, setBaselines] = useState<Map<string, Baseline>>(() => {
-    // Initialize baselines from initial tasks (only for tasks that don't have baselines yet)
+    // 1. Priority to external baselines if provided
+    if (externalBaselines && externalBaselines.size > 0) {
+      return externalBaselines;
+    }
+    // 2. Initialize baselines from initial tasks (only for tasks that don't have baselines yet)
     // This captures the original plan when tasks are first loaded
     if (safeTasks.length > 0) {
       return createBaseline(safeTasks);
     }
     return new Map();
   });
+
+  // Sync with external baselines if they change
+  useEffect(() => {
+    if (externalBaselines && externalBaselines.size > 0) {
+      setBaselines(externalBaselines);
+    }
+  }, [externalBaselines]);
 
   const [currentTheme] = useState<'light' | 'dark'>((config.theme as 'light' | 'dark') || 'light');
   const [filters, setFilters] = useState<FilterOptions>({
