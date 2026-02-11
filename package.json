@@ -1,9 +1,9 @@
 {
   "name": "@timjerry/iris-gantt",
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use.",
   "keywords": [
     "gantt",
