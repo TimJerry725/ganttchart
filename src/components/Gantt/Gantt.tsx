@@ -789,6 +789,7 @@ export const Gantt: React.FC<GanttProps> = ({
             links={links}
             onAddDependency={handleAddDependency}
             onRemoveDependency={handleRemoveDependency}
+            onTaskUpdate={handleUpdateTask}
             onClose={() => { setShowDependencyEditor(false); setDependencyEditTask(null); }}
             styleConfig={styleConfig}
           />

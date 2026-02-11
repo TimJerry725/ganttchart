@@ -10,6 +10,7 @@ import {
 import type { Task, Link, GanttStyleConfig } from './types';
 import { parseDependencyString, convertDependencyType, convertLagToDays } from './utils/dependencyParser';
 import { applyStyleConfig } from './utils/styleUtils';
+import { addToDate } from './utils/dateUtils';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -20,6 +21,7 @@ interface DependencyEditorProps {
   links: Link[];
   onAddDependency: (sourceId: string, targetId: string, type: Link['type'], lag?: number) => void;
   onRemoveDependency: (linkId: string) => void;
+  onTaskUpdate?: (task: Task) => void;
   onClose: () => void;
   styleConfig?: Partial<GanttStyleConfig>;
 }
@@ -30,6 +32,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
   links,
   onAddDependency,
   onRemoveDependency,
+  onTaskUpdate,
   onClose,
   styleConfig,
 }) => {
@@ -38,6 +41,7 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
   const [dependencyType, setDependencyType] = useState<Link['type']>('e2s');
   const [lagTime, setLagTime] = useState<number>(0);
   const [lagUnit, setLagUnit] = useState<'day' | 'hour' | 'week' | 'month'>('day');
+  const [duration, setDuration] = useState<number>(task.duration);
   const [quickAddValue, setQuickAddValue] = useState<string>('');
 
   // Get existing dependencies
@@ -49,6 +53,17 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
   const handleAdd = () => {
     if (selectedTask) {
       const lagInDays = convertLagToDays(lagTime, lagUnit);
+
+      // Update task duration if it changed
+      if (duration !== task.duration && onTaskUpdate) {
+        const newEndDate = addToDate(new Date(task.start), duration, 'day');
+        onTaskUpdate({
+          ...task,
+          duration: duration,
+          end: newEndDate
+        });
+      }
+
       onAddDependency(selectedTask, task.id, dependencyType, lagInDays);
       setSelectedTask('');
       setLagTime(0);
@@ -179,6 +194,16 @@ export const DependencyEditor: React.FC<DependencyEditorProps> = ({
                     <Option value="month">Months</Option>
                   </Select>
                 </div>
+              </div>
+
+              <div>
+                <Text style={{ display: 'block', marginBottom: 8, fontSize: 13, color: styles.font?.color }}>Duration (days)</Text>
+                <InputNumber
+                  style={{ width: '100%', ...styles.input }}
+                  min={1}
+                  value={duration}
+                  onChange={(v) => setDuration(v || 1)}
+                />
               </div>
 
               <Button

@@ -148,6 +148,7 @@ export const Grid = memo(forwardRef<HTMLDivElement, GridProps>(
               links={links}
               onAddDependency={(sourceId, targetId, type, lag) => onAddDependency?.(sourceId, targetId, type, lag)}
               onRemoveDependency={(linkId) => onRemoveDependency?.(linkId)}
+              onTaskUpdate={onTaskUpdate}
               styleConfig={styleConfig}
             >
               <div

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Popover, Select, InputNumber, Button, Typography } from 'antd';
 import type { Task, Link, GanttStyleConfig } from './types';
 import { convertLagToDays } from './utils/dependencyParser';
-import { formatDate } from './utils/dateUtils';
+import { formatDate, addToDate } from './utils/dateUtils';
 import { applyStyleConfig } from './utils/styleUtils';
 
 const { Text, Paragraph } = Typography;
@@ -14,6 +14,7 @@ interface DependencyPopoverProps {
     links: Link[];
     onAddDependency: (sourceId: string, targetId: string, type: Link['type'], lag?: number) => void;
     onRemoveDependency?: (linkId: string) => void;
+    onTaskUpdate?: (task: Task) => void;
     children: React.ReactNode;
     styleConfig?: Partial<GanttStyleConfig>;
 }
@@ -24,6 +25,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
     links,
     onAddDependency,
     onRemoveDependency,
+    onTaskUpdate,
     children,
     styleConfig,
 }) => {
@@ -33,6 +35,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
     const [dependencyType, setDependencyType] = useState<Link['type']>('e2s');
     const [delayType, setDelayType] = useState<'lag' | 'lead'>('lag');
     const [spanValue, setSpanValue] = useState<number>(0);
+    const [duration, setDuration] = useState<number>(task.duration);
     const [showPreview, setShowPreview] = useState(true);
     const spanUnit = 'day';
 
@@ -50,6 +53,17 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
         if (selectedSourceId) {
             const lagMagnitude = delayType === 'lag' ? spanValue : -spanValue;
             const lagInDays = convertLagToDays(lagMagnitude, spanUnit);
+
+            // Update task duration if it changed
+            if (duration !== task.duration && onTaskUpdate) {
+                const newEndDate = addToDate(new Date(task.start), duration, 'day');
+                onTaskUpdate({
+                    ...task,
+                    duration: duration,
+                    end: newEndDate
+                });
+            }
+
             onAddDependency(selectedSourceId, task.id, dependencyType, lagInDays);
             setVisible(false);
             resetState();
@@ -61,6 +75,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
         setDependencyType('e2s');
         setDelayType('lag');
         setSpanValue(0);
+        setDuration(task.duration);
     };
 
     const handleRemove = () => {
@@ -90,6 +105,7 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
             } else {
                 resetState();
             }
+            setDuration(task.duration);
         }
     };
 
@@ -306,6 +322,20 @@ export const DependencyPopover: React.FC<DependencyPopoverProps> = ({
                         placeholder="0"
                     />
                 </div>
+            </div>
+
+            {/* Duration */}
+            <div style={{ marginBottom: 14 }}>
+                <Text style={{ fontSize: '12px', display: 'block', marginBottom: 6, color: styles.font?.color }}>
+                    Duration (days)
+                </Text>
+                <InputNumber
+                    min={1}
+                    value={duration}
+                    onChange={v => setDuration(v || 1)}
+                    style={{ width: '100%' }}
+                    placeholder="Duration"
+                />
             </div>
 
             {/* Dependency Type Reference */}
