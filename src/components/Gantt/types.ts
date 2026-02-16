@@ -239,6 +239,12 @@ export interface Baseline {
   end: Date;
 }
 
+export interface TaskReorderMeta {
+  currentSequenceId: number;
+  targetSequenceId: number;
+  targetStageId: string | null;
+}
+
 export type ZoomLevel = number;
 
 export interface DropIndicator {

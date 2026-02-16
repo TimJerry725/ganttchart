@@ -14,7 +14,7 @@ import { createBaseline } from './features/baselineUtils';
 import * as ExportUtils from './features/ExportUtils';
 import { applyFilters } from './features/filterUtils';
 import type { FilterOptions } from './features/filterUtils';
-import type { Task, Link } from './types';
+import type { Task, Link, TaskReorderMeta } from './types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGripVertical } from '@fortawesome/free-solid-svg-icons';
 import './gantt.css';
@@ -26,7 +26,7 @@ export interface GanttProps {
   uiConfig?: Partial<GanttUIConfig>;
   styleConfig?: Partial<GanttStyleConfig>; // Colors, fonts, spacing
   iconConfig?: Partial<GanttIconConfig>; // Custom icons
-  onTaskUpdate?: (task: Task) => void;
+  onTaskUpdate?: (task: Task, reorderMeta?: TaskReorderMeta) => void;
   onTaskCreate?: (task: Task) => void;
   onTaskDelete?: (taskId: string) => void;
   onLinkCreate?: (link: Link) => void;
@@ -464,6 +464,16 @@ export const Gantt: React.FC<GanttProps> = ({
           remainingTasks.splice(insertIdx, 0, ...currentGroupTasks);
           setTasks(remainingTasks);
           saveState('task_update', beforeState, { tasks: remainingTasks, links });
+
+          const currentSequenceId = sourceIdxInFull + 1;
+          const targetSequenceId = remainingTasks.findIndex(t => t.id === sourceTask.id) + 1;
+          const reorderMeta: TaskReorderMeta = {
+            currentSequenceId,
+            targetSequenceId,
+            targetStageId: newParentId ?? null,
+          };
+          const reorderedTask = remainingTasks.find(t => t.id === sourceTask.id);
+          if (reorderedTask && onTaskUpdate) onTaskUpdate(reorderedTask, reorderMeta);
         }
       }
     }
