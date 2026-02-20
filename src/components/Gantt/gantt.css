@@ -91,6 +91,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+  position: relative;
   min-height: 0;
   min-width: 0;
   max-width: 100%;
@@ -262,6 +263,7 @@
   cursor: pointer;
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   background-color: var(--wx-gantt-background);
+  position: relative;
   /* Performance optimization */
   contain: layout style paint;
   height: var(--gantt-row-height, 48px);
@@ -304,6 +306,38 @@
 
 .gantt-grid-row.ghost-row {
   transition: none !important;
+}
+
+.gantt-drag-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 0 10px;
+  border: 1px solid #2196f3;
+  border-left: 4px solid #1f2937;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  opacity: 0.98;
+}
+
+.gantt-drag-preview-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gantt-drag-preview-count {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(33, 150, 243, 0.12);
+  color: #0b5db5;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 body.gantt-dragging {

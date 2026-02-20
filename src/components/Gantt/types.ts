@@ -16,6 +16,8 @@ export interface Task {
   onHoldPeriods?: { start: Date; end: Date }[];
   dependencies?: string[]; // Array of task IDs this task depends on
   segments?: TaskSegment[]; // For split tasks
+  sequence_id?: number;
+  stage_id?: string | null;
 }
 
 export interface TaskSegment {

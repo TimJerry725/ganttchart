@@ -23,7 +23,7 @@ interface GridProps {
   links?: Link[];
   allTasks?: Task[];
   dropIndicator?: { taskId: string; position: 'above' | 'below' | 'inside' } | null;
-  reorderTask?: { id: string; initialIndex: number; currentY: number; descendantIds: string[] } | null;
+  reorderTask?: { id: string; initialIndex: number; currentX: number; currentY: number; descendantIds: string[] } | null;
   iconConfig?: Partial<import('./types').GanttIconConfig>;
   styleConfig?: Partial<import('./types').GanttStyleConfig>;
 }
