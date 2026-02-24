@@ -114,12 +114,15 @@ function MyGantt() {
   
   // Event Handlers
   onTaskUpdate={(task: Task) => void}
+  onTaskDragUpdate={(payload: TaskDragUpdatePayload) => void}
   onTaskCreate={(task: Task) => void}
   onTaskDelete={(taskId: string) => void}
   onLinkCreate={(link: Link) => void}
   onLinkDelete={(linkId: string) => void}
 />
 ```
+
+`onTaskDragUpdate` is fired after timeline drag/resize with both previous and updated task data, so you can sync your backend API directly.
 
 ### Tooltip Props (API-ready)
 

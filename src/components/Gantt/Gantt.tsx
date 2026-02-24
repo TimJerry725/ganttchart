@@ -14,7 +14,18 @@ import { createBaseline } from './features/baselineUtils';
 import * as ExportUtils from './features/ExportUtils';
 import { applyFilters } from './features/filterUtils';
 import type { FilterOptions } from './features/filterUtils';
-import type { DateInput, Task, TaskInput, Link, TaskReorderMeta, OnHoldPeriodInput, TaskSegmentInput, TaskTooltipConfig } from './types';
+import type {
+  DateInput,
+  Task,
+  TaskInput,
+  Link,
+  TaskReorderMeta,
+  OnHoldPeriodInput,
+  TaskSegmentInput,
+  TaskTooltipConfig,
+  TaskDragUpdatePayload,
+  TaskDragUpdateMeta,
+} from './types';
 import './gantt.css';
 
 export interface GanttProps {
@@ -27,6 +38,7 @@ export interface GanttProps {
   taskTooltipConfig?: Partial<TaskTooltipConfig>;
   onHoldPeriods?: OnHoldPeriodInput[]; // Project-level on-hold periods that affect all tasks
   onTaskUpdate?: (task: Task, reorderMeta?: TaskReorderMeta) => void;
+  onTaskDragUpdate?: (payload: TaskDragUpdatePayload) => void | Promise<void>;
   onTaskCreate?: (task: Task) => void;
   onTaskDelete?: (taskId: string) => void;
   onLinkCreate?: (link: Link) => void;
@@ -186,6 +198,7 @@ const normalizeTaskInput = (task: TaskInput): Task => {
 
   return {
     id: String(task.id),
+    rawId: task.id,
     text: task.text || task.name || task.title || task.taskName || task.task_name || `Task ${String(task.id)}`,
     start,
     end,
@@ -211,6 +224,7 @@ const normalizeTaskInput = (task: TaskInput): Task => {
     segments: normalizeSegments(task.segments, start, end),
     sequence_id: task.sequence_id,
     stage_id: task.stage_id,
+    tooltipConfig: task.tooltipConfig,
   };
 };
 
@@ -228,6 +242,9 @@ const normalizeTaskInputs = (tasks: TaskInput[]): Task[] => {
  *   - The task's end date is extended by the overlap duration
  * Tasks with no overlap are returned unchanged.
  * Tasks that already have explicit segments or onHoldPeriods are skipped.
+ * 
+ * IMPORTANT: This applies to ALL tasks including project-type tasks,
+ * so the on-hold grey bar is visible across the entire project.
  */
 const applyProjectHoldPeriods = (
   tasks: Task[],
@@ -267,6 +284,18 @@ const applyProjectHoldPeriods = (
           };
         }
       }
+      return task;
+    }
+
+    // Check if the task starts after all hold periods end — no change needed
+    const lastHoldEnd = sortedHolds[sortedHolds.length - 1].end.getTime();
+    if (taskStartMs >= lastHoldEnd) {
+      return task;
+    }
+
+    // Check if the task ends before any hold period starts — no change needed
+    const firstHoldStart = sortedHolds[0].start.getTime();
+    if (taskEndMs <= firstHoldStart) {
       return task;
     }
 
@@ -477,6 +506,7 @@ export const Gantt: React.FC<GanttProps> = ({
   taskTooltipConfig = {},
   onHoldPeriods: projectHoldPeriodsInput,
   onTaskUpdate,
+  onTaskDragUpdate,
   onTaskCreate,
   onTaskDelete,
   onLinkCreate,
@@ -812,13 +842,23 @@ export const Gantt: React.FC<GanttProps> = ({
           };
 
           const reorderedTask = remainingTasks.find(t => t.id === sourceTask.id);
-          if (reorderedTask && onTaskUpdate) {
+          if (reorderedTask) {
             const taskWithMeta = {
               ...reorderedTask,
               sequence_id: targetSequenceId,
               stage_id: newParentId ?? null,
             };
-            onTaskUpdate(taskWithMeta, reorderMeta);
+            if (onTaskUpdate) {
+              onTaskUpdate(taskWithMeta, reorderMeta);
+            }
+            if (onTaskDragUpdate) {
+              onTaskDragUpdate({
+                task: taskWithMeta,
+                previousTask: sourceTask,
+                dragType: 'reorder',
+                reorderMeta,
+              });
+            }
           }
         }
       }
@@ -1120,9 +1160,21 @@ export const Gantt: React.FC<GanttProps> = ({
             onTaskClick={() => { }}
             onTaskDragStart={() => { }}
             onTaskDragEnd={() => { }}
-            onTaskUpdate={(id, updates) => {
+            onTaskUpdate={(id, updates, dragMeta?: TaskDragUpdateMeta) => {
               const task = tasks.find(t => t.id === id);
-              if (task) handleUpdateTask({ ...task, ...updates });
+              if (!task) return;
+
+              const previousTask = { ...task };
+              const updatedTask = { ...task, ...updates };
+              handleUpdateTask(updatedTask);
+
+              if (dragMeta && onTaskDragUpdate) {
+                onTaskDragUpdate({
+                  task: updatedTask,
+                  previousTask,
+                  dragType: dragMeta.dragType,
+                });
+              }
             }}
             zoomLevel={zoomLevel}
             baselines={baselines}

@@ -786,9 +786,8 @@ body.gantt-dragging {
 
 .gantt-task-bar:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-50%) scale(1.02);
+  transform: translateY(-50%);
   z-index: 100 !important;
-  filter: brightness(1.05);
 }
 
 .gantt-task-bar.selected {
@@ -997,35 +996,38 @@ body.gantt-dragging {
 
 .gantt-task-bar.segment {
   pointer-events: all;
-  /* Active segments look like normal solid task bars.
+  z-index: 2;
+  /* Active segments render above on-hold periods (z-index: 0).
      Only `.gantt-on-hold-period` overlay should show the hatched pattern. */
 }
 
 .gantt-task-bar.segment:hover {
-  transform: translateY(-50%) scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  transform: translateY(-50%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* On-hold period styling */
 .gantt-on-hold-period {
   position: absolute;
-  height: 20px;
-  /* Internal height, task bar is 28px */
+  height: 28px;
+  /* Same height as task bar for consistent appearance */
   top: 50%;
   transform: translateY(-50%);
-  background-color: #f1f3f4;
+  background-color: #d9d9d9;
   background-image: repeating-linear-gradient(45deg,
       transparent,
       transparent 5px,
-      #dadce0 5px,
-      #dadce0 10px);
-  border-radius: 4px;
-  opacity: 0.8;
-  z-index: 1;
+      #c0c0c0 5px,
+      #c0c0c0 10px);
+  border-radius: var(--wx-gantt-bar-border-radius);
+  opacity: 0.9;
+  z-index: 0;
+  /* Behind task segments */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .theme-dark .gantt-on-hold-period {
-  background-color: #3c4043;
+  background-color: #4a4a4a;
   background-image: repeating-linear-gradient(45deg,
       transparent,
       transparent 5px,

@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Timeline } from './Timeline';
-import type { Task, Link, GanttConfig, Baseline, Scale, TaskTooltipConfig } from './types';
+import type { Task, Link, GanttConfig, Baseline, Scale, TaskTooltipConfig, TaskDragUpdateMeta } from './types';
 
 interface ChartProps {
     tasks: Task[];
@@ -13,7 +13,7 @@ interface ChartProps {
     onTaskClick: (taskId: string) => void;
     onTaskDragStart: (taskId: string, clientX: number, clientY: number) => void;
     onTaskDragEnd: () => void;
-    onTaskUpdate: (id: string, updates: Partial<Task>) => void;
+    onTaskUpdate: (id: string, updates: Partial<Task>, meta?: TaskDragUpdateMeta) => void;
     zoomLevel: number;
     baselines: Map<string, Baseline>;
     allowBaselineOnlyMode?: boolean;

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Task } from './types';
+import type { Task, TaskDragUpdateMeta } from './types';
 import { getDaysBetween, addToDate } from './utils/dateUtils';
 
 export interface DragState {
@@ -17,7 +17,7 @@ type ScaleUnit = 'day' | 'hour' | 'week' | 'month' | 'quarter' | 'year';
 
 export const useDragDrop = (
   tasks: Task[],
-  onTaskUpdate?: (id: string, updates: Partial<Task>) => void,
+  onTaskUpdate?: (id: string, updates: Partial<Task>, meta?: TaskDragUpdateMeta) => void,
   columnWidth: number = 60,
   unit: ScaleUnit = 'day',
   step: number = 1
@@ -114,7 +114,18 @@ export const useDragDrop = (
   const handleDragEnd = useCallback((updatedTask: Task | null) => {
     if (updatedTask && onTaskUpdate) {
       const { id, ...updates } = updatedTask;
-      onTaskUpdate(id, updates);
+      const dragType = dragState.type;
+      if (dragType && dragType !== 'reorder') {
+        const meta: TaskDragUpdateMeta = {
+          dragType,
+          previousStart: new Date(dragState.initialStart),
+          previousEnd: new Date(dragState.initialEnd),
+          previousDuration: getDaysBetween(dragState.initialStart, dragState.initialEnd),
+        };
+        onTaskUpdate(id, updates, meta);
+      } else {
+        onTaskUpdate(id, updates);
+      }
     }
 
     setDragState({
@@ -127,7 +138,7 @@ export const useDragDrop = (
       dragDeltaX: 0,
       dragDeltaY: 0,
     });
-  }, [onTaskUpdate]);
+  }, [onTaskUpdate, dragState]);
 
   return {
     dragState,

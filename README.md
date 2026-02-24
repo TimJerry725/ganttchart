@@ -2,9 +2,22 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.4.1 (Latest)
+## 🆕 Version 1.4.3 (Latest)
 
 ### Included Changes
+- **Project-level OnHold applied to all tasks** — The `onHoldPeriods` prop now propagates the grey hatched on-hold bar to **all** task rows including `project`-type tasks. Previously, only child/standalone tasks showed the hold bar; now the entire project hierarchy displays it consistently.
+- **Same-height on-hold bars** — The grey on-hold period bar is now the same height (28px) as the task bar. It no longer appears as a smaller overlay on top of the task bar; instead, both bars sit at the same level with the colored task segments in front and the grey hatched hold area behind.
+- **Tasks continue after hold period** — When a project resumes after an on-hold period, all affected tasks continue in sequence after the hold, and remaining days are extended automatically.
+- **No hover enlarge/scale effect** — Task bars no longer scale up or brighten on hover. They remain at their original size and appearance, preventing visual overlap with adjacent bars.
+
+## 🔖 Version 1.4.2
+
+### Included Changes
+- **Per-task tooltip config** — Each task can now carry its own `tooltipConfig` to override global tooltip settings (show/hide fields, labels, accessors, formatters).
+- **Unified `onTaskDragUpdate` callback** — Single callback for all drag operations: task bar move/resize AND row reorder (grip icon drag-and-drop).
+- **Row reorder API integration** — `onTaskDragUpdate` now fires with `dragType: 'reorder'` and `reorderMeta` (sequence IDs, stage ID) when tasks are reordered via grip icon.
+- **`rawId` preserved** — The original API task ID (before string normalization) is now available as `task.rawId` for backend integration.
+- **`TaskDragUpdatePayload` type** — Provides `task`, `previousTask`, `dragType`, and optional `reorderMeta` for API calls.
 - Added direct OnHold support in `tasks` props for API payloads.
 - `tasks` now accepts `onHoldPeriods` and `on_hold_periods`.
 - OnHold date fields now accept `Date`, ISO date strings, or timestamps and are normalized internally.
@@ -107,7 +120,10 @@ import { Gantt } from 'iris-gantt'
 import Gantt from 'iris-gantt'
 
 // Types
-import type { Task, Link, GanttConfig, GanttUIConfig, GanttStyleConfig } from 'iris-gantt'
+import type {
+  Task, Link, GanttConfig, GanttUIConfig, GanttStyleConfig,
+  TaskTooltipConfig, TaskDragUpdatePayload, TaskReorderMeta,
+} from 'iris-gantt'
 
 // CSS (required!)
 import 'iris-gantt/gantt.css'
@@ -129,7 +145,7 @@ import 'iris-gantt/gantt.css'
 />
 ```
 
-### Tooltip As Props
+### Tooltip As Props (Global)
 
 All task hover fields are configurable via props and can be mapped from API values:
 
@@ -155,6 +171,45 @@ All task hover fields are configurable via props and can be mapped from API valu
     progressAccessor: (task) => task.progress,
     dependencyRuleAccessor: (task, generatedRules) => task.dependencyRule || generatedRules,
   }}
+/>
+```
+
+### Per-Task Tooltip Config
+
+Each task can override the global `taskTooltipConfig` with its own `tooltipConfig`. Task-level settings take priority:
+
+```tsx
+<Gantt
+  tasks={[
+    {
+      id: 1,
+      text: 'Task with custom tooltip',
+      start: '2026-01-01',
+      end: '2026-01-10',
+      duration: 9,
+      progress: 50,
+      tooltipConfig: {
+        showOwner: false,
+        showDependencyRule: false,
+        showProgress: true,
+        showActualDates: true,
+        plannedStartAccessor: (task) => customDataMap.get(task.id)?.plannedStart,
+        plannedEndAccessor: (task) => customDataMap.get(task.id)?.plannedEnd,
+        actualStartAccessor: (task) => customDataMap.get(task.id)?.actualStart,
+        actualEndAccessor: (task) => customDataMap.get(task.id)?.actualEnd,
+      },
+    },
+    {
+      id: 2,
+      text: 'Task using global tooltip config',
+      start: '2026-01-05',
+      end: '2026-01-15',
+      duration: 10,
+      progress: 30,
+      // No tooltipConfig — uses global taskTooltipConfig
+    },
+  ]}
+  taskTooltipConfig={{ showOwner: true, showProgress: true }}
 />
 ```
 
@@ -302,11 +357,56 @@ Baselines are **always visible** and **automatically created** when tasks are se
 
 ## 🔄 Event Handlers
 
+### `onTaskDragUpdate` — Unified Drag & Reorder API
+
+A single callback for **all** drag operations: task bar move/resize AND row reorder.
+
 ```tsx
 <Gantt
   tasks={tasks}
-  onTaskUpdate={(task) => {
-    // Save to your backend
+  onTaskDragUpdate={async ({ task, previousTask, dragType, reorderMeta }) => {
+    // task.rawId preserves the original API ID (before string normalization)
+    const taskId = task.rawId ?? task.id;
+
+    if (dragType === 'reorder' && reorderMeta) {
+      // Row reorder — task was dragged to a new position via grip icon
+      await api.reorderTask(taskId, {
+        current_sequence_id: reorderMeta.currentSequenceId,
+        target_sequence_id: reorderMeta.targetSequenceId,
+        target_stage_id: reorderMeta.targetStageId,  // parent task ID or null for root
+      });
+    } else {
+      // Task bar drag — move or resize on the timeline
+      // dragType: 'move' | 'resize-left' | 'resize-right'
+      await api.updateTaskDates(taskId, {
+        start_date: task.start.toISOString(),
+        end_date: task.end.toISOString(),
+        duration: task.duration,
+        action: dragType,
+        previous_start_date: previousTask.start.toISOString(),
+        previous_end_date: previousTask.end.toISOString(),
+      });
+    }
+  }}
+/>
+```
+
+**`TaskDragUpdatePayload` fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `task` | `Task` | The updated task (after drag/reorder) |
+| `previousTask` | `Task` | The task state before the operation |
+| `dragType` | `'move' \| 'resize-left' \| 'resize-right' \| 'reorder'` | What kind of drag was performed |
+| `reorderMeta` | `TaskReorderMeta \| undefined` | Only present for `'reorder'` — contains `currentSequenceId`, `targetSequenceId`, `targetStageId` |
+
+### Other Event Handlers
+
+```tsx
+<Gantt
+  tasks={tasks}
+  onTaskUpdate={(task, reorderMeta?) => {
+    // General task update (also fires on reorder with reorderMeta)
   }}
   onTaskCreate={(task) => {
     // Add to your backend
@@ -433,7 +533,10 @@ Full TypeScript support is included:
 
 ```tsx
 import { Gantt } from 'iris-gantt'
-import type { Task, Link, GanttConfig, GanttUIConfig, GanttStyleConfig } from 'iris-gantt'
+import type {
+  Task, Link, GanttConfig, GanttUIConfig, GanttStyleConfig,
+  TaskTooltipConfig, TaskDragUpdatePayload, TaskReorderMeta,
+} from 'iris-gantt'
 
 const tasks: Task[] = [...]
 const config: GanttConfig = {...}

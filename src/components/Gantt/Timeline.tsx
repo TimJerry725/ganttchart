@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useCallback } from 'react';
-import type { Task, Link, Scale, GanttConfig, Baseline, TaskTooltipConfig } from './types';
+import type { Task, Link, Scale, GanttConfig, Baseline, TaskTooltipConfig, TaskDragUpdateMeta } from './types';
 import { TaskBar } from './TaskBar';
 import { LinkRenderer } from './LinkRenderer';
 import { useDragDrop } from './DragDrop';
@@ -16,7 +16,7 @@ interface TimelineProps {
   onTaskClick: (taskId: string) => void;
   onTaskDragStart: (taskId: string, clientX: number, clientY: number) => void;
   onTaskDragEnd: () => void;
-  onTaskUpdate?: (id: string, updates: Partial<Task>) => void;
+  onTaskUpdate?: (id: string, updates: Partial<Task>, meta?: TaskDragUpdateMeta) => void;
   zoomLevel: number;
   baselines?: Map<string, Baseline>;
   allowBaselineOnlyMode?: boolean;

@@ -12,6 +12,7 @@ export interface OnHoldPeriodInput {
 
 export interface Task {
   id: string;
+  rawId?: string | number; // Original API ID before normalization
   text: string;
   start: Date;
   end: Date;
@@ -35,6 +36,7 @@ export interface Task {
   segments?: TaskSegment[]; // For split tasks
   sequence_id?: number;
   stage_id?: string | null;
+  tooltipConfig?: Partial<TaskTooltipConfig>;
 }
 
 export interface TaskSegment {
@@ -94,6 +96,7 @@ export interface TaskInput extends Omit<Task, 'id' | 'text' | 'start' | 'end' | 
   dependencyRuleDescription?: string[] | string;
   dependency_rule_description?: string[] | string;
   segments?: TaskSegmentInput[];
+  tooltipConfig?: Partial<TaskTooltipConfig>;
 }
 
 export interface Link {
@@ -352,6 +355,20 @@ export interface TaskReorderMeta {
   currentSequenceId: number;
   targetSequenceId: number;
   targetStageId: string | null;
+}
+
+export interface TaskDragUpdateMeta {
+  dragType: 'move' | 'resize-left' | 'resize-right';
+  previousStart: Date;
+  previousEnd: Date;
+  previousDuration: number;
+}
+
+export interface TaskDragUpdatePayload {
+  task: Task;
+  previousTask: Task;
+  dragType: TaskDragUpdateMeta['dragType'] | 'reorder';
+  reorderMeta?: TaskReorderMeta;
 }
 
 export type ZoomLevel = number;

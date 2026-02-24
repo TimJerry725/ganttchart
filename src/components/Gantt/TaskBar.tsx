@@ -152,106 +152,111 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     return undefined;
   };
 
-  const dateFormat = tooltipConfig?.dateFormat || 'MMM D, YYYY';
-  const taskNameRaw = tooltipConfig?.taskNameAccessor?.(task) ?? task.text;
+  // Merge global tooltipConfig with task-level overrides (task-level takes priority)
+  const mergedConfig: TaskTooltipConfig | undefined = task.tooltipConfig
+    ? { ...tooltipConfig, ...task.tooltipConfig }
+    : tooltipConfig;
+
+  const dateFormat = mergedConfig?.dateFormat || 'MMM D, YYYY';
+  const taskNameRaw = mergedConfig?.taskNameAccessor?.(task) ?? task.text;
   const taskNameValue = String(taskNameRaw ?? '').trim() || `Task ${task.id}`;
-  const taskNameText = tooltipConfig?.taskNameFormatter
-    ? tooltipConfig.taskNameFormatter(taskNameValue, task)
+  const taskNameText = mergedConfig?.taskNameFormatter
+    ? mergedConfig.taskNameFormatter(taskNameValue, task)
     : taskNameValue;
 
   const plannedStart = resolveDate(
-    tooltipConfig?.plannedStartAccessor?.(task) ?? task.plannedStart ?? baseline?.start ?? task.start,
+    mergedConfig?.plannedStartAccessor?.(task) ?? task.plannedStart ?? baseline?.start ?? task.start,
     task.start
   );
   const plannedEnd = resolveDate(
-    tooltipConfig?.plannedEndAccessor?.(task) ?? task.plannedEnd ?? baseline?.end ?? task.end,
+    mergedConfig?.plannedEndAccessor?.(task) ?? task.plannedEnd ?? baseline?.end ?? task.end,
     task.end
   );
-  const plannedText = tooltipConfig?.plannedDatesFormatter
-    ? tooltipConfig.plannedDatesFormatter(plannedStart, plannedEnd, task)
+  const plannedText = mergedConfig?.plannedDatesFormatter
+    ? mergedConfig.plannedDatesFormatter(plannedStart, plannedEnd, task)
     : `${formatDate(plannedStart, dateFormat)} - ${formatDate(plannedEnd, dateFormat)}`;
 
   const actualStart = resolveDate(
-    tooltipConfig?.actualStartAccessor?.(task) ?? task.actualStart ?? task.start,
+    mergedConfig?.actualStartAccessor?.(task) ?? task.actualStart ?? task.start,
     task.start
   );
   const actualEnd = resolveDate(
-    tooltipConfig?.actualEndAccessor?.(task) ?? task.actualEnd ?? task.end,
+    mergedConfig?.actualEndAccessor?.(task) ?? task.actualEnd ?? task.end,
     task.end
   );
-  const actualText = tooltipConfig?.actualDatesFormatter
-    ? tooltipConfig.actualDatesFormatter(actualStart, actualEnd, task)
+  const actualText = mergedConfig?.actualDatesFormatter
+    ? mergedConfig.actualDatesFormatter(actualStart, actualEnd, task)
     : `${formatDate(actualStart, dateFormat)} - ${formatDate(actualEnd, dateFormat)}`;
 
-  const statusValue = tooltipConfig?.statusAccessor?.(task) ?? task.status;
+  const statusValue = mergedConfig?.statusAccessor?.(task) ?? task.status;
   const normalizedStatusValue = statusValue !== undefined && statusValue !== null
     ? String(statusValue)
     : '';
-  const statusText = tooltipConfig?.statusFormatter
-    ? tooltipConfig.statusFormatter(normalizedStatusValue, task)
-    : (normalizedStatusValue ? normalizedStatusValue.replace(/-/g, ' ') : (tooltipConfig?.emptyStatusText || 'Not set'));
+  const statusText = mergedConfig?.statusFormatter
+    ? mergedConfig.statusFormatter(normalizedStatusValue, task)
+    : (normalizedStatusValue ? normalizedStatusValue.replace(/-/g, ' ') : (mergedConfig?.emptyStatusText || 'Not set'));
 
-  const ownerValue = tooltipConfig?.ownerAccessor?.(task) ?? task.owner;
+  const ownerValue = mergedConfig?.ownerAccessor?.(task) ?? task.owner;
   const normalizedOwnerValue = ownerValue !== undefined && ownerValue !== null
     ? String(ownerValue).trim()
     : '';
   const ownerText = normalizedOwnerValue
-    ? (tooltipConfig?.ownerFormatter ? tooltipConfig.ownerFormatter(normalizedOwnerValue, task) : normalizedOwnerValue)
-    : (tooltipConfig?.emptyOwnerText || '');
+    ? (mergedConfig?.ownerFormatter ? mergedConfig.ownerFormatter(normalizedOwnerValue, task) : normalizedOwnerValue)
+    : (mergedConfig?.emptyOwnerText || '');
 
   const generatedDependencyRules = dependencyRuleDescriptions.length > 0
     ? dependencyRuleDescriptions
     : (task.dependencyRule || []);
   const dependencyRulesFromAccessor = normalizeDependencyRules(
-    tooltipConfig?.dependencyRuleAccessor?.(task, generatedDependencyRules)
+    mergedConfig?.dependencyRuleAccessor?.(task, generatedDependencyRules)
   );
   const dependencyRules = dependencyRulesFromAccessor || generatedDependencyRules;
   const dependencyText = dependencyRules.length > 0
     ? dependencyRules
-      .map((rule) => tooltipConfig?.dependencyRuleFormatter ? tooltipConfig.dependencyRuleFormatter(rule, task) : rule)
-      .join(tooltipConfig?.dependencySeparator || ' | ')
-    : (tooltipConfig?.emptyDependencyRuleText || 'No dependency rule');
+      .map((rule) => mergedConfig?.dependencyRuleFormatter ? mergedConfig.dependencyRuleFormatter(rule, task) : rule)
+      .join(mergedConfig?.dependencySeparator || ' | ')
+    : (mergedConfig?.emptyDependencyRuleText || 'No dependency rule');
 
-  const progressRaw = tooltipConfig?.progressAccessor?.(task) ?? task.progress;
+  const progressRaw = mergedConfig?.progressAccessor?.(task) ?? task.progress;
   const parsedProgress = typeof progressRaw === 'number' ? progressRaw : Number(progressRaw);
   const progressValue = Number.isFinite(parsedProgress) ? parsedProgress : task.progress;
-  const progressText = tooltipConfig?.progressFormatter
-    ? tooltipConfig.progressFormatter(progressValue, task)
+  const progressText = mergedConfig?.progressFormatter
+    ? mergedConfig.progressFormatter(progressValue, task)
     : `${progressValue}%`;
 
   const tooltipContent = (
     <div className="gantt-tooltip">
-      {tooltipConfig?.showTaskName !== false && (
+      {mergedConfig?.showTaskName !== false && (
         <div className="gantt-tooltip-title">{taskNameText}</div>
       )}
-      {tooltipConfig?.showPlannedDates !== false && (
+      {mergedConfig?.showPlannedDates !== false && (
         <div className="gantt-tooltip-dates">
-          {(tooltipConfig?.plannedLabel || 'Planned')}: {plannedText}
+          {(mergedConfig?.plannedLabel || 'Planned')}: {plannedText}
         </div>
       )}
-      {tooltipConfig?.showActualDates !== false && (
+      {mergedConfig?.showActualDates !== false && (
         <div className="gantt-tooltip-dates">
-          {(tooltipConfig?.actualLabel || 'Actual')}: {actualText}
+          {(mergedConfig?.actualLabel || 'Actual')}: {actualText}
         </div>
       )}
-      {tooltipConfig?.showStatus !== false && (
+      {mergedConfig?.showStatus !== false && (
         <div className="gantt-tooltip-progress">
-          {(tooltipConfig?.statusLabel || 'Status')}: {statusText}
+          {(mergedConfig?.statusLabel || 'Status')}: {statusText}
         </div>
       )}
-      {tooltipConfig?.showOwner !== false && ownerText && (
+      {mergedConfig?.showOwner !== false && ownerText && (
         <div className="gantt-tooltip-owner">
-          {(tooltipConfig?.ownerLabel || 'Owner')}: {ownerText}
+          {(mergedConfig?.ownerLabel || 'Owner')}: {ownerText}
         </div>
       )}
-      {tooltipConfig?.showDependencyRule !== false && (
+      {mergedConfig?.showDependencyRule !== false && (
         <div className="gantt-tooltip-owner">
-          {(tooltipConfig?.dependencyRuleLabel || 'Dependency Rule')}: {dependencyText}
+          {(mergedConfig?.dependencyRuleLabel || 'Dependency Rule')}: {dependencyText}
         </div>
       )}
-      {tooltipConfig?.showProgress !== false && (
+      {mergedConfig?.showProgress !== false && (
         <div className="gantt-tooltip-progress">
-          {(tooltipConfig?.progressLabel || 'Progress')}: {progressText}
+          {(mergedConfig?.progressLabel || 'Progress')}: {progressText}
         </div>
       )}
     </div>
