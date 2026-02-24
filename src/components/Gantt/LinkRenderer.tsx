@@ -113,13 +113,27 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     let points: Array<{ x: number; y: number }>;
 
     if (isCrossRow) {
-      const midY = sY + (tY - sY) / 2;
-      // Cross-row links: keep the long horizontal segment in the lane between rows.
+      const laneGap = 6;
+      const movingDown = tY > sY;
+      // Keep the long horizontal segment near the source row, not in the middle rows.
+      // This avoids links visually "starting" from an intermediate task row.
+      let laneY = movingDown
+        ? Math.min(sPos.top + sPos.height + laneGap, tPos.top - laneGap)
+        : Math.max(sPos.top - laneGap, tPos.top + tPos.height + laneGap);
+
+      // Ensure we keep a small vertical move from both endpoints.
+      if (Math.abs(laneY - sY) < 2) {
+        laneY = sY + (movingDown ? 2 : -2);
+      }
+      if (Math.abs(laneY - tY) < 2) {
+        laneY = tY + (movingDown ? -2 : 2);
+      }
+
       points = [
         { x: sX, y: sY },
         { x: sourceStubX, y: sY },
-        { x: sourceStubX, y: midY },
-        { x: targetStubX, y: midY },
+        { x: sourceStubX, y: laneY },
+        { x: targetStubX, y: laneY },
         { x: targetStubX, y: tY },
         { x: arrowJoinX, y: tY },
       ];

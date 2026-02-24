@@ -132,17 +132,27 @@ export const TaskBar: React.FC<TaskBarProps> = ({
 
     return (
       <div className="gantt-task-group">
-        {/* Render on-hold periods first (usually background-like) */}
-        {task.onHoldPeriods?.map((hold, i) => (
-          <div
-            key={`hold-${i}`}
-            className="gantt-on-hold-period"
-            style={{
-              left: `${position.left + (hold.start.getTime() - task.start.getTime()) / totalDuration * position.width}px`,
-              width: `${(hold.end.getTime() - hold.start.getTime()) / totalDuration * position.width}px`,
-            }}
-          />
-        ))}
+        {/* Render on-hold periods only within the task's date range */}
+        {totalDuration > 0 && task.onHoldPeriods?.map((hold, i) => {
+          // Clamp hold period to task boundaries for rendering
+          const holdStartMs = Math.max(hold.start.getTime(), task.start.getTime());
+          const holdEndMs = Math.min(hold.end.getTime(), task.end.getTime());
+          const holdDuration = holdEndMs - holdStartMs;
+          // Skip if the on-hold period doesn't overlap with the task range
+          if (holdDuration <= 0) return null;
+          const holdLeft = position.left + ((holdStartMs - task.start.getTime()) / totalDuration) * position.width;
+          const holdWidth = (holdDuration / totalDuration) * position.width;
+          return (
+            <div
+              key={`hold-${i}`}
+              className="gantt-on-hold-period"
+              style={{
+                left: `${holdLeft}px`,
+                width: `${holdWidth}px`,
+              }}
+            />
+          );
+        })}
 
         {/* Render active segments */}
         {effectiveSegments.map((seg: TaskSegment, i) => (
@@ -150,8 +160,8 @@ export const TaskBar: React.FC<TaskBarProps> = ({
             <div
               className={getTaskBarClass() + ' segment'}
               style={{
-                left: `${position.left + (seg.start.getTime() - task.start.getTime()) / totalDuration * position.width}px`,
-                width: `${(seg.end.getTime() - seg.start.getTime()) / totalDuration * position.width}px`,
+                left: `${totalDuration > 0 ? position.left + (seg.start.getTime() - task.start.getTime()) / totalDuration * position.width : position.left}px`,
+                width: `${totalDuration > 0 ? (seg.end.getTime() - seg.start.getTime()) / totalDuration * position.width : position.width}px`,
                 backgroundColor: task.color || undefined,
               }}
               onClick={onClick}

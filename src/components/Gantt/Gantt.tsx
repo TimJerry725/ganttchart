@@ -24,6 +24,7 @@ export interface GanttProps {
   uiConfig?: Partial<GanttUIConfig>;
   styleConfig?: Partial<GanttStyleConfig>; // Colors, fonts, spacing
   iconConfig?: Partial<GanttIconConfig>; // Custom icons
+  onHoldPeriods?: OnHoldPeriodInput[]; // Project-level on-hold periods that affect all tasks
   onTaskUpdate?: (task: Task, reorderMeta?: TaskReorderMeta) => void;
   onTaskCreate?: (task: Task) => void;
   onTaskDelete?: (taskId: string) => void;
@@ -82,14 +83,23 @@ const normalizeOnHoldPeriods = (
 ): Array<{ start: Date; end: Date }> | undefined => {
   if (!Array.isArray(periods) || periods.length === 0) return undefined;
 
+  const taskStartMs = taskStart.getTime();
+  const taskEndMs = taskEnd.getTime();
+
   return periods
     .map((period) => {
-      const start = toDate(period?.start, taskStart);
-      const endRaw = toDate(period?.end, taskEnd);
-      const end = endRaw.getTime() < start.getTime() ? start : endRaw;
-      return { start, end };
+      const rawStart = toDate(period?.start, taskStart);
+      const rawEnd = toDate(period?.end, taskEnd);
+      // Clamp the on-hold period to the task's date range
+      const clampedStartMs = Math.max(rawStart.getTime(), taskStartMs);
+      const clampedEndMs = Math.min(rawEnd.getTime(), taskEndMs);
+      return {
+        start: new Date(clampedStartMs),
+        end: new Date(clampedEndMs),
+      };
     })
-    .filter((period) => period.end.getTime() >= period.start.getTime());
+    // Discard periods that fall completely outside the task range or have zero/negative duration
+    .filter((period) => period.end.getTime() > period.start.getTime());
 };
 
 const normalizeSegments = (
@@ -159,6 +169,140 @@ const normalizeTaskInput = (task: TaskInput): Task => {
 const normalizeTaskInputs = (tasks: TaskInput[]): Task[] => {
   if (!Array.isArray(tasks)) return [];
   return tasks.map(normalizeTaskInput);
+};
+
+/**
+ * Apply project-level on-hold periods to all tasks.
+ * For each task that overlaps with a hold period:
+ *   - Work before the hold is preserved as a segment
+ *   - The hold period itself becomes an onHoldPeriod (hatched area)
+ *   - Remaining work resumes immediately after the hold ends
+ *   - The task's end date is extended by the overlap duration
+ * Tasks with no overlap are returned unchanged.
+ * Tasks that already have explicit segments or onHoldPeriods are skipped.
+ */
+const applyProjectHoldPeriods = (
+  tasks: Task[],
+  holdPeriods: Array<{ start: Date; end: Date }>
+): Task[] => {
+  if (holdPeriods.length === 0) return tasks;
+
+  // Sort hold periods by start date
+  const sortedHolds = [...holdPeriods].sort(
+    (a, b) => a.start.getTime() - b.start.getTime()
+  );
+
+  return tasks.map((task) => {
+    // Skip tasks that already have explicit onHoldPeriods or segments
+    if (
+      (task.onHoldPeriods && task.onHoldPeriods.length > 0) ||
+      (task.segments && task.segments.length > 0)
+    ) {
+      return task;
+    }
+
+    const taskStartMs = task.start.getTime();
+    const taskEndMs = task.end.getTime();
+    const workToDo = taskEndMs - taskStartMs;
+
+    // Handle zero-duration tasks (milestones): shift past the hold if they fall inside one
+    if (workToDo <= 0) {
+      for (const hold of sortedHolds) {
+        if (
+          taskStartMs >= hold.start.getTime() &&
+          taskStartMs < hold.end.getTime()
+        ) {
+          return {
+            ...task,
+            start: new Date(hold.end.getTime()),
+            end: new Date(hold.end.getTime()),
+          };
+        }
+      }
+      return task;
+    }
+
+    // Walk the timeline, building segments (work periods) and hold gaps
+    let cursor = taskStartMs;
+    let workDone = 0;
+    let holdIdx = 0;
+    const segments: NonNullable<Task['segments']> = [];
+    const taskHolds: Array<{ start: Date; end: Date }> = [];
+
+    while (workDone < workToDo) {
+      // Skip hold periods that have already ended relative to the cursor
+      while (
+        holdIdx < sortedHolds.length &&
+        sortedHolds[holdIdx].end.getTime() <= cursor
+      ) {
+        holdIdx++;
+      }
+
+      if (holdIdx < sortedHolds.length) {
+        const hold = sortedHolds[holdIdx];
+        const holdStartMs = hold.start.getTime();
+        const holdEndMs = hold.end.getTime();
+
+        if (cursor < holdStartMs) {
+          // There's work time available before the next hold
+          const available = holdStartMs - cursor;
+          const work = Math.min(available, workToDo - workDone);
+          segments.push({
+            start: new Date(cursor),
+            end: new Date(cursor + work),
+            duration: Math.ceil(work / MS_IN_DAY),
+          });
+          workDone += work;
+          cursor += work;
+
+          if (workDone >= workToDo) break;
+
+          // Now at the hold boundary — record the hold and skip past it
+          taskHolds.push({
+            start: new Date(holdStartMs),
+            end: new Date(holdEndMs),
+          });
+          cursor = holdEndMs;
+          holdIdx++;
+        } else {
+          // Cursor is inside the hold period — record it and jump past
+          taskHolds.push({
+            start: new Date(cursor),
+            end: new Date(holdEndMs),
+          });
+          cursor = holdEndMs;
+          holdIdx++;
+        }
+      } else {
+        // No more holds ahead — finish the remaining work
+        const remaining = workToDo - workDone;
+        segments.push({
+          start: new Date(cursor),
+          end: new Date(cursor + remaining),
+          duration: Math.ceil(remaining / MS_IN_DAY),
+        });
+        workDone = workToDo;
+      }
+    }
+
+    // If no hold periods overlapped with this task, return unchanged
+    if (taskHolds.length === 0) return task;
+
+    // New end date is the end of the last segment
+    const newEnd =
+      segments.length > 0 ? segments[segments.length - 1].end : task.end;
+
+    return {
+      ...task,
+      end: newEnd,
+      duration: Math.max(
+        Math.ceil((newEnd.getTime() - taskStartMs) / MS_IN_DAY),
+        0
+      ),
+      segments,
+      onHoldPeriods: taskHolds,
+    };
+  });
 };
 
 const getDefaultColumns = (uiConfig?: Partial<GanttUIConfig>): Column[] => [
@@ -262,6 +406,7 @@ export const Gantt: React.FC<GanttProps> = ({
   uiConfig = {},
   styleConfig = {},
   iconConfig = {},
+  onHoldPeriods: projectHoldPeriodsInput,
   onTaskUpdate,
   onTaskCreate,
   onTaskDelete,
@@ -314,8 +459,23 @@ export const Gantt: React.FC<GanttProps> = ({
 
     return vars as React.CSSProperties;
   }, [styleConfig]);
-  // Defensive checks
-  const safeTasks = React.useMemo(() => normalizeTaskInputs(initialTasks), [initialTasks]);
+  // Normalize project-level on-hold periods
+  const normalizedProjectHolds = React.useMemo(() => {
+    if (!projectHoldPeriodsInput || projectHoldPeriodsInput.length === 0) return [];
+    const now = new Date();
+    return projectHoldPeriodsInput
+      .map((p) => ({
+        start: toDate(p.start, now),
+        end: toDate(p.end, now),
+      }))
+      .filter((p) => p.end.getTime() > p.start.getTime());
+  }, [projectHoldPeriodsInput]);
+
+  // Defensive checks — normalize tasks, then apply project-level hold periods
+  const safeTasks = React.useMemo(() => {
+    const normalized = normalizeTaskInputs(initialTasks);
+    return applyProjectHoldPeriods(normalized, normalizedProjectHolds);
+  }, [initialTasks, normalizedProjectHolds]);
   const safeLinks = Array.isArray(initialLinks) ? initialLinks : [];
   // Undo/Redo system
   const {
@@ -980,27 +1140,27 @@ export const Gantt: React.FC<GanttProps> = ({
             ? safeY - containerRect.top + 12
             : safeY + 12;
           return (
-          <div
-            className="gantt-drag-preview"
-            style={{
-              height: rowHeight,
-              top: previewTop,
-              left: previewLeft,
-              position: 'absolute',
-              pointerEvents: 'none',
-              zIndex: 9999,
-              maxWidth: '420px',
-            }}
-          >
-            <span className="gantt-drag-preview-name" title={draggedTask.text}>
-              {draggedTask.text}
-            </span>
-            {reorderTask.descendantIds.length > 0 && (
-              <span className="gantt-drag-preview-count">
-                +{reorderTask.descendantIds.length}
+            <div
+              className="gantt-drag-preview"
+              style={{
+                height: rowHeight,
+                top: previewTop,
+                left: previewLeft,
+                position: 'absolute',
+                pointerEvents: 'none',
+                zIndex: 9999,
+                maxWidth: '420px',
+              }}
+            >
+              <span className="gantt-drag-preview-name" title={draggedTask.text}>
+                {draggedTask.text}
               </span>
-            )}
-          </div>
+              {reorderTask.descendantIds.length > 0 && (
+                <span className="gantt-drag-preview-count">
+                  +{reorderTask.descendantIds.length}
+                </span>
+              )}
+            </div>
           );
         })()}
       </div>
