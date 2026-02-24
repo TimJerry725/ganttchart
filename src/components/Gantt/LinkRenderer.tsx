@@ -51,12 +51,9 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     const sPos = getTaskPosition(source);
     const tPos = getTaskPosition(target);
 
-    // Start dependency from source center.
+    // Both source and target Y should be at the exact vertical center of the bar
     const sY = sPos.top + sPos.height / 2;
-    // Land slightly below target center for better visual alignment.
-    const targetCenterY = tPos.top + tPos.height / 2;
-    const targetYOffset = Math.max(2, Math.round(tPos.height * 0.08));
-    const tY = Math.min(targetCenterY + targetYOffset, tPos.top + tPos.height - 3);
+    const tY = tPos.top + tPos.height / 2;
 
     const ROUTING = {
       sourceStub: 14,

@@ -14,7 +14,7 @@ import { createBaseline } from './features/baselineUtils';
 import * as ExportUtils from './features/ExportUtils';
 import { applyFilters } from './features/filterUtils';
 import type { FilterOptions } from './features/filterUtils';
-import type { DateInput, Task, TaskInput, Link, TaskReorderMeta, OnHoldPeriodInput, TaskSegmentInput } from './types';
+import type { DateInput, Task, TaskInput, Link, TaskReorderMeta, OnHoldPeriodInput, TaskSegmentInput, TaskTooltipConfig } from './types';
 import './gantt.css';
 
 export interface GanttProps {
@@ -24,6 +24,7 @@ export interface GanttProps {
   uiConfig?: Partial<GanttUIConfig>;
   styleConfig?: Partial<GanttStyleConfig>; // Colors, fonts, spacing
   iconConfig?: Partial<GanttIconConfig>; // Custom icons
+  taskTooltipConfig?: Partial<TaskTooltipConfig>;
   onHoldPeriods?: OnHoldPeriodInput[]; // Project-level on-hold periods that affect all tasks
   onTaskUpdate?: (task: Task, reorderMeta?: TaskReorderMeta) => void;
   onTaskCreate?: (task: Task) => void;
@@ -76,6 +77,42 @@ const toNumber = (value: number | string | undefined, fallback: number): number 
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const normalizeDependencies = (
+  value: TaskInput['dependencies']
+): string[] | undefined => {
+  if (Array.isArray(value)) {
+    const normalized = value.map((dependencyId) => String(dependencyId).trim()).filter(Boolean);
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value
+      .split(/[|,]/)
+      .map((dependencyId) => dependencyId.trim())
+      .filter(Boolean);
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  return undefined;
+};
+
+const normalizeDependencyRules = (value: TaskInput['dependencyRule'] | TaskInput['dependency_rule'] | TaskInput['dependencyRuleDescription'] | TaskInput['dependency_rule_description']): string[] | undefined => {
+  if (Array.isArray(value)) {
+    const normalized = value.map((rule) => String(rule).trim()).filter(Boolean);
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value
+      .split(/\r?\n|\|/)
+      .map((rule) => rule.trim())
+      .filter(Boolean);
+    return normalized.length > 0 ? normalized : undefined;
+  }
+
+  return undefined;
+};
+
 const normalizeOnHoldPeriods = (
   periods: OnHoldPeriodInput[] | undefined,
   taskStart: Date,
@@ -126,28 +163,38 @@ const normalizeSegments = (
 
 const normalizeTaskInput = (task: TaskInput): Task => {
   const now = new Date();
-  const start = toDate(task.start, now);
-  const endRaw = toDate(task.end, start);
+  const start = toDate(task.start ?? task.startDate ?? task.start_date, now);
+  const endRaw = toDate(task.end ?? task.endDate ?? task.end_date, start);
   const end = endRaw.getTime() < start.getTime() ? start : endRaw;
+  const plannedStart = toDate(task.plannedStart ?? task.planned_start ?? task.planned_start_date, start);
+  const plannedEndRaw = toDate(task.plannedEnd ?? task.planned_end ?? task.planned_end_date, end);
+  const plannedEnd = plannedEndRaw.getTime() < plannedStart.getTime() ? plannedStart : plannedEndRaw;
+  const actualStart = toDate(task.actualStart ?? task.actual_start ?? task.actual_start_date, start);
+  const actualEndRaw = toDate(task.actualEnd ?? task.actual_end ?? task.actual_end_date, end);
+  const actualEnd = actualEndRaw.getTime() < actualStart.getTime() ? actualStart : actualEndRaw;
   const derivedDuration = Math.max(Math.ceil((end.getTime() - start.getTime()) / MS_IN_DAY), 0);
 
-  const rawDependencies = task.dependencies;
-  let dependencies: string[] | undefined;
-  if (Array.isArray(rawDependencies)) {
-    dependencies = rawDependencies.map((dependencyId) => String(dependencyId));
-  } else if (typeof rawDependencies === 'string') {
-    dependencies = rawDependencies.split(',').map((value) => value.trim()).filter(Boolean);
-  }
+  const dependencies = normalizeDependencies(task.dependencies ?? task.dependsOn ?? task.depends_on);
+  const dependencyRule = normalizeDependencyRules(
+    task.dependencyRule ??
+    task.dependency_rule ??
+    task.dependencyRuleDescription ??
+    task.dependency_rule_description
+  );
 
   const onHoldPeriods = normalizeOnHoldPeriods(task.onHoldPeriods ?? task.on_hold_periods, start, end);
 
   return {
     id: String(task.id),
-    text: task.text || task.name || task.title || `Task ${String(task.id)}`,
+    text: task.text || task.name || task.title || task.taskName || task.task_name || `Task ${String(task.id)}`,
     start,
     end,
+    plannedStart,
+    plannedEnd,
+    actualStart,
+    actualEnd,
     duration: toNumber(task.duration, derivedDuration),
-    progress: Math.max(0, Math.min(100, toNumber(task.progress, 0))),
+    progress: Math.max(0, Math.min(100, toNumber(task.progress ?? task.progressPercentage ?? task.progress_percentage, 0))),
     type: task.type,
     parent: task.parent !== undefined && task.parent !== null && String(task.parent).length > 0
       ? String(task.parent)
@@ -155,11 +202,12 @@ const normalizeTaskInput = (task: TaskInput): Task => {
     open: task.open,
     color: task.color,
     details: task.details,
-    owner: task.owner,
+    owner: task.owner || task.ownerName || task.owner_name,
     priority: task.priority,
-    status: task.status,
+    status: task.status ?? task.currentStatus ?? task.current_status,
     onHoldPeriods,
     dependencies,
+    dependencyRule,
     segments: normalizeSegments(task.segments, start, end),
     sequence_id: task.sequence_id,
     stage_id: task.stage_id,
@@ -311,13 +359,33 @@ const getDefaultColumns = (uiConfig?: Partial<GanttUIConfig>): Column[] => [
   { name: 'predecessors', label: uiConfig?.columnLabels?.dependsOn || 'Depends on', width: 120, align: 'left' },
   { name: 'duration', label: uiConfig?.columnLabels?.duration || 'Duration', width: 110, align: 'left' },
   { name: 'start', label: uiConfig?.columnLabels?.start || 'Start', width: 130, align: 'left' },
-  { name: 'add', label: '', width: 50, align: 'center' },
 ];
 
 const defaultScales: Scale[] = [
   { unit: 'month', step: 1, format: 'MMM' },
   { unit: 'day', step: 1, format: 'D' },
 ];
+
+const defaultTaskTooltipConfig: TaskTooltipConfig = {
+  showTaskName: true,
+  showPlannedDates: true,
+  showActualDates: true,
+  showStatus: true,
+  showDependencyRule: true,
+  showProgress: true,
+  showOwner: true,
+  plannedLabel: 'Planned',
+  actualLabel: 'Actual',
+  statusLabel: 'Status',
+  dependencyRuleLabel: 'Dependency Rule',
+  progressLabel: 'Progress',
+  ownerLabel: 'Owner',
+  dateFormat: 'MMM D, YYYY',
+  dependencySeparator: ' | ',
+  emptyStatusText: 'Not set',
+  emptyOwnerText: 'Not assigned',
+  emptyDependencyRuleText: 'No dependency rule',
+};
 
 // Default UI configuration
 const defaultUIConfig: GanttUIConfig = {
@@ -406,6 +474,7 @@ export const Gantt: React.FC<GanttProps> = ({
   uiConfig = {},
   styleConfig = {},
   iconConfig = {},
+  taskTooltipConfig = {},
   onHoldPeriods: projectHoldPeriodsInput,
   onTaskUpdate,
   onTaskCreate,
@@ -416,6 +485,7 @@ export const Gantt: React.FC<GanttProps> = ({
 }) => {
   // Merge UI config with defaults
   const ui: GanttUIConfig = { ...defaultUIConfig, ...uiConfig };
+  const mergedTaskTooltipConfig: TaskTooltipConfig = { ...defaultTaskTooltipConfig, ...taskTooltipConfig };
 
   // Apply style config via CSS variables
   const styleVariables: React.CSSProperties = React.useMemo(() => {
@@ -539,7 +609,7 @@ export const Gantt: React.FC<GanttProps> = ({
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isScrollingRef = useRef(false);
+  const isScrollingRef = useRef<string | null>(null);
   const scrollTimeoutRef = useRef<number | null>(null);
 
   const ganttConfig: GanttConfig = {
@@ -918,29 +988,17 @@ export const Gantt: React.FC<GanttProps> = ({
     if (!gridBody || !timelineBody) return;
 
     const handleGridScroll = () => {
-      if (!isScrollingRef.current) {
-        isScrollingRef.current = true;
-        timelineBody.scrollTop = gridBody.scrollTop;
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-        scrollTimeoutRef.current = window.setTimeout(() => {
-          isScrollingRef.current = false;
-        }, 150);
-      }
+      if (isScrollingRef.current === 'timeline') return;
+      isScrollingRef.current = 'grid';
+      timelineBody.scrollTop = gridBody.scrollTop;
+      requestAnimationFrame(() => { isScrollingRef.current = null; });
     };
 
     const handleTimelineScroll = () => {
-      if (!isScrollingRef.current) {
-        isScrollingRef.current = true;
-        gridBody.scrollTop = timelineBody.scrollTop;
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-        scrollTimeoutRef.current = window.setTimeout(() => {
-          isScrollingRef.current = false;
-        }, 150);
-      }
+      if (isScrollingRef.current === 'grid') return;
+      isScrollingRef.current = 'timeline';
+      gridBody.scrollTop = timelineBody.scrollTop;
+      requestAnimationFrame(() => { isScrollingRef.current = null; });
     };
 
     gridBody.addEventListener('scroll', handleGridScroll, { passive: true });
@@ -1068,6 +1126,7 @@ export const Gantt: React.FC<GanttProps> = ({
             }}
             zoomLevel={zoomLevel}
             baselines={baselines}
+            taskTooltipConfig={mergedTaskTooltipConfig}
           />
         </div>
 

@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
 import { Timeline } from './Timeline';
-import type { Task, Link, GanttConfig, Baseline, Scale } from './types';
+import type { Task, Link, GanttConfig, Baseline, Scale, TaskTooltipConfig } from './types';
 
 interface ChartProps {
     tasks: Task[];
@@ -17,6 +17,7 @@ interface ChartProps {
     zoomLevel: number;
     baselines: Map<string, Baseline>;
     allowBaselineOnlyMode?: boolean;
+    taskTooltipConfig?: TaskTooltipConfig;
 }
 
 export const Chart = forwardRef<HTMLDivElement, ChartProps>((props, ref) => {

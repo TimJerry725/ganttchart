@@ -109,6 +109,8 @@ function MyGantt() {
   uiConfig={GanttUIConfig}
   styleConfig={GanttStyleConfig}
   iconConfig={GanttIconConfig}
+  taskTooltipConfig={TaskTooltipConfig}
+  onHoldPeriods={OnHoldPeriodInput[]}
   
   // Event Handlers
   onTaskUpdate={(task: Task) => void}
@@ -116,6 +118,27 @@ function MyGantt() {
   onTaskDelete={(taskId: string) => void}
   onLinkCreate={(link: Link) => void}
   onLinkDelete={(linkId: string) => void}
+/>
+```
+
+### Tooltip Props (API-ready)
+
+```tsx
+<Gantt
+  tasks={tasks}
+  taskTooltipConfig={{
+    showTaskName: true,
+    showPlannedDates: true,
+    showActualDates: true,
+    showStatus: true,
+    showDependencyRule: true,
+    showProgress: true,
+    showOwner: true,
+    taskNameAccessor: (task) => task.text,
+    statusAccessor: (task) => task.status,
+    progressAccessor: (task) => task.progress,
+    dependencyRuleAccessor: (task, generatedRules) => task.dependencyRule || generatedRules,
+  }}
 />
 ```
 
@@ -592,6 +615,10 @@ interface Task {
   text: string
   start: Date
   end: Date
+  plannedStart?: Date
+  plannedEnd?: Date
+  actualStart?: Date
+  actualEnd?: Date
   duration: number
   progress: number
   type?: 'task' | 'milestone' | 'project'
@@ -601,7 +628,10 @@ interface Task {
   details?: string
   owner?: string
   priority?: 'low' | 'medium' | 'high'
+  status?: string
+  onHoldPeriods?: { start: Date; end: Date }[]
   dependencies?: string[]
+  dependencyRule?: string[]
   segments?: TaskSegment[]
 }
 ```

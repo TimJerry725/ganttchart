@@ -17,11 +17,11 @@
   --wx-gantt-font-weight: 400;
   --wx-gantt-line-height: 1.5714285714285714;
 
-  /* Layout & Spacing - Responsive units */
-  --gantt-header-height: clamp(60px, 8vh, 84px);
-  --gantt-row-height: clamp(48px, 5vh, 52px);
-  /* Increased to 48px to ensure baseline bar is fully visible with space below: task bar (28px) + gap (4px) + baseline (6px) + space below (6px) + padding (4px) = 48px */
-  --gantt-scale-height: clamp(24px, 3vh, 28px);
+  /* Layout & Spacing — FIXED px values for stability across zoom levels and host projects.
+     header-height MUST equal 3 × scale-height (month + range + day rows). */
+  --gantt-header-height: 84px;
+  --gantt-row-height: 48px;
+  --gantt-scale-height: 28px;
   --gantt-grid-width: clamp(280px, 30vw, 720px);
   --gantt-container-height: 100%;
   --gantt-container-min-height: 400px;
@@ -51,7 +51,7 @@
   /* Red */
   --wx-gantt-status-not-started: #9E9E9E;
   /* Gray */
-  --wx-gantt-baseline-color: #BDBDBD;
+  --wx-gantt-baseline-color: #E0E0E0;
   /* Gray for baseline */
 
   /* Typography - Align with Ant Design */
@@ -59,11 +59,11 @@
   --wx-gantt-font-color-alt: rgba(0, 0, 0, 0.45);
   --wx-gantt-icon-color: rgba(0, 0, 0, 0.45);
 
-  /* Spacing - Responsive */
-  --gantt-spacing-xs: clamp(4px, 0.5vw, 8px);
-  --gantt-spacing-sm: clamp(8px, 1vw, 12px);
-  --gantt-spacing-md: clamp(12px, 1.5vw, 16px);
-  --gantt-spacing-lg: clamp(16px, 2vw, 24px);
+  /* Spacing - Fixed px for predictability */
+  --gantt-spacing-xs: 4px;
+  --gantt-spacing-sm: 8px;
+  --gantt-spacing-md: 12px;
+  --gantt-spacing-lg: 16px;
 
   /* Legacy/Compatibility Fallbacks */
   --font-body: var(--wx-gantt-font-family);
@@ -71,6 +71,16 @@
   --color-text-main: var(--wx-gantt-font-color);
 }
 
+
+/* Universal box-sizing inside the gantt scope — prevents borders from
+   adding to element dimensions, which is the #1 cause of row misalignment
+   when the component is embedded in a host project with a different box model. */
+.gantt-page-wrapper,
+.gantt-page-wrapper *,
+.gantt-page-wrapper *::before,
+.gantt-page-wrapper *::after {
+  box-sizing: border-box;
+}
 
 /* Page Wrapper - Responsive and adaptable */
 .gantt-page-wrapper {
@@ -80,7 +90,6 @@
   min-height: var(--gantt-container-min-height, 400px);
   width: 100%;
   max-width: 100%;
-  box-sizing: border-box;
   /* Inherit font from parent */
   font-family: var(--wx-gantt-font-family);
   font-size: var(--wx-gantt-font-size, 14px);
@@ -122,22 +131,19 @@
 .gantt-layout {
   display: flex;
   flex: 1;
-  overflow-x: auto;
-  /* Individual scroll container */
+  /* Single vertical scroll container for both grid + timeline.
+     This guarantees rows stay aligned because both sides share
+     the same scroll context — no JS sync needed. */
   overflow-y: auto;
-  overflow: visible;
-  /* Allow labels above timeline to be visible */
+  overflow-x: auto;
   position: relative;
   background-color: #fafafa;
-  /* Remove smooth scroll for better performance - can cause hanging */
-  /* scroll-behavior: smooth; */
   min-height: 0;
   min-width: 0;
   width: 100%;
   /* Performance optimizations */
   will-change: scroll-position;
   transform: translateZ(0);
-  /* Fill available space */
 }
 
 /* Modern Scrollbars */
@@ -246,15 +252,9 @@
 }
 
 .gantt-grid-body {
-  flex: 1;
-  overflow-y: auto;
+  /* No independent vertical scroll — gantt-layout handles it */
+  overflow-y: visible;
   overflow-x: auto;
-  /* Changed to auto to allow horizontal scroll if columns don't fit */
-  /* Performance optimizations for smooth scrolling */
-  will-change: scroll-position;
-  transform: translateZ(0);
-  /* Use hardware acceleration */
-  -webkit-overflow-scrolling: touch;
 }
 
 .gantt-grid-row {
@@ -270,8 +270,8 @@
   min-height: var(--gantt-row-height, 48px);
   max-height: var(--gantt-row-height, 48px);
   min-width: 100%;
-  /* Ensure row spans all columns */
   width: 100%;
+  overflow: hidden;
 }
 
 .gantt-grid-row:hover {
@@ -640,13 +640,9 @@ body.gantt-dragging {
 .gantt-timeline-body {
   position: relative;
   min-height: 0;
-  overflow-y: auto;
+  /* No independent vertical scroll — gantt-layout handles it */
+  overflow-y: visible;
   overflow-x: hidden;
-  /* Performance optimizations for smooth scrolling */
-  will-change: scroll-position;
-  transform: translateZ(0);
-  /* Use hardware acceleration */
-  -webkit-overflow-scrolling: touch;
 }
 
 .gantt-timeline-grid {
@@ -756,12 +752,11 @@ body.gantt-dragging {
   position: relative;
   width: 100%;
   border-bottom: 1px solid #e5e7eb;
-  height: var(--gantt-row-height, 44px);
-  min-height: 44px;
-  /* Minimum 44px to ensure baseline is visible: task bar (28px) + gap (4px) + baseline (6px) + padding (6px) = 44px */
+  height: var(--gantt-row-height, 48px);
+  min-height: var(--gantt-row-height, 48px);
+  max-height: var(--gantt-row-height, 48px);
   /* Performance optimization */
   contain: layout style paint;
-  max-height: var(--gantt-row-height, 44px);
   flex-shrink: 0;
   /* Ensure baseline bar is visible */
   overflow: visible;

@@ -15,6 +15,10 @@ export interface Task {
   text: string;
   start: Date;
   end: Date;
+  plannedStart?: Date;
+  plannedEnd?: Date;
+  actualStart?: Date;
+  actualEnd?: Date;
   duration: number;
   progress: number;
   type?: 'task' | 'milestone' | 'project';
@@ -24,9 +28,10 @@ export interface Task {
   details?: string;
   owner?: string;
   priority?: 'low' | 'medium' | 'high';
-  status?: 'completed' | 'in-progress' | 'delayed' | 'not-started';
+  status?: string;
   onHoldPeriods?: OnHoldPeriod[];
   dependencies?: string[]; // Array of task IDs this task depends on
+  dependencyRule?: string[]; // Optional dependency rule descriptions from API
   segments?: TaskSegment[]; // For split tasks
   sequence_id?: number;
   stage_id?: string | null;
@@ -44,19 +49,50 @@ export interface TaskSegmentInput {
   duration?: number | string;
 }
 
-export interface TaskInput extends Omit<Task, 'id' | 'text' | 'start' | 'end' | 'duration' | 'progress' | 'parent' | 'onHoldPeriods' | 'dependencies' | 'segments'> {
+export interface TaskInput extends Omit<Task, 'id' | 'text' | 'start' | 'end' | 'plannedStart' | 'plannedEnd' | 'actualStart' | 'actualEnd' | 'duration' | 'progress' | 'parent' | 'onHoldPeriods' | 'dependencies' | 'dependencyRule' | 'segments'> {
   id: string | number;
   text?: string;
   name?: string;
   title?: string;
-  start: DateInput;
-  end: DateInput;
+  taskName?: string;
+  task_name?: string;
+  start?: DateInput;
+  end?: DateInput;
+  startDate?: DateInput;
+  start_date?: DateInput;
+  endDate?: DateInput;
+  end_date?: DateInput;
+  plannedStart?: DateInput;
+  plannedEnd?: DateInput;
+  planned_start?: DateInput;
+  planned_end?: DateInput;
+  planned_start_date?: DateInput;
+  planned_end_date?: DateInput;
+  actualStart?: DateInput;
+  actualEnd?: DateInput;
+  actual_start?: DateInput;
+  actual_end?: DateInput;
+  actual_start_date?: DateInput;
+  actual_end_date?: DateInput;
   duration?: number | string;
   progress?: number | string;
+  progressPercentage?: number | string;
+  progress_percentage?: number | string;
   parent?: string | number | null;
+  ownerName?: string;
+  owner_name?: string;
+  status?: Task['status'];
+  currentStatus?: Task['status'];
+  current_status?: Task['status'];
   onHoldPeriods?: OnHoldPeriodInput[];
   on_hold_periods?: OnHoldPeriodInput[];
   dependencies?: Array<string | number> | string;
+  dependsOn?: Array<string | number> | string;
+  depends_on?: Array<string | number> | string;
+  dependencyRule?: string[] | string;
+  dependency_rule?: string[] | string;
+  dependencyRuleDescription?: string[] | string;
+  dependency_rule_description?: string[] | string;
   segments?: TaskSegmentInput[];
 }
 
@@ -67,6 +103,43 @@ export interface Link {
   type: 'e2s' | 's2s' | 'e2e' | 's2e'; // end-to-start, start-to-start, end-to-end, start-to-end
   lag?: number; // lag time in days (positive = delay, negative = lead time)
   lagUnit?: 'day' | 'hour' | 'week' | 'month'; // unit for lag time (default: 'day')
+}
+
+export interface TaskTooltipConfig {
+  showTaskName?: boolean;
+  showPlannedDates?: boolean;
+  showActualDates?: boolean;
+  showStatus?: boolean;
+  showDependencyRule?: boolean;
+  showProgress?: boolean;
+  showOwner?: boolean;
+  plannedLabel?: string;
+  actualLabel?: string;
+  statusLabel?: string;
+  dependencyRuleLabel?: string;
+  progressLabel?: string;
+  ownerLabel?: string;
+  dateFormat?: string;
+  dependencySeparator?: string;
+  emptyStatusText?: string;
+  emptyOwnerText?: string;
+  emptyDependencyRuleText?: string;
+  taskNameAccessor?: (task: Task) => string | undefined;
+  plannedStartAccessor?: (task: Task) => DateInput | undefined;
+  plannedEndAccessor?: (task: Task) => DateInput | undefined;
+  actualStartAccessor?: (task: Task) => DateInput | undefined;
+  actualEndAccessor?: (task: Task) => DateInput | undefined;
+  statusAccessor?: (task: Task) => string | undefined;
+  ownerAccessor?: (task: Task) => string | undefined;
+  dependencyRuleAccessor?: (task: Task, generatedRules: string[]) => string | string[] | undefined;
+  progressAccessor?: (task: Task) => number | string | undefined;
+  taskNameFormatter?: (taskName: string, task: Task) => string;
+  plannedDatesFormatter?: (plannedStart: Date, plannedEnd: Date, task: Task) => string;
+  actualDatesFormatter?: (actualStart: Date, actualEnd: Date, task: Task) => string;
+  ownerFormatter?: (owner: string, task: Task) => string;
+  statusFormatter?: (status?: string, task?: Task) => string;
+  progressFormatter?: (progress: number, task: Task) => string;
+  dependencyRuleFormatter?: (rule: string, task: Task) => string;
 }
 
 export interface Scale {

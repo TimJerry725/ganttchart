@@ -2,12 +2,15 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.3.7 (Latest)
+## 🆕 Version 1.4.1 (Latest)
 
 ### Included Changes
 - Added direct OnHold support in `tasks` props for API payloads.
 - `tasks` now accepts `onHoldPeriods` and `on_hold_periods`.
 - OnHold date fields now accept `Date`, ISO date strings, or timestamps and are normalized internally.
+- Task hover tooltip is fully prop-driven (show/hide, labels, accessors, and formatters).
+- Tooltip data now supports direct API aliases for planned/actual dates, status, progress, owner, and dependency rule.
+- Dependency rule tooltip can be read from API payload (`dependencyRule`/`dependency_rule`) or generated from links.
 - Improved dependency arrow routing with cleaner orthogonal bends between rows.
 - Updated arrowheads from filled triangles to open chevrons.
 - Reduced line-to-arrowhead gap for tighter arrow joins.
@@ -125,6 +128,46 @@ import 'iris-gantt/gantt.css'
   onTaskUpdate={(task) => console.log('Updated:', task)}
 />
 ```
+
+### Tooltip As Props
+
+All task hover fields are configurable via props and can be mapped from API values:
+
+```tsx
+<Gantt
+  tasks={tasks}
+  taskTooltipConfig={{
+    showTaskName: true,
+    showPlannedDates: true,
+    showActualDates: true,
+    showStatus: true,
+    showDependencyRule: true,
+    showProgress: true,
+    plannedLabel: 'Planned start/end',
+    actualLabel: 'Actual start/end',
+    statusLabel: 'Current status',
+    dependencyRuleLabel: 'Dependency rule',
+    progressLabel: 'Progress',
+    ownerLabel: 'Owner',
+    dateFormat: 'MMM D, YYYY',
+    taskNameAccessor: (task) => task.text,
+    statusAccessor: (task) => task.status,
+    progressAccessor: (task) => task.progress,
+    dependencyRuleAccessor: (task, generatedRules) => task.dependencyRule || generatedRules,
+  }}
+/>
+```
+
+API-friendly task aliases accepted in `tasks`:
+- Name: `text`, `name`, `title`, `taskName`, `task_name`
+- Timeline dates: `start`, `startDate`, `start_date`, `end`, `endDate`, `end_date`
+- Planned dates: `plannedStart`, `planned_start`, `planned_start_date`, `plannedEnd`, `planned_end`, `planned_end_date`
+- Actual dates: `actualStart`, `actual_start`, `actual_start_date`, `actualEnd`, `actual_end`, `actual_end_date`
+- Status: `status`, `currentStatus`, `current_status`
+- Progress: `progress`, `progressPercentage`, `progress_percentage`
+- Owner: `owner`, `ownerName`, `owner_name`
+- Dependencies: `dependencies`, `dependsOn`, `depends_on`
+- Dependency rule: `dependencyRule`, `dependency_rule`, `dependencyRuleDescription`, `dependency_rule_description`
 
 ## ⏸️ OnHold In `tasks` Props
 

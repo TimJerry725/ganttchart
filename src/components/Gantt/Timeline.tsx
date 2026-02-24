@@ -1,5 +1,5 @@
 import React, { forwardRef, useState, useCallback } from 'react';
-import type { Task, Link, Scale, GanttConfig, Baseline } from './types';
+import type { Task, Link, Scale, GanttConfig, Baseline, TaskTooltipConfig } from './types';
 import { TaskBar } from './TaskBar';
 import { LinkRenderer } from './LinkRenderer';
 import { useDragDrop } from './DragDrop';
@@ -20,6 +20,7 @@ interface TimelineProps {
   zoomLevel: number;
   baselines?: Map<string, Baseline>;
   allowBaselineOnlyMode?: boolean;
+  taskTooltipConfig?: TaskTooltipConfig;
 }
 
 export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
@@ -37,10 +38,55 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     zoomLevel,
     baselines,
     allowBaselineOnlyMode = false,
+    taskTooltipConfig,
   }, ref) => {
     const [localTasks, setLocalTasks] = useState(tasks);
     const columnWidth = (config.columnWidth || 60) * zoomLevel;
     const showBaselines = config.baselines && baselines && baselines.size > 0;
+    const taskById = React.useMemo(() => {
+      const map = new Map<string, Task>();
+      localTasks.forEach((task) => map.set(task.id, task));
+      return map;
+    }, [localTasks]);
+
+    const dependencyRulesByTargetId = React.useMemo(() => {
+      const map = new Map<string, string[]>();
+      const linkTypeLabel: Record<Link['type'], string> = {
+        e2s: 'Finish-to-Start',
+        s2s: 'Start-to-Start',
+        e2e: 'Finish-to-Finish',
+        s2e: 'Start-to-Finish',
+      };
+
+      const appendRules = (taskId: string, rules: string[]) => {
+        const existing = map.get(taskId) || [];
+        const merged = [...existing, ...rules.map((rule) => rule.trim()).filter(Boolean)];
+        if (merged.length > 0) {
+          map.set(taskId, Array.from(new Set(merged)));
+        }
+      };
+
+      localTasks.forEach((task) => {
+        if (task.dependencyRule && task.dependencyRule.length > 0) {
+          appendRules(task.id, task.dependencyRule);
+        }
+      });
+
+      links.forEach((link) => {
+        const source = taskById.get(link.source);
+        const target = taskById.get(link.target);
+        const sourceName = source?.text || `Task ${link.source}`;
+        const targetName = target?.text || `Task ${link.target}`;
+        const typeLabel = linkTypeLabel[link.type];
+        const lag = typeof link.lag === 'number' && link.lag !== 0
+          ? ` (${link.lag > 0 ? '+' : ''}${link.lag} ${link.lagUnit || 'day'})`
+          : '';
+        const ruleDescription = `${targetName} depends on ${sourceName} [${typeLabel}]${lag}`;
+        appendRules(link.target, [ruleDescription]);
+      });
+
+      return map;
+    }, [links, localTasks, taskById]);
 
     const { dragState, handleDragStart, handleDrag, handleDragEnd } = useDragDrop(
       localTasks,
@@ -121,20 +167,31 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       };
     };
 
-    const getTaskPositionForLinks = (task: Task) => {
+    const getTaskPositionForLinks = React.useCallback((task: Task) => {
       const pos = getTaskPosition(task);
       const index = localTasks.findIndex(t => t.id === task.id);
-      const rowHeight = config.rowHeight || 48;
-      const taskHeight = 32;
+
+      // Read the actual row height from the CSS variable on the container element,
+      // so the arrow positions stay correct regardless of host-project overrides.
+      let rowHeight = config.rowHeight || 48;
+      if (ref && typeof ref === 'object' && ref.current) {
+        const cssVal = getComputedStyle(ref.current).getPropertyValue('--gantt-row-height');
+        if (cssVal) {
+          const parsed = parseFloat(cssVal);
+          if (!isNaN(parsed) && parsed > 0) rowHeight = parsed;
+        }
+      }
+
+      const taskHeight = config.taskHeight || 28; // matches CSS .gantt-task-bar { height: 28px }
       const topPadding = (rowHeight - taskHeight) / 2;
 
       return {
         left: pos.left,
         width: pos.width,
         top: index * rowHeight + topPadding,
-        height: taskHeight
+        height: taskHeight,
       };
-    };
+    }, [getTaskPosition, localTasks, config.rowHeight, config.taskHeight, ref]);
 
     const mouseMoveTimeoutRef = React.useRef<number | null>(null);
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -665,6 +722,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                     {/* Main task bar */}
                     <TaskBar
                       task={task}
+                      baseline={baseline}
+                      dependencyRuleDescriptions={dependencyRulesByTargetId.get(task.id) || []}
+                      tooltipConfig={taskTooltipConfig}
                       position={position}
                       selected={selectedTask === task.id}
                       dragging={dragState.taskId === task.id}
