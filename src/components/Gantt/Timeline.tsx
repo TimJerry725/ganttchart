@@ -19,6 +19,7 @@ interface TimelineProps {
   onTaskUpdate?: (id: string, updates: Partial<Task>) => void;
   zoomLevel: number;
   baselines?: Map<string, Baseline>;
+  allowBaselineOnlyMode?: boolean;
 }
 
 export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
@@ -35,6 +36,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     onTaskUpdate,
     zoomLevel,
     baselines,
+    allowBaselineOnlyMode = false,
   }, ref) => {
     const [localTasks, setLocalTasks] = useState(tasks);
     const columnWidth = (config.columnWidth || 60) * zoomLevel;
@@ -162,6 +164,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
     const secondaryScale = scales[1];
     const secondaryCells = React.useMemo(() => generateCells(secondaryScale), [generateCells, secondaryScale]);
+    const showBaselineOnlyRows = allowBaselineOnlyMode && localTasks.length === 0 && showBaselines;
 
     // Group cells for the top header (Month/Year) - memoized
     const generateTopHeaderCells = React.useCallback(() => {
@@ -617,47 +620,66 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
 
           {/* Task bars */}
           <div className="gantt-timeline-tasks" style={{ width: totalWidth }}>
-            {localTasks.map((task) => {
-              const position = getTaskPosition(task);
-              const baseline = showBaselines ? baselines?.get(task.id) : undefined;
-              const baselinePosition = baseline ? getBaselinePosition(baseline) : undefined;
+            {showBaselineOnlyRows
+              ? Array.from(baselines?.values() || []).map((baseline) => {
+                const baselinePosition = getBaselinePosition(baseline);
 
-
-              return (
-                <div
-                  key={task.id}
-                  className="gantt-timeline-row"
-                >
-                  {/* Baseline bar (shown below task bar) */}
-                  {baseline && baselinePosition && (
+                return (
+                  <div
+                    key={`baseline-only-${baseline.taskId}`}
+                    className="gantt-timeline-row baseline-only"
+                  >
                     <div
-                      className={`gantt-baseline-bar ${task.type === 'milestone' ? 'milestone' : ''}`}
+                      className="gantt-baseline-bar baseline-only"
                       style={{
                         left: `${baselinePosition.left}px`,
                         width: `${baselinePosition.width}px`,
                       }}
                       title={`Baseline: ${baseline.start.toLocaleDateString()} - ${baseline.end.toLocaleDateString()}`}
                     />
-                  )}
+                  </div>
+                );
+              })
+              : localTasks.map((task) => {
+                const position = getTaskPosition(task);
+                const baseline = showBaselines ? baselines?.get(task.id) : undefined;
+                const baselinePosition = baseline ? getBaselinePosition(baseline) : undefined;
 
-                  {/* Main task bar */}
-                  <TaskBar
-                    task={task}
-                    position={position}
-                    selected={selectedTask === task.id}
-                    dragging={dragState.taskId === task.id}
-                    dragDeltaX={dragState.dragDeltaX}
-                    dragType={dragState.type}
-                    onClick={() => onTaskClick(task.id)}
-                    onDragStart={(clientX, clientY, type) => {
-                      handleDragStart(task.id, clientX, clientY, type);
-                      onTaskDragStart(task.id, clientX, clientY);
-                    }}
-                    readonly={config.readonly}
-                  />
-                </div>
-              );
-            })}
+                return (
+                  <div
+                    key={task.id}
+                    className="gantt-timeline-row"
+                  >
+                    {/* Baseline bar (shown below task bar) */}
+                    {baseline && baselinePosition && (
+                      <div
+                        className={`gantt-baseline-bar ${task.type === 'milestone' ? 'milestone' : ''}`}
+                        style={{
+                          left: `${baselinePosition.left}px`,
+                          width: `${baselinePosition.width}px`,
+                        }}
+                        title={`Baseline: ${baseline.start.toLocaleDateString()} - ${baseline.end.toLocaleDateString()}`}
+                      />
+                    )}
+
+                    {/* Main task bar */}
+                    <TaskBar
+                      task={task}
+                      position={position}
+                      selected={selectedTask === task.id}
+                      dragging={dragState.taskId === task.id}
+                      dragDeltaX={dragState.dragDeltaX}
+                      dragType={dragState.type}
+                      onClick={() => onTaskClick(task.id)}
+                      onDragStart={(clientX, clientY, type) => {
+                        handleDragStart(task.id, clientX, clientY, type);
+                        onTaskDragStart(task.id, clientX, clientY);
+                      }}
+                      readonly={config.readonly}
+                    />
+                  </div>
+                );
+              })}
           </div>
         </div>
       </div>

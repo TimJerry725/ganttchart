@@ -1,3 +1,15 @@
+export type DateInput = Date | string | number;
+
+export interface OnHoldPeriod {
+  start: Date;
+  end: Date;
+}
+
+export interface OnHoldPeriodInput {
+  start: DateInput;
+  end: DateInput;
+}
+
 export interface Task {
   id: string;
   text: string;
@@ -13,7 +25,7 @@ export interface Task {
   owner?: string;
   priority?: 'low' | 'medium' | 'high';
   status?: 'completed' | 'in-progress' | 'delayed' | 'not-started';
-  onHoldPeriods?: { start: Date; end: Date }[];
+  onHoldPeriods?: OnHoldPeriod[];
   dependencies?: string[]; // Array of task IDs this task depends on
   segments?: TaskSegment[]; // For split tasks
   sequence_id?: number;
@@ -24,6 +36,28 @@ export interface TaskSegment {
   start: Date;
   end: Date;
   duration: number;
+}
+
+export interface TaskSegmentInput {
+  start: DateInput;
+  end: DateInput;
+  duration?: number | string;
+}
+
+export interface TaskInput extends Omit<Task, 'id' | 'text' | 'start' | 'end' | 'duration' | 'progress' | 'parent' | 'onHoldPeriods' | 'dependencies' | 'segments'> {
+  id: string | number;
+  text?: string;
+  name?: string;
+  title?: string;
+  start: DateInput;
+  end: DateInput;
+  duration?: number | string;
+  progress?: number | string;
+  parent?: string | number | null;
+  onHoldPeriods?: OnHoldPeriodInput[];
+  on_hold_periods?: OnHoldPeriodInput[];
+  dependencies?: Array<string | number> | string;
+  segments?: TaskSegmentInput[];
 }
 
 export interface Link {

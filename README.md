@@ -2,6 +2,18 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
+## 🆕 Version 1.3.7 (Latest)
+
+### Included Changes
+- Added direct OnHold support in `tasks` props for API payloads.
+- `tasks` now accepts `onHoldPeriods` and `on_hold_periods`.
+- OnHold date fields now accept `Date`, ISO date strings, or timestamps and are normalized internally.
+- Improved dependency arrow routing with cleaner orthogonal bends between rows.
+- Updated arrowheads from filled triangles to open chevrons.
+- Reduced line-to-arrowhead gap for tighter arrow joins.
+- Adjusted arrow anchors to improve source/target alignment on bars.
+- Synced rendered row height with drag/link math to prevent arrow misalignment across rows.
+
 ## ✨ Features
 
 ### Core Features
@@ -111,6 +123,33 @@ import 'iris-gantt/gantt.css'
     containerMinHeight: '400px',
   }}
   onTaskUpdate={(task) => console.log('Updated:', task)}
+/>
+```
+
+## ⏸️ OnHold In `tasks` Props
+
+You can pass paused periods directly inside each task using either:
+- `onHoldPeriods` (camelCase)
+- `on_hold_periods` (snake_case API style)
+
+Date values can be `Date`, ISO date string, or timestamp number.
+
+```tsx
+<Gantt
+  tasks={[
+    {
+      id: 1,
+      text: 'Development',
+      start: '2026-02-01',
+      end: '2026-02-20',
+      duration: 19,
+      progress: 45,
+      on_hold_periods: [
+        { start: '2026-02-06', end: '2026-02-09' },
+        { start: '2026-02-12', end: '2026-02-13' },
+      ],
+    },
+  ]}
 />
 ```
 

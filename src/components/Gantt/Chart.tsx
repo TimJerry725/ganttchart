@@ -16,6 +16,7 @@ interface ChartProps {
     onTaskUpdate: (id: string, updates: Partial<Task>) => void;
     zoomLevel: number;
     baselines: Map<string, Baseline>;
+    allowBaselineOnlyMode?: boolean;
 }
 
 export const Chart = forwardRef<HTMLDivElement, ChartProps>((props, ref) => {

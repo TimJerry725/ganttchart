@@ -8,9 +8,13 @@ interface LinkRendererProps {
 }
 
 export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTaskPosition }) => {
-  const getTaskById = (id: string): Task | undefined => {
-    return tasks.find(t => t.id === id);
-  };
+  const taskById = React.useMemo(() => {
+    const map = new Map<string, Task>();
+    tasks.forEach((task) => map.set(task.id, task));
+    return map;
+  }, [tasks]);
+
+  const getTaskById = (id: string): Task | undefined => taskById.get(id);
 
   // Calculate SVG dimensions from all task positions
   const svgDimensions = React.useMemo(() => {
@@ -38,104 +42,132 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     };
   }, [tasks, getTaskPosition]);
 
-  const createPath = (link: Link): string => {
+  const createGeometry = (link: Link): { path: string; arrow: string } => {
     const source = getTaskById(link.source);
     const target = getTaskById(link.target);
 
-    if (!source || !target) return '';
+    if (!source || !target) return { path: '', arrow: '' };
 
     const sPos = getTaskPosition(source);
     const tPos = getTaskPosition(target);
 
-    // Center Y position of task bars
+    // Start dependency from source center.
     const sY = sPos.top + sPos.height / 2;
-    const tY = tPos.top + tPos.height / 2;
+    // Land slightly below target center for better visual alignment.
+    const targetCenterY = tPos.top + tPos.height / 2;
+    const targetYOffset = Math.max(2, Math.round(tPos.height * 0.08));
+    const tY = Math.min(targetCenterY + targetYOffset, tPos.top + tPos.height - 3);
 
-    let sX = 0, tX = 0;
+    const ROUTING = {
+      sourceStub: 14,
+      targetStub: 8,
+      detourPadding: 24,
+      minHorizontalSpan: 18,
+      arrowGap: 2,
+      arrowLength: 14,
+      arrowWidth: 14,
+      arrowStemOverlap: 1,
+      chevronNotchDepth: 5,
+    };
 
-    // Determine start and end X positions based on link type
+    let sX = 0;
+    let tX = 0;
+    let sourceOutDir: 1 | -1 = 1;
+    let targetInDir: 1 | -1 = 1;
+
     switch (link.type) {
-      case 'e2s': // End to Start
+      case 'e2s':
         sX = sPos.left + sPos.width;
         tX = tPos.left;
+        sourceOutDir = 1;
+        targetInDir = 1;
         break;
-      case 's2s': // Start to Start
+      case 's2s':
         sX = sPos.left;
         tX = tPos.left;
+        sourceOutDir = -1;
+        targetInDir = 1;
         break;
-      case 'e2e': // End to End
+      case 'e2e':
         sX = sPos.left + sPos.width;
         tX = tPos.left + tPos.width;
+        sourceOutDir = 1;
+        targetInDir = -1;
         break;
-      case 's2e': // Start to End
+      case 's2e':
         sX = sPos.left;
         tX = tPos.left + tPos.width;
+        sourceOutDir = -1;
+        targetInDir = -1;
         break;
     }
 
-    const dx = tX - sX;
-    const dy = tY - sY;
-    const minStep = 20;
+    const sourceStubX = sX + sourceOutDir * ROUTING.sourceStub;
+    const arrowTipX = tX - targetInDir * ROUTING.arrowGap;
+    const arrowBaseX = arrowTipX - targetInDir * ROUTING.arrowLength;
+    const arrowNotchX = arrowBaseX + targetInDir * ROUTING.chevronNotchDepth;
+    const targetStubX = arrowNotchX - targetInDir * ROUTING.targetStub;
+    const arrowJoinX = arrowNotchX + targetInDir * ROUTING.arrowStemOverlap;
 
-    // Refined orthogonal routing
-    if (link.type === 'e2s') {
-      if (dx >= minStep) {
-        // Simple 3-segment orthogonal
-        const mx = sX + dx / 2;
-        return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
-      } else {
-        // Backward link - 5 segments
-        const step = minStep / 2;
-        const my = sY + dy / 2;
-        return `M ${sX},${sY} L ${sX + step},${sY} L ${sX + step},${my} L ${tX - step},${my} L ${tX - step},${tY} L ${tX},${tY}`;
-      }
-    } else if (link.type === 's2s') {
-      const mx = Math.min(sX, tX) - minStep / 2;
-      return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
-    } else if (link.type === 'e2e') {
-      const mx = Math.max(sX, tX) + minStep / 2;
-      return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
-    } else if (link.type === 's2e') {
-      if (dx <= -minStep) {
-        const mx = sX + dx / 2;
-        return `M ${sX},${sY} L ${mx},${sY} L ${mx},${tY} L ${tX},${tY}`;
-      } else {
-        const step = minStep / 2;
-        const my = sY + dy / 2;
-        return `M ${sX},${sY} L ${sX - step},${sY} L ${sX - step},${my} L ${tX + step},${my} L ${tX + step},${tY} L ${tX},${tY}`;
-      }
-    }
+    const isCrossRow = Math.abs(tY - sY) > 1;
+    let points: Array<{ x: number; y: number }>;
 
-    return '';
-  };
-
-  const createArrow = (link: Link): string => {
-    const target = getTaskById(link.target);
-    if (!target) return '';
-
-    const tPos = getTaskPosition(target);
-    const cy = tPos.top + tPos.height / 2;
-    const size = 8;
-    const width = 6;
-
-    let x = 0;
-    let pointRight = true;
-
-    // Determine arrow position and direction
-    if (link.type === 'e2s' || link.type === 's2s') {
-      x = tPos.left;
-      pointRight = true;
+    if (isCrossRow) {
+      const midY = sY + (tY - sY) / 2;
+      // Cross-row links: keep the long horizontal segment in the lane between rows.
+      points = [
+        { x: sX, y: sY },
+        { x: sourceStubX, y: sY },
+        { x: sourceStubX, y: midY },
+        { x: targetStubX, y: midY },
+        { x: targetStubX, y: tY },
+        { x: arrowJoinX, y: tY },
+      ];
     } else {
-      x = tPos.left + tPos.width;
-      pointRight = false;
+      let turnX: number;
+      if (sourceOutDir === targetInDir) {
+        const hasForwardSpan = sourceOutDir === 1
+          ? (targetStubX - sourceStubX) >= ROUTING.minHorizontalSpan
+          : (sourceStubX - targetStubX) >= ROUTING.minHorizontalSpan;
+
+        if (hasForwardSpan) {
+          turnX = (sourceStubX + targetStubX) / 2;
+        } else {
+          turnX = sourceOutDir === 1
+            ? Math.max(sX, tX) + ROUTING.detourPadding
+            : Math.min(sX, tX) - ROUTING.detourPadding;
+        }
+      } else {
+        turnX = sourceOutDir === 1
+          ? Math.max(sX, tX) + ROUTING.detourPadding
+          : Math.min(sX, tX) - ROUTING.detourPadding;
+      }
+
+      points = [
+        { x: sX, y: sY },
+        { x: sourceStubX, y: sY },
+        { x: turnX, y: sY },
+        { x: turnX, y: tY },
+        { x: targetStubX, y: tY },
+        { x: arrowJoinX, y: tY },
+      ];
     }
 
-    // Create triangle
-    if (pointRight) {
-      return `M ${x},${cy} L ${x - size},${cy - width / 2} L ${x - size},${cy + width / 2} Z`;
-    } else {
-      return `M ${x},${cy} L ${x + size},${cy - width / 2} L ${x + size},${cy + width / 2} Z`;
-    }
+    const compactPoints = points.filter((point, idx) => {
+      if (idx === 0) return true;
+      const prev = points[idx - 1];
+      return Math.abs(point.x - prev.x) > 0.5 || Math.abs(point.y - prev.y) > 0.5;
+    });
+
+    const path = compactPoints.length > 0
+      ? compactPoints.map((point, idx) => `${idx === 0 ? 'M' : 'L'} ${point.x},${point.y}`).join(' ')
+      : '';
+
+    const halfArrowWidth = ROUTING.arrowWidth / 2;
+    // Filled chevron arrowhead (closed path with center notch)
+    const arrow = `M ${arrowBaseX},${tY - halfArrowWidth} L ${arrowTipX},${tY} L ${arrowBaseX},${tY + halfArrowWidth} L ${arrowNotchX},${tY} Z`;
+
+    return { path, arrow };
   };
 
   if (links.length === 0) return null;
@@ -159,8 +191,9 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
 
         if (!source || !target) return null;
 
-        const pathD = createPath(link);
-        const arrowD = createArrow(link);
+        const geometry = createGeometry(link);
+        const pathD = geometry.path;
+        const arrowD = geometry.arrow;
 
         if (!pathD || !arrowD) return null;
 

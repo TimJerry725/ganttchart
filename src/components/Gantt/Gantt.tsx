@@ -14,11 +14,11 @@ import { createBaseline } from './features/baselineUtils';
 import * as ExportUtils from './features/ExportUtils';
 import { applyFilters } from './features/filterUtils';
 import type { FilterOptions } from './features/filterUtils';
-import type { Task, Link, TaskReorderMeta } from './types';
+import type { DateInput, Task, TaskInput, Link, TaskReorderMeta, OnHoldPeriodInput, TaskSegmentInput } from './types';
 import './gantt.css';
 
 export interface GanttProps {
-  tasks: Task[];
+  tasks: TaskInput[];
   links?: Link[];
   config?: Partial<GanttConfig>;
   uiConfig?: Partial<GanttUIConfig>;
@@ -52,6 +52,114 @@ export interface GanttProps {
   endDateFormat?: string;
   baselines?: Map<string, Baseline>;
 }
+
+const MS_IN_DAY = 24 * 60 * 60 * 1000;
+
+const toDate = (value: DateInput | undefined, fallback: Date): Date => {
+  if (value instanceof Date) {
+    const cloned = new Date(value.getTime());
+    return Number.isNaN(cloned.getTime()) ? new Date(fallback.getTime()) : cloned;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    const parsed = new Date(value);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed;
+    }
+  }
+  return new Date(fallback.getTime());
+};
+
+const toNumber = (value: number | string | undefined, fallback: number): number => {
+  if (value === undefined || value === null || value === '') return fallback;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeOnHoldPeriods = (
+  periods: OnHoldPeriodInput[] | undefined,
+  taskStart: Date,
+  taskEnd: Date
+): Array<{ start: Date; end: Date }> | undefined => {
+  if (!Array.isArray(periods) || periods.length === 0) return undefined;
+
+  return periods
+    .map((period) => {
+      const start = toDate(period?.start, taskStart);
+      const endRaw = toDate(period?.end, taskEnd);
+      const end = endRaw.getTime() < start.getTime() ? start : endRaw;
+      return { start, end };
+    })
+    .filter((period) => period.end.getTime() >= period.start.getTime());
+};
+
+const normalizeSegments = (
+  segments: TaskSegmentInput[] | undefined,
+  taskStart: Date,
+  taskEnd: Date
+): Task['segments'] => {
+  if (!Array.isArray(segments)) return undefined;
+
+  return segments
+    .map((segment) => {
+      const start = toDate(segment?.start, taskStart);
+      const endRaw = toDate(segment?.end, taskEnd);
+      const end = endRaw.getTime() < start.getTime() ? start : endRaw;
+      const derivedDuration = Math.max(Math.ceil((end.getTime() - start.getTime()) / MS_IN_DAY), 0);
+      return {
+        start,
+        end,
+        duration: toNumber(segment?.duration, derivedDuration),
+      };
+    })
+    .filter((segment) => segment.end.getTime() >= segment.start.getTime());
+};
+
+const normalizeTaskInput = (task: TaskInput): Task => {
+  const now = new Date();
+  const start = toDate(task.start, now);
+  const endRaw = toDate(task.end, start);
+  const end = endRaw.getTime() < start.getTime() ? start : endRaw;
+  const derivedDuration = Math.max(Math.ceil((end.getTime() - start.getTime()) / MS_IN_DAY), 0);
+
+  const rawDependencies = task.dependencies;
+  let dependencies: string[] | undefined;
+  if (Array.isArray(rawDependencies)) {
+    dependencies = rawDependencies.map((dependencyId) => String(dependencyId));
+  } else if (typeof rawDependencies === 'string') {
+    dependencies = rawDependencies.split(',').map((value) => value.trim()).filter(Boolean);
+  }
+
+  const onHoldPeriods = normalizeOnHoldPeriods(task.onHoldPeriods ?? task.on_hold_periods, start, end);
+
+  return {
+    id: String(task.id),
+    text: task.text || task.name || task.title || `Task ${String(task.id)}`,
+    start,
+    end,
+    duration: toNumber(task.duration, derivedDuration),
+    progress: Math.max(0, Math.min(100, toNumber(task.progress, 0))),
+    type: task.type,
+    parent: task.parent !== undefined && task.parent !== null && String(task.parent).length > 0
+      ? String(task.parent)
+      : undefined,
+    open: task.open,
+    color: task.color,
+    details: task.details,
+    owner: task.owner,
+    priority: task.priority,
+    status: task.status,
+    onHoldPeriods,
+    dependencies,
+    segments: normalizeSegments(task.segments, start, end),
+    sequence_id: task.sequence_id,
+    stage_id: task.stage_id,
+  };
+};
+
+const normalizeTaskInputs = (tasks: TaskInput[]): Task[] => {
+  if (!Array.isArray(tasks)) return [];
+  return tasks.map(normalizeTaskInput);
+};
 
 const getDefaultColumns = (uiConfig?: Partial<GanttUIConfig>): Column[] => [
   { name: 'index', label: '', width: 40, align: 'center' },
@@ -207,7 +315,7 @@ export const Gantt: React.FC<GanttProps> = ({
     return vars as React.CSSProperties;
   }, [styleConfig]);
   // Defensive checks
-  const safeTasks = Array.isArray(initialTasks) ? initialTasks : [];
+  const safeTasks = React.useMemo(() => normalizeTaskInputs(initialTasks), [initialTasks]);
   const safeLinks = Array.isArray(initialLinks) ? initialLinks : [];
   // Undo/Redo system
   const {
@@ -280,7 +388,7 @@ export const Gantt: React.FC<GanttProps> = ({
     readonly: false,
     editable: true,
     taskHeight: 28,
-    rowHeight: 44,
+    rowHeight: 48,
     scaleHeight: 28,
     columnWidth: 80,
     minColumnWidth: 60,
@@ -501,7 +609,7 @@ export const Gantt: React.FC<GanttProps> = ({
         cancelAnimationFrame(mouseMoveTimeoutRef.current);
       }
       mouseMoveTimeoutRef.current = requestAnimationFrame(() => {
-        const rowHeight = ganttConfig.rowHeight || 44;
+        const rowHeight = ganttConfig.rowHeight || 48;
         const gridBody = gridContainerRef.current?.querySelector('.gantt-grid-body');
         if (!gridBody || filteredTasks.length === 0) {
           setDropIndicator(null);
@@ -694,6 +802,11 @@ export const Gantt: React.FC<GanttProps> = ({
     minHeight: config.containerMinHeight || '400px',
   };
 
+  // Keep rendered row height in sync with all drag/link position calculations
+  const layoutCssVars: React.CSSProperties = {
+    '--gantt-row-height': `${ganttConfig.rowHeight || 48}px`,
+  } as React.CSSProperties;
+
   // Apply grid width if specified
   const gridWidthStyle = config.gridWidth ? { '--gantt-grid-width': config.gridWidth } as React.CSSProperties : {};
 
@@ -711,7 +824,7 @@ export const Gantt: React.FC<GanttProps> = ({
       <div
         className={`gantt-container theme-${ganttConfig.theme}`}
         ref={containerRef}
-        style={gridWidthStyle}
+        style={{ ...gridWidthStyle, ...layoutCssVars }}
       >
         <Toolbar
           zoomLevel={zoomLevel}
