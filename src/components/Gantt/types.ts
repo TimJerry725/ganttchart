@@ -58,12 +58,15 @@ export interface TaskInput extends Omit<Task, 'id' | 'text' | 'start' | 'end' | 
   title?: string;
   taskName?: string;
   task_name?: string;
+  workGroupName?: string;       // API alias: task name field
   start?: DateInput;
   end?: DateInput;
   startDate?: DateInput;
   start_date?: DateInput;
   endDate?: DateInput;
   end_date?: DateInput;
+  plannedStartDate?: DateInput; // API alias: task bar start date
+  plannedEndDate?: DateInput;   // API alias: task bar end date
   plannedStart?: DateInput;
   plannedEnd?: DateInput;
   planned_start?: DateInput;

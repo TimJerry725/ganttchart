@@ -37,6 +37,7 @@ export interface GanttProps {
   iconConfig?: Partial<GanttIconConfig>; // Custom icons
   taskTooltipConfig?: Partial<TaskTooltipConfig>;
   onHoldPeriods?: OnHoldPeriodInput[]; // Project-level on-hold periods that affect all tasks
+  on_hold_periods?: OnHoldPeriodInput[]; // Snake_case alias for API compatibility
   onTaskUpdate?: (task: Task, reorderMeta?: TaskReorderMeta) => void;
   onTaskDragUpdate?: (payload: TaskDragUpdatePayload) => void | Promise<void>;
   onTaskCreate?: (task: Task) => void;
@@ -175,8 +176,16 @@ const normalizeSegments = (
 
 const normalizeTaskInput = (task: TaskInput): Task => {
   const now = new Date();
-  const start = toDate(task.start ?? task.startDate ?? task.start_date, now);
-  const endRaw = toDate(task.end ?? task.endDate ?? task.end_date, start);
+  // Support API field names: plannedStartDate/plannedEndDate as the task bar dates
+  // when no explicit start/end/start_date fields are present.
+  const start = toDate(
+    task.start ?? task.startDate ?? task.start_date ?? task.plannedStartDate,
+    now
+  );
+  const endRaw = toDate(
+    task.end ?? task.endDate ?? task.end_date ?? task.plannedEndDate,
+    start
+  );
   const end = endRaw.getTime() < start.getTime() ? start : endRaw;
   const plannedStart = toDate(task.plannedStart ?? task.planned_start ?? task.planned_start_date, start);
   const plannedEndRaw = toDate(task.plannedEnd ?? task.planned_end ?? task.planned_end_date, end);
@@ -199,7 +208,8 @@ const normalizeTaskInput = (task: TaskInput): Task => {
   return {
     id: String(task.id),
     rawId: task.id,
-    text: task.text || task.name || task.title || task.taskName || task.task_name || `Task ${String(task.id)}`,
+    // Support API field name: workGroupName as the task display name
+    text: task.text || task.name || task.title || task.taskName || task.task_name || task.workGroupName || `Task ${String(task.id)}`,
     start,
     end,
     plannedStart,
@@ -504,7 +514,8 @@ export const Gantt: React.FC<GanttProps> = ({
   styleConfig = {},
   iconConfig = {},
   taskTooltipConfig = {},
-  onHoldPeriods: projectHoldPeriodsInput,
+  onHoldPeriods,
+  on_hold_periods,
   onTaskUpdate,
   onTaskDragUpdate,
   onTaskCreate,
@@ -559,17 +570,18 @@ export const Gantt: React.FC<GanttProps> = ({
 
     return vars as React.CSSProperties;
   }, [styleConfig]);
-  // Normalize project-level on-hold periods
+  // Normalize project-level on-hold periods (supports both camelCase and snake_case props)
   const normalizedProjectHolds = React.useMemo(() => {
+    const projectHoldPeriodsInput = onHoldPeriods ?? on_hold_periods;
     if (!projectHoldPeriodsInput || projectHoldPeriodsInput.length === 0) return [];
     const now = new Date();
     return projectHoldPeriodsInput
-      .map((p) => ({
+      .map((p: OnHoldPeriodInput) => ({
         start: toDate(p.start, now),
         end: toDate(p.end, now),
       }))
-      .filter((p) => p.end.getTime() > p.start.getTime());
-  }, [projectHoldPeriodsInput]);
+      .filter((p: { start: Date; end: Date }) => p.end.getTime() > p.start.getTime());
+  }, [onHoldPeriods, on_hold_periods]);
 
   // Defensive checks — normalize tasks, then apply project-level hold periods
   const safeTasks = React.useMemo(() => {
@@ -654,7 +666,6 @@ export const Gantt: React.FC<GanttProps> = ({
     minColumnWidth: 60,
     autoSchedule: false,
     criticalPath: false,
-    baselines: true, // Always enabled
     weekends: true,
     holidays: [],
     theme: currentTheme,
@@ -682,6 +693,9 @@ export const Gantt: React.FC<GanttProps> = ({
     projectStartLineMarkerSize: config.projectStartLineMarkerSize || 8, // Marker size in pixels
     projectStartLineMarkerStyle: config.projectStartLineMarkerStyle || 'triangle', // Marker style
     ...config,
+    // IMPORTANT: Re-apply baselines after spread so undefined from config doesn't override the default.
+    // baselines should always be true unless the user explicitly passes false.
+    baselines: config.baselines !== false,
   };
 
   // Update filtered tasks when filters or tasks change

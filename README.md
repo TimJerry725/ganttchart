@@ -2,13 +2,31 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.4.3 (Latest)
+## 🆕 Version 1.4.7 (Latest)
 
-### Included Changes
-- **Project-level OnHold applied to all tasks** — The `onHoldPeriods` prop now propagates the grey hatched on-hold bar to **all** task rows including `project`-type tasks. Previously, only child/standalone tasks showed the hold bar; now the entire project hierarchy displays it consistently.
-- **Same-height on-hold bars** — The grey on-hold period bar is now the same height (28px) as the task bar. It no longer appears as a smaller overlay on top of the task bar; instead, both bars sit at the same level with the colored task segments in front and the grey hatched hold area behind.
+### Bug Fixes
+- **OnHold grey lines now render with project API data** — Fixed a bug where on-hold grey bars were not visible when tasks used API field names (`workGroupName`, `plannedStartDate`, `plannedEndDate`). The normalizer now recognises these aliases, so dates are correctly resolved and the hold period overlap is detected.
+
+### New API Field Aliases
+The `tasks` prop now accepts the following additional field names used by common project APIs:
+
+| New alias | Maps to |
+|---|---|
+| `workGroupName` | Task display name |
+| `plannedStartDate` | Task bar start date |
+| `plannedEndDate` | Task bar end date |
+
+## 🔖 Version 1.4.6
+
+### Bug Fixes
+- **Baselines now show by default** — Fixed a critical bug where baselines were not rendering because the `config` spread was overriding the default `baselines: true` with `undefined`. Baselines are now always enabled unless you explicitly pass `config={{ baselines: false }}`.
+- **`on_hold_periods` snake_case prop supported** — The Gantt component now accepts both `onHoldPeriods` (camelCase) and `on_hold_periods` (snake_case) as a top-level prop for project-level on-hold periods. Previously only the camelCase variant was recognized, causing the feature to silently fail for API-style payloads.
+
+### Improvements
+- **Project-level OnHold applied to all tasks** — The `onHoldPeriods` / `on_hold_periods` prop now propagates the grey hatched on-hold bar to **all** task rows including `project`-type tasks. Previously, only child/standalone tasks showed the hold bar; now the entire project hierarchy displays it consistently.
+- **Same-height on-hold bars** — The grey on-hold period bar is now the same height (28px) as the task bar.
 - **Tasks continue after hold period** — When a project resumes after an on-hold period, all affected tasks continue in sequence after the hold, and remaining days are extended automatically.
-- **No hover enlarge/scale effect** — Task bars no longer scale up or brighten on hover. They remain at their original size and appearance, preventing visual overlap with adjacent bars.
+- **No hover enlarge/scale effect** — Task bars no longer scale up or brighten on hover.
 
 ## 🔖 Version 1.4.2
 
@@ -214,8 +232,8 @@ Each task can override the global `taskTooltipConfig` with its own `tooltipConfi
 ```
 
 API-friendly task aliases accepted in `tasks`:
-- Name: `text`, `name`, `title`, `taskName`, `task_name`
-- Timeline dates: `start`, `startDate`, `start_date`, `end`, `endDate`, `end_date`
+- Name: `text`, `name`, `title`, `taskName`, `task_name`, `workGroupName`
+- Timeline dates: `start`, `startDate`, `start_date`, `plannedStartDate`, `end`, `endDate`, `end_date`, `plannedEndDate`
 - Planned dates: `plannedStart`, `planned_start`, `planned_start_date`, `plannedEnd`, `planned_end`, `planned_end_date`
 - Actual dates: `actualStart`, `actual_start`, `actual_start_date`, `actualEnd`, `actual_end`, `actual_end_date`
 - Status: `status`, `currentStatus`, `current_status`
