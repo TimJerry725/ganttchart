@@ -16,6 +16,11 @@ export interface Task {
   text: string;
   start: Date;
   end: Date;
+  /**
+   * API-friendly flag to control whether the task bar shows resize handles.
+   * Defaults to true when omitted.
+   */
+  ShowHandle?: boolean;
   plannedStart?: Date;
   plannedEnd?: Date;
   actualStart?: Date;
@@ -59,6 +64,13 @@ export interface TaskInput extends Omit<Task, 'id' | 'text' | 'start' | 'end' | 
   taskName?: string;
   task_name?: string;
   workGroupName?: string;       // API alias: task name field
+  /**
+   * API-friendly flag to control whether the task bar shows resize handles.
+   * Defaults to true when omitted.
+   */
+  ShowHandle?: boolean;
+  // CamelCase alias
+  showHandle?: boolean;
   start?: DateInput;
   end?: DateInput;
   startDate?: DateInput;
@@ -91,6 +103,10 @@ export interface TaskInput extends Omit<Task, 'id' | 'text' | 'start' | 'end' | 
   current_status?: Task['status'];
   onHoldPeriods?: OnHoldPeriodInput[];
   on_hold_periods?: OnHoldPeriodInput[];
+  // Additional API-friendly aliases for on-hold ranges
+  onHold?: OnHoldPeriodInput[] | OnHoldPeriodInput;
+  on_hold?: OnHoldPeriodInput[] | OnHoldPeriodInput;
+  onhold?: OnHoldPeriodInput[] | OnHoldPeriodInput;
   dependencies?: Array<string | number> | string;
   dependsOn?: Array<string | number> | string;
   depends_on?: Array<string | number> | string;

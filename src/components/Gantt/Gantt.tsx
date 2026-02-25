@@ -38,6 +38,9 @@ export interface GanttProps {
   taskTooltipConfig?: Partial<TaskTooltipConfig>;
   onHoldPeriods?: OnHoldPeriodInput[]; // Project-level on-hold periods that affect all tasks
   on_hold_periods?: OnHoldPeriodInput[]; // Snake_case alias for API compatibility
+  onHold?: OnHoldPeriodInput[] | OnHoldPeriodInput; // Additional API alias
+  on_hold?: OnHoldPeriodInput[] | OnHoldPeriodInput; // Additional API alias
+  onhold?: OnHoldPeriodInput[] | OnHoldPeriodInput; // Additional API alias
   onTaskUpdate?: (task: Task, reorderMeta?: TaskReorderMeta) => void;
   onTaskDragUpdate?: (payload: TaskDragUpdatePayload) => void | Promise<void>;
   onTaskCreate?: (task: Task) => void;
@@ -90,6 +93,25 @@ const toNumber = (value: number | string | undefined, fallback: number): number 
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+type OnHoldInput = OnHoldPeriodInput[] | OnHoldPeriodInput | undefined;
+
+const normalizeOnHoldInput = (periods: OnHoldInput): OnHoldPeriodInput[] => {
+  if (Array.isArray(periods)) {
+    return periods.filter((period) => period !== undefined && period !== null);
+  }
+  return periods ? [periods] : [];
+};
+
+const getFirstOnHoldPeriods = (...candidates: OnHoldInput[]): OnHoldPeriodInput[] => {
+  for (const candidate of candidates) {
+    const normalized = normalizeOnHoldInput(candidate);
+    if (normalized.length > 0) {
+      return normalized;
+    }
+  }
+  return [];
+};
+
 const normalizeDependencies = (
   value: TaskInput['dependencies']
 ): string[] | undefined => {
@@ -127,16 +149,17 @@ const normalizeDependencyRules = (value: TaskInput['dependencyRule'] | TaskInput
 };
 
 const normalizeOnHoldPeriods = (
-  periods: OnHoldPeriodInput[] | undefined,
+  periods: OnHoldInput,
   taskStart: Date,
   taskEnd: Date
 ): Array<{ start: Date; end: Date }> | undefined => {
-  if (!Array.isArray(periods) || periods.length === 0) return undefined;
+  const periodArray = normalizeOnHoldInput(periods);
+  if (periodArray.length === 0) return undefined;
 
   const taskStartMs = taskStart.getTime();
   const taskEndMs = taskEnd.getTime();
 
-  return periods
+  return periodArray
     .map((period) => {
       const rawStart = toDate(period?.start, taskStart);
       const rawEnd = toDate(period?.end, taskEnd);
@@ -203,7 +226,17 @@ const normalizeTaskInput = (task: TaskInput): Task => {
     task.dependency_rule_description
   );
 
-  const onHoldPeriods = normalizeOnHoldPeriods(task.onHoldPeriods ?? task.on_hold_periods, start, end);
+  const onHoldPeriods = normalizeOnHoldPeriods(
+    getFirstOnHoldPeriods(
+      task.onHoldPeriods,
+      task.on_hold_periods,
+      task.onHold,
+      task.on_hold,
+      task.onhold
+    ),
+    start,
+    end
+  );
 
   return {
     id: String(task.id),
@@ -212,6 +245,7 @@ const normalizeTaskInput = (task: TaskInput): Task => {
     text: task.text || task.name || task.title || task.taskName || task.task_name || task.workGroupName || `Task ${String(task.id)}`,
     start,
     end,
+    ShowHandle: task.ShowHandle ?? task.showHandle,
     plannedStart,
     plannedEnd,
     actualStart,
@@ -516,6 +550,9 @@ export const Gantt: React.FC<GanttProps> = ({
   taskTooltipConfig = {},
   onHoldPeriods,
   on_hold_periods,
+  onHold,
+  on_hold,
+  onhold,
   onTaskUpdate,
   onTaskDragUpdate,
   onTaskCreate,
@@ -572,8 +609,14 @@ export const Gantt: React.FC<GanttProps> = ({
   }, [styleConfig]);
   // Normalize project-level on-hold periods (supports both camelCase and snake_case props)
   const normalizedProjectHolds = React.useMemo(() => {
-    const projectHoldPeriodsInput = onHoldPeriods ?? on_hold_periods;
-    if (!projectHoldPeriodsInput || projectHoldPeriodsInput.length === 0) return [];
+    const projectHoldPeriodsInput = getFirstOnHoldPeriods(
+      onHoldPeriods,
+      on_hold_periods,
+      onHold,
+      on_hold,
+      onhold
+    );
+    if (projectHoldPeriodsInput.length === 0) return [];
     const now = new Date();
     return projectHoldPeriodsInput
       .map((p: OnHoldPeriodInput) => ({
@@ -581,7 +624,7 @@ export const Gantt: React.FC<GanttProps> = ({
         end: toDate(p.end, now),
       }))
       .filter((p: { start: Date; end: Date }) => p.end.getTime() > p.start.getTime());
-  }, [onHoldPeriods, on_hold_periods]);
+  }, [onHoldPeriods, on_hold_periods, onHold, on_hold, onhold]);
 
   // Defensive checks — normalize tasks, then apply project-level hold periods
   const safeTasks = React.useMemo(() => {

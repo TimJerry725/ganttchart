@@ -32,6 +32,8 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   dependencyRuleDescriptions = [],
   tooltipConfig,
 }) => {
+  const showHandle = task.ShowHandle !== undefined ? task.ShowHandle : true;
+
   const handleMouseDown = (e: React.MouseEvent, type: 'move' | 'resize-left' | 'resize-right') => {
     if (readonly) return;
     e.preventDefault();
@@ -88,7 +90,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   const renderTaskBarContent = (isSegment = false) => (
     <>
       {/* Resize handle - left */}
-      {!readonly && !isSegment && (
+      {!readonly && showHandle && !isSegment && (
         <div
           className="gantt-task-resize-handle gantt-task-resize-left"
           onMouseDown={(e) => handleMouseDown(e, 'resize-left')}
@@ -115,7 +117,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
       </div>
 
       {/* Resize handle - right */}
-      {!readonly && !isSegment && (
+      {!readonly && showHandle && !isSegment && (
         <div
           className="gantt-task-resize-handle gantt-task-resize-right"
           onMouseDown={(e) => handleMouseDown(e, 'resize-right')}
@@ -264,10 +266,63 @@ export const TaskBar: React.FC<TaskBarProps> = ({
 
   if ((task.segments && task.segments.length > 0) || (task.onHoldPeriods && task.onHoldPeriods.length > 0)) {
     const totalDuration = task.end.getTime() - task.start.getTime();
+    const msInDay = 24 * 60 * 60 * 1000;
 
-    // Fallback to a single segment if no segments provided but we have on-hold periods
-    const effectiveSegments = (task.segments && task.segments.length > 0)
+    const effectiveSegments: TaskSegment[] = (task.segments && task.segments.length > 0)
       ? task.segments
+      : (() => {
+        const holds = (task.onHoldPeriods || [])
+          .map((hold) => ({
+            startMs: Math.max(hold.start.getTime(), task.start.getTime()),
+            endMs: Math.min(hold.end.getTime(), task.end.getTime()),
+          }))
+          .filter((hold) => hold.endMs > hold.startMs)
+          .sort((a, b) => a.startMs - b.startMs);
+
+        if (holds.length === 0) {
+          return [{ start: task.start, end: task.end, duration: task.duration || 0 }];
+        }
+
+        const mergedHolds: Array<{ startMs: number; endMs: number }> = [];
+        holds.forEach((hold) => {
+          const last = mergedHolds[mergedHolds.length - 1];
+          if (!last || hold.startMs > last.endMs) {
+            mergedHolds.push({ ...hold });
+            return;
+          }
+          last.endMs = Math.max(last.endMs, hold.endMs);
+        });
+
+        const segments: TaskSegment[] = [];
+        let cursor = task.start.getTime();
+
+        mergedHolds.forEach((hold) => {
+          if (cursor < hold.startMs) {
+            const segmentDurationMs = hold.startMs - cursor;
+            segments.push({
+              start: new Date(cursor),
+              end: new Date(hold.startMs),
+              duration: Math.max(Math.ceil(segmentDurationMs / msInDay), 0),
+            });
+          }
+          cursor = Math.max(cursor, hold.endMs);
+        });
+
+        if (cursor < task.end.getTime()) {
+          const segmentDurationMs = task.end.getTime() - cursor;
+          segments.push({
+            start: new Date(cursor),
+            end: new Date(task.end.getTime()),
+            duration: Math.max(Math.ceil(segmentDurationMs / msInDay), 0),
+          });
+        }
+
+        return segments;
+      })();
+
+    const hasActiveSegments = effectiveSegments.length > 0;
+    const segmentsToRender = hasActiveSegments
+      ? effectiveSegments
       : [{ start: task.start, end: task.end, duration: task.duration || 0 }];
 
     return (
@@ -295,20 +350,21 @@ export const TaskBar: React.FC<TaskBarProps> = ({
         })}
 
         {/* Render active segments */}
-        {effectiveSegments.map((seg: TaskSegment, i) => (
+        {segmentsToRender.map((seg: TaskSegment, i) => (
           <Tooltip key={`seg-${i}`} title={tooltipContent} mouseEnterDelay={0.5}>
             <div
               className={getTaskBarClass() + ' segment'}
               style={{
                 left: `${totalDuration > 0 ? position.left + (seg.start.getTime() - task.start.getTime()) / totalDuration * position.width : position.left}px`,
                 width: `${totalDuration > 0 ? (seg.end.getTime() - seg.start.getTime()) / totalDuration * position.width : position.width}px`,
-                backgroundColor: task.color || undefined,
+                backgroundColor: hasActiveSegments ? task.color || undefined : 'transparent',
+                boxShadow: hasActiveSegments ? undefined : 'none',
               }}
               onClick={onClick}
               onMouseDown={(e) => handleMouseDown(e, 'move')}
             >
               {/* Show text only in the first segment or if it's the only one */}
-              {renderTaskBarContent(i > 0)}
+              {renderTaskBarContent(i > 0 || !hasActiveSegments)}
             </div>
           </Tooltip>
         ))}

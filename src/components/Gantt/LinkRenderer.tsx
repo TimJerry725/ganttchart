@@ -16,6 +16,38 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
 
   const getTaskById = (id: string): Task | undefined => taskById.get(id);
 
+  const linkLaneInfo = React.useMemo(() => {
+    const outgoingCountByTaskId = new Map<string, number>();
+    const incomingCountByTaskId = new Map<string, number>();
+    const outgoingIndexByLinkId = new Map<string, number>();
+    const incomingIndexByLinkId = new Map<string, number>();
+
+    links.forEach((link) => {
+      outgoingCountByTaskId.set(link.source, (outgoingCountByTaskId.get(link.source) || 0) + 1);
+      incomingCountByTaskId.set(link.target, (incomingCountByTaskId.get(link.target) || 0) + 1);
+    });
+
+    const outgoingSeenByTaskId = new Map<string, number>();
+    const incomingSeenByTaskId = new Map<string, number>();
+
+    links.forEach((link) => {
+      const outIdx = outgoingSeenByTaskId.get(link.source) || 0;
+      outgoingIndexByLinkId.set(link.id, outIdx);
+      outgoingSeenByTaskId.set(link.source, outIdx + 1);
+
+      const inIdx = incomingSeenByTaskId.get(link.target) || 0;
+      incomingIndexByLinkId.set(link.id, inIdx);
+      incomingSeenByTaskId.set(link.target, inIdx + 1);
+    });
+
+    return {
+      outgoingCountByTaskId,
+      incomingCountByTaskId,
+      outgoingIndexByLinkId,
+      incomingIndexByLinkId,
+    };
+  }, [links]);
+
   // Calculate SVG dimensions from all task positions
   const svgDimensions = React.useMemo(() => {
     let maxWidth = 0;
@@ -42,6 +74,12 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     };
   }, [tasks, getTaskPosition]);
 
+  const getEndpointOffset = (index: number, taskHeight: number): number => {
+    const laneGap = Math.max(3, Math.round(taskHeight / 7));
+    const maxOffset = Math.max(2, taskHeight / 2 - 2);
+    return Math.min((index + 1) * laneGap, maxOffset);
+  };
+
   const createGeometry = (link: Link): { path: string; arrow: string } => {
     const source = getTaskById(link.source);
     const target = getTaskById(link.target);
@@ -52,8 +90,19 @@ export const LinkRenderer: React.FC<LinkRendererProps> = ({ links, tasks, getTas
     const tPos = getTaskPosition(target);
 
     // Both source and target Y should be at the exact vertical center of the bar
-    const sY = sPos.top + sPos.height / 2;
-    const tY = tPos.top + tPos.height / 2;
+    const sourceHasBoth = (linkLaneInfo.outgoingCountByTaskId.get(source.id) || 0) > 0
+      && (linkLaneInfo.incomingCountByTaskId.get(source.id) || 0) > 0;
+    const targetHasBoth = (linkLaneInfo.outgoingCountByTaskId.get(target.id) || 0) > 0
+      && (linkLaneInfo.incomingCountByTaskId.get(target.id) || 0) > 0;
+
+    // If a task has both incoming and outgoing links, offset the endpoints so "in" and "out"
+    // don't share the same line on a single bar.
+    const sY = (sPos.top + sPos.height / 2) + (sourceHasBoth
+      ? getEndpointOffset(linkLaneInfo.outgoingIndexByLinkId.get(link.id) || 0, sPos.height)
+      : 0);
+    const tY = (tPos.top + tPos.height / 2) - (targetHasBoth
+      ? getEndpointOffset(linkLaneInfo.incomingIndexByLinkId.get(link.id) || 0, tPos.height)
+      : 0);
 
     const ROUTING = {
       sourceStub: 14,

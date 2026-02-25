@@ -233,6 +233,8 @@ Each task can override the global `taskTooltipConfig` with its own `tooltipConfi
 
 API-friendly task aliases accepted in `tasks`:
 - Name: `text`, `name`, `title`, `taskName`, `task_name`, `workGroupName`
+- Drag/resize handles: `ShowHandle` (boolean), `showHandle` (boolean)
+- OnHold periods: `onHoldPeriods`, `on_hold_periods`, `onHold`, `on_hold`, `onhold`
 - Timeline dates: `start`, `startDate`, `start_date`, `plannedStartDate`, `end`, `endDate`, `end_date`, `plannedEndDate`
 - Planned dates: `plannedStart`, `planned_start`, `planned_start_date`, `plannedEnd`, `planned_end`, `planned_end_date`
 - Actual dates: `actualStart`, `actual_start`, `actual_start_date`, `actualEnd`, `actual_end`, `actual_end_date`
@@ -247,6 +249,11 @@ API-friendly task aliases accepted in `tasks`:
 You can pass paused periods directly inside each task using either:
 - `onHoldPeriods` (camelCase)
 - `on_hold_periods` (snake_case API style)
+- `onHold`, `on_hold`, `onhold` (additional API aliases)
+
+Each alias accepts either:
+- An array of periods: `[{ start, end }, ...]`
+- A single period object: `{ start, end }`
 
 Date values can be `Date`, ISO date string, or timestamp number.
 
