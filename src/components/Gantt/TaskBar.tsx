@@ -266,7 +266,6 @@ export const TaskBar: React.FC<TaskBarProps> = ({
 
   if ((task.segments && task.segments.length > 0) || (task.onHoldPeriods && task.onHoldPeriods.length > 0)) {
     const totalDuration = task.end.getTime() - task.start.getTime();
-    const msInDay = 24 * 60 * 60 * 1000;
 
     const mergedHolds = (task.onHoldPeriods || [])
       .map((hold) => ({
@@ -285,84 +284,13 @@ export const TaskBar: React.FC<TaskBarProps> = ({
         return acc;
       }, []);
 
-    const splitRangeByHolds = (startMs: number, endMs: number): Array<{ startMs: number; endMs: number }> => {
-      if (endMs <= startMs) return [];
-      if (mergedHolds.length === 0) return [{ startMs, endMs }];
-
-      let ranges: Array<{ startMs: number; endMs: number }> = [{ startMs, endMs }];
-
-      mergedHolds.forEach((hold) => {
-        const nextRanges: Array<{ startMs: number; endMs: number }> = [];
-
-        ranges.forEach((range) => {
-          if (hold.endMs <= range.startMs || hold.startMs >= range.endMs) {
-            nextRanges.push(range);
-            return;
-          }
-
-          if (range.startMs < hold.startMs) {
-            nextRanges.push({
-              startMs: range.startMs,
-              endMs: hold.startMs,
-            });
-          }
-
-          if (hold.endMs < range.endMs) {
-            nextRanges.push({
-              startMs: hold.endMs,
-              endMs: range.endMs,
-            });
-          }
-        });
-
-        ranges = nextRanges;
-      });
-
-      return ranges.filter((range) => range.endMs > range.startMs);
-    };
-
-    const baseSegments: TaskSegment[] = (task.segments && task.segments.length > 0)
-      ? task.segments
-      : [{ start: task.start, end: task.end, duration: task.duration || 0 }];
-
-    const effectiveSegments: TaskSegment[] = baseSegments.flatMap((seg) => {
-      const segmentStartMs = Math.max(seg.start.getTime(), task.start.getTime());
-      const segmentEndMs = Math.min(seg.end.getTime(), task.end.getTime());
-
-      return splitRangeByHolds(segmentStartMs, segmentEndMs).map((range) => ({
-        start: new Date(range.startMs),
-        end: new Date(range.endMs),
-        duration: Math.max(Math.ceil((range.endMs - range.startMs) / msInDay), 0),
-      }));
-    });
-
-    const hasActiveSegments = effectiveSegments.length > 0;
-    const segmentsToRender = hasActiveSegments
-      ? effectiveSegments
+    const hasExplicitSegments = Boolean(task.segments && task.segments.length > 0);
+    const segmentsToRender: TaskSegment[] = hasExplicitSegments
+      ? task.segments as TaskSegment[]
       : [{ start: task.start, end: task.end, duration: task.duration || 0 }];
 
     return (
       <div className="gantt-task-group">
-        {/* Render on-hold periods only within the task's date range */}
-        {totalDuration > 0 && mergedHolds.map((hold, i) => {
-          const holdStartMs = hold.startMs;
-          const holdEndMs = hold.endMs;
-          const holdDuration = holdEndMs - holdStartMs;
-          if (holdDuration <= 0) return null;
-          const holdLeft = position.left + ((holdStartMs - task.start.getTime()) / totalDuration) * position.width;
-          const holdWidth = (holdDuration / totalDuration) * position.width;
-          return (
-            <div
-              key={`hold-${i}`}
-              className="gantt-on-hold-period"
-              style={{
-                left: `${holdLeft}px`,
-                width: `${holdWidth}px`,
-              }}
-            />
-          );
-        })}
-
         {/* Render active segments */}
         {segmentsToRender.map((seg: TaskSegment, i) => (
           <Tooltip key={`seg-${i}`} title={tooltipContent} mouseEnterDelay={0.5}>
@@ -371,17 +299,39 @@ export const TaskBar: React.FC<TaskBarProps> = ({
               style={{
                 left: `${totalDuration > 0 ? position.left + (seg.start.getTime() - task.start.getTime()) / totalDuration * position.width : position.left}px`,
                 width: `${totalDuration > 0 ? (seg.end.getTime() - seg.start.getTime()) / totalDuration * position.width : position.width}px`,
-                backgroundColor: hasActiveSegments ? task.color || undefined : 'transparent',
-                boxShadow: hasActiveSegments ? undefined : 'none',
+                backgroundColor: task.color || undefined,
               }}
               onClick={onClick}
               onMouseDown={(e) => handleMouseDown(e, 'move')}
             >
               {/* Show text only in the first segment or if it's the only one */}
-              {renderTaskBarContent(i > 0 || !hasActiveSegments)}
+              {renderTaskBarContent(i > 0)}
             </div>
           </Tooltip>
         ))}
+
+        {/* Render on-hold periods AFTER segments so they overlay on top of any status color */}
+        {totalDuration > 0 && mergedHolds.map((hold, i) => {
+          const holdDuration = hold.endMs - hold.startMs;
+          if (holdDuration <= 0) return null;
+          const holdLeft = position.left + ((hold.startMs - task.start.getTime()) / totalDuration) * position.width;
+          const holdWidth = (holdDuration / totalDuration) * position.width;
+          return (
+            <div
+              key={`hold-${i}`}
+              className="gantt-on-hold-period"
+              style={{
+                left: `${holdLeft}px`,
+                width: `${holdWidth}px`,
+                // z-index 4: above resize handles (3), progress fill (1), content (2)
+                // Always rendered on top regardless of status-* colour
+                zIndex: 4,
+                opacity: hasExplicitSegments ? 0.9 : 0.75,
+                pointerEvents: 'none',
+              }}
+            />
+          );
+        })}
       </div>
     );
   }

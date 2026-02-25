@@ -997,8 +997,8 @@ body.gantt-dragging {
 .gantt-task-bar.segment {
   pointer-events: all;
   z-index: 2;
-  /* Active segments render above on-hold periods (z-index: 0).
-     Only `.gantt-on-hold-period` overlay should show the hatched pattern. */
+  /* On-hold overlay renders AFTER segments in the DOM at z-index 4 (inline)
+     so it always appears on top regardless of status-* colour. */
 }
 
 .gantt-task-bar.segment:hover {
@@ -1021,8 +1021,9 @@ body.gantt-dragging {
       #c0c0c0 10px);
   border-radius: var(--wx-gantt-bar-border-radius);
   opacity: 0.9;
-  z-index: 0;
-  /* Behind task segments */
+  z-index: 4;
+  /* Above task bar content (2), progress (1), resize handles (3).
+     Rendered last in DOM so overlays any status-* background colour. */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 

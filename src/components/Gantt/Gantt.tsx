@@ -318,16 +318,9 @@ const getIntersectingProjectHolds = (
 );
 
 /**
- * Apply project-level on-hold periods to all tasks.
- * For each task that overlaps with a hold period:
- *   - Work before the hold is preserved as a segment
- *   - The hold period itself becomes an onHoldPeriod (hatched area)
- *   - Remaining work resumes immediately after the hold ends
- *   - The task's end date is extended by the overlap duration
- * Tasks with no overlap are returned unchanged.
- * 
- * IMPORTANT: This applies to ALL tasks including project-type tasks,
- * so the on-hold grey bar is visible across the entire project.
+ * Apply project-level on-hold periods as a visual overlay to all intersecting tasks.
+ * This keeps task start/end/duration exactly as provided by API data and avoids
+ * shifting completed tasks after the hold window.
  */
 const applyProjectHoldPeriods = (
   tasks: Task[],
@@ -335,16 +328,12 @@ const applyProjectHoldPeriods = (
 ): Task[] => {
   if (holdPeriods.length === 0) return tasks;
 
-  // Sort hold periods by start date
-  const sortedHolds = [...holdPeriods].sort(
-    (a, b) => a.start.getTime() - b.start.getTime()
-  );
+  const mergedProjectHolds = mergeHoldPeriods(holdPeriods);
 
   return tasks.map((task) => {
     const taskStartMs = task.start.getTime();
     const taskEndMs = task.end.getTime();
-    const workToDo = taskEndMs - taskStartMs;
-    const taskHoldOverlaps = getIntersectingProjectHolds(taskStartMs, taskEndMs, sortedHolds);
+    const taskHoldOverlaps = getIntersectingProjectHolds(taskStartMs, taskEndMs, mergedProjectHolds);
 
     if (taskHoldOverlaps.length === 0) {
       return task;
@@ -353,114 +342,9 @@ const applyProjectHoldPeriods = (
     const existingTaskHolds = task.onHoldPeriods || [];
     const mergedTaskHolds = mergeHoldPeriods([...existingTaskHolds, ...taskHoldOverlaps]);
 
-    // If task already has explicit segments or on-hold periods,
-    // preserve its schedule and just merge-in project-level hold overlays.
-    if (
-      (task.segments && task.segments.length > 0) ||
-      (task.onHoldPeriods && task.onHoldPeriods.length > 0)
-    ) {
-      return {
-        ...task,
-        onHoldPeriods: mergedTaskHolds,
-      };
-    }
-
-    // Handle zero-duration tasks (milestones): shift past the hold if they fall inside one
-    if (workToDo <= 0) {
-      for (const hold of taskHoldOverlaps) {
-        if (
-          taskStartMs >= hold.start.getTime() &&
-          taskStartMs < hold.end.getTime()
-        ) {
-          return {
-            ...task,
-            start: new Date(hold.end.getTime()),
-            end: new Date(hold.end.getTime()),
-          };
-        }
-      }
-      return task;
-    }
-
-    // Walk the timeline, building segments (work periods) and hold gaps
-    let cursor = taskStartMs;
-    let workDone = 0;
-    let holdIdx = 0;
-    const segments: NonNullable<Task['segments']> = [];
-    const taskHolds: Array<{ start: Date; end: Date }> = [];
-
-    while (workDone < workToDo) {
-      // Skip hold periods that have already ended relative to the cursor
-      while (
-        holdIdx < taskHoldOverlaps.length &&
-        taskHoldOverlaps[holdIdx].end.getTime() <= cursor
-      ) {
-        holdIdx++;
-      }
-
-      if (holdIdx < taskHoldOverlaps.length) {
-        const hold = taskHoldOverlaps[holdIdx];
-        const holdStartMs = hold.start.getTime();
-        const holdEndMs = hold.end.getTime();
-
-        if (cursor < holdStartMs) {
-          // There's work time available before the next hold
-          const available = holdStartMs - cursor;
-          const work = Math.min(available, workToDo - workDone);
-          segments.push({
-            start: new Date(cursor),
-            end: new Date(cursor + work),
-            duration: Math.ceil(work / MS_IN_DAY),
-          });
-          workDone += work;
-          cursor += work;
-
-          if (workDone >= workToDo) break;
-
-          // Now at the hold boundary — record the hold and skip past it
-          taskHolds.push({
-            start: new Date(holdStartMs),
-            end: new Date(holdEndMs),
-          });
-          cursor = holdEndMs;
-          holdIdx++;
-        } else {
-          // Cursor is inside the hold period — record it and jump past
-          taskHolds.push({
-            start: new Date(cursor),
-            end: new Date(holdEndMs),
-          });
-          cursor = holdEndMs;
-          holdIdx++;
-        }
-      } else {
-        // No more holds ahead — finish the remaining work
-        const remaining = workToDo - workDone;
-        segments.push({
-          start: new Date(cursor),
-          end: new Date(cursor + remaining),
-          duration: Math.ceil(remaining / MS_IN_DAY),
-        });
-        workDone = workToDo;
-      }
-    }
-
-    // If no hold periods overlapped with this task, return unchanged
-    if (taskHolds.length === 0) return task;
-
-    // New end date is the end of the last segment
-    const newEnd =
-      segments.length > 0 ? segments[segments.length - 1].end : task.end;
-
     return {
       ...task,
-      end: newEnd,
-      duration: Math.max(
-        Math.ceil((newEnd.getTime() - taskStartMs) / MS_IN_DAY),
-        0
-      ),
-      segments,
-      onHoldPeriods: mergeHoldPeriods([...mergedTaskHolds, ...taskHolds]),
+      onHoldPeriods: mergedTaskHolds,
     };
   });
 };

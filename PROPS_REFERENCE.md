@@ -1,6 +1,6 @@
 # Iris Gantt Props and Types Reference
 
-Version: `1.4.8`  
+Version: `1.4.10`  
 Scope: Public props/types exported from:
 - `src/components/Gantt/Gantt.tsx`
 - `src/components/Gantt/types.ts`
