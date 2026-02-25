@@ -265,6 +265,7 @@ export const TaskBar: React.FC<TaskBarProps> = ({
   );
 
   if ((task.segments && task.segments.length > 0) || (task.onHoldPeriods && task.onHoldPeriods.length > 0)) {
+    console.log("[TaskBar] " + task.text + " onHold:", task.onHoldPeriods);
     const totalDuration = task.end.getTime() - task.start.getTime();
 
     const mergedHolds = (task.onHoldPeriods || [])
@@ -311,11 +312,12 @@ export const TaskBar: React.FC<TaskBarProps> = ({
         ))}
 
         {/* Render on-hold periods AFTER segments so they overlay on top of any status color */}
-        {totalDuration > 0 && mergedHolds.map((hold, i) => {
+        {mergedHolds.map((hold, i) => {
+          const effectiveDuration = totalDuration > 0 ? totalDuration : 86400000;
           const holdDuration = hold.endMs - hold.startMs;
           if (holdDuration <= 0) return null;
-          const holdLeft = position.left + ((hold.startMs - task.start.getTime()) / totalDuration) * position.width;
-          const holdWidth = (holdDuration / totalDuration) * position.width;
+          const holdLeft = position.left + ((hold.startMs - task.start.getTime()) / effectiveDuration) * position.width;
+          const holdWidth = (holdDuration / effectiveDuration) * position.width;
           return (
             <div
               key={`hold-${i}`}
