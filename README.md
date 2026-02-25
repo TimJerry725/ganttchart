@@ -125,6 +125,7 @@ function MyGantt() {
 
 - **[Complete Usage Guide](./USAGE.md)** - Comprehensive documentation with all props and examples
 - **[API Reference](./USAGE.md#api-reference)** - Full TypeScript API
+- **[Props and Types Reference](./PROPS_REFERENCE.md)** - Complete prop/type list from exported interfaces
 - **[Responsive Design Guide](./RESPONSIVE_STYLING.md)** - How to make it responsive and match your project styles
 - **[Customization Guide](./CUSTOMIZATION_GUIDE.md)** - Advanced customization options
 
