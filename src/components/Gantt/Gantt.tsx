@@ -304,21 +304,17 @@ const mergeHoldPeriods = (
   return merged;
 };
 
-const getOverlappingHoldPeriods = (
+const getIntersectingProjectHolds = (
   taskStartMs: number,
   taskEndMs: number,
   holdPeriods: Array<{ start: Date; end: Date }>
 ): Array<{ start: Date; end: Date }> => (
   holdPeriods
-    .map((hold) => {
-      const overlapStartMs = Math.max(taskStartMs, hold.start.getTime());
-      const overlapEndMs = Math.min(taskEndMs, hold.end.getTime());
-      return {
-        start: new Date(overlapStartMs),
-        end: new Date(overlapEndMs),
-      };
-    })
-    .filter((period) => period.end.getTime() > period.start.getTime())
+    .filter((hold) => taskEndMs > hold.start.getTime() && taskStartMs < hold.end.getTime())
+    .map((hold) => ({
+      start: new Date(hold.start.getTime()),
+      end: new Date(hold.end.getTime()),
+    }))
 );
 
 /**
@@ -348,7 +344,7 @@ const applyProjectHoldPeriods = (
     const taskStartMs = task.start.getTime();
     const taskEndMs = task.end.getTime();
     const workToDo = taskEndMs - taskStartMs;
-    const taskHoldOverlaps = getOverlappingHoldPeriods(taskStartMs, taskEndMs, sortedHolds);
+    const taskHoldOverlaps = getIntersectingProjectHolds(taskStartMs, taskEndMs, sortedHolds);
 
     if (taskHoldOverlaps.length === 0) {
       return task;
