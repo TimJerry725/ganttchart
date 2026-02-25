@@ -268,57 +268,73 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     const totalDuration = task.end.getTime() - task.start.getTime();
     const msInDay = 24 * 60 * 60 * 1000;
 
-    const effectiveSegments: TaskSegment[] = (task.segments && task.segments.length > 0)
-      ? task.segments
-      : (() => {
-        const holds = (task.onHoldPeriods || [])
-          .map((hold) => ({
-            startMs: Math.max(hold.start.getTime(), task.start.getTime()),
-            endMs: Math.min(hold.end.getTime(), task.end.getTime()),
-          }))
-          .filter((hold) => hold.endMs > hold.startMs)
-          .sort((a, b) => a.startMs - b.startMs);
-
-        if (holds.length === 0) {
-          return [{ start: task.start, end: task.end, duration: task.duration || 0 }];
+    const mergedHolds = (task.onHoldPeriods || [])
+      .map((hold) => ({
+        startMs: Math.max(hold.start.getTime(), task.start.getTime()),
+        endMs: Math.min(hold.end.getTime(), task.end.getTime()),
+      }))
+      .filter((hold) => hold.endMs > hold.startMs)
+      .sort((a, b) => a.startMs - b.startMs)
+      .reduce<Array<{ startMs: number; endMs: number }>>((acc, hold) => {
+        const last = acc[acc.length - 1];
+        if (!last || hold.startMs > last.endMs) {
+          acc.push({ ...hold });
+          return acc;
         }
+        last.endMs = Math.max(last.endMs, hold.endMs);
+        return acc;
+      }, []);
 
-        const mergedHolds: Array<{ startMs: number; endMs: number }> = [];
-        holds.forEach((hold) => {
-          const last = mergedHolds[mergedHolds.length - 1];
-          if (!last || hold.startMs > last.endMs) {
-            mergedHolds.push({ ...hold });
+    const splitRangeByHolds = (startMs: number, endMs: number): Array<{ startMs: number; endMs: number }> => {
+      if (endMs <= startMs) return [];
+      if (mergedHolds.length === 0) return [{ startMs, endMs }];
+
+      let ranges: Array<{ startMs: number; endMs: number }> = [{ startMs, endMs }];
+
+      mergedHolds.forEach((hold) => {
+        const nextRanges: Array<{ startMs: number; endMs: number }> = [];
+
+        ranges.forEach((range) => {
+          if (hold.endMs <= range.startMs || hold.startMs >= range.endMs) {
+            nextRanges.push(range);
             return;
           }
-          last.endMs = Math.max(last.endMs, hold.endMs);
-        });
 
-        const segments: TaskSegment[] = [];
-        let cursor = task.start.getTime();
-
-        mergedHolds.forEach((hold) => {
-          if (cursor < hold.startMs) {
-            const segmentDurationMs = hold.startMs - cursor;
-            segments.push({
-              start: new Date(cursor),
-              end: new Date(hold.startMs),
-              duration: Math.max(Math.ceil(segmentDurationMs / msInDay), 0),
+          if (range.startMs < hold.startMs) {
+            nextRanges.push({
+              startMs: range.startMs,
+              endMs: hold.startMs,
             });
           }
-          cursor = Math.max(cursor, hold.endMs);
+
+          if (hold.endMs < range.endMs) {
+            nextRanges.push({
+              startMs: hold.endMs,
+              endMs: range.endMs,
+            });
+          }
         });
 
-        if (cursor < task.end.getTime()) {
-          const segmentDurationMs = task.end.getTime() - cursor;
-          segments.push({
-            start: new Date(cursor),
-            end: new Date(task.end.getTime()),
-            duration: Math.max(Math.ceil(segmentDurationMs / msInDay), 0),
-          });
-        }
+        ranges = nextRanges;
+      });
 
-        return segments;
-      })();
+      return ranges.filter((range) => range.endMs > range.startMs);
+    };
+
+    const baseSegments: TaskSegment[] = (task.segments && task.segments.length > 0)
+      ? task.segments
+      : [{ start: task.start, end: task.end, duration: task.duration || 0 }];
+
+    const effectiveSegments: TaskSegment[] = baseSegments.flatMap((seg) => {
+      const segmentStartMs = Math.max(seg.start.getTime(), task.start.getTime());
+      const segmentEndMs = Math.min(seg.end.getTime(), task.end.getTime());
+
+      return splitRangeByHolds(segmentStartMs, segmentEndMs).map((range) => ({
+        start: new Date(range.startMs),
+        end: new Date(range.endMs),
+        duration: Math.max(Math.ceil((range.endMs - range.startMs) / msInDay), 0),
+      }));
+    });
 
     const hasActiveSegments = effectiveSegments.length > 0;
     const segmentsToRender = hasActiveSegments
@@ -328,12 +344,10 @@ export const TaskBar: React.FC<TaskBarProps> = ({
     return (
       <div className="gantt-task-group">
         {/* Render on-hold periods only within the task's date range */}
-        {totalDuration > 0 && task.onHoldPeriods?.map((hold, i) => {
-          // Clamp hold period to task boundaries for rendering
-          const holdStartMs = Math.max(hold.start.getTime(), task.start.getTime());
-          const holdEndMs = Math.min(hold.end.getTime(), task.end.getTime());
+        {totalDuration > 0 && mergedHolds.map((hold, i) => {
+          const holdStartMs = hold.startMs;
+          const holdEndMs = hold.endMs;
           const holdDuration = holdEndMs - holdStartMs;
-          // Skip if the on-hold period doesn't overlap with the task range
           if (holdDuration <= 0) return null;
           const holdLeft = position.left + ((holdStartMs - task.start.getTime()) / totalDuration) * position.width;
           const holdWidth = (holdDuration / totalDuration) * position.width;
