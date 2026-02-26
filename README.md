@@ -2,9 +2,11 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.4.10 (Latest)
+## 🆕 Version 1.5.0 (Latest)
 
 ### Bug Fixes
+- **On-Hold correctly renders over completed tasks** — The grey hatched on-hold overlay now correctly sits *above* the task bar in the DOM tree. Previously, the `status-completed` blue background colour overrode it.
+- **On-Hold overlay stays visible on hover** — Raised the CSS `z-index` of `.gantt-on-hold-period` to `101 !important`. The task bar hover state elevates to `z-index: 100`, so the hold pattern will no longer disappear when you mouse over a task.
 
 - **OnHold grey lines now render with project API data** — Fixed a bug where on-hold grey bars were not visible when tasks used API field names (`workGroupName`, `plannedStartDate`, `plannedEndDate`). The normalizer now recognises these aliases, so dates are correctly resolved and the hold period overlap is detected.
 

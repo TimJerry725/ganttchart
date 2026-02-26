@@ -325,9 +325,9 @@ export const TaskBar: React.FC<TaskBarProps> = ({
               style={{
                 left: `${holdLeft}px`,
                 width: `${holdWidth}px`,
-                // z-index 4: above resize handles (3), progress fill (1), content (2)
+                // z-index 101: above hover state (100)
                 // Always rendered on top regardless of status-* colour
-                zIndex: 4,
+                zIndex: 101,
                 opacity: hasExplicitSegments ? 0.9 : 0.75,
                 pointerEvents: 'none',
               }}

@@ -1021,30 +1021,26 @@ body.gantt-dragging {
   top: 50%;
   transform: translateY(-50%);
   background-color: #d9d9d9;
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 5px,
-    #c0c0c0 5px,
-    #c0c0c0 10px
-  );
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 5px,
+      #c0c0c0 5px,
+      #c0c0c0 10px);
   border-radius: var(--wx-gantt-bar-border-radius);
   opacity: 0.9;
-  z-index: 4;
-  /* Above task bar content (2), progress (1), resize handles (3).
+  z-index: 101 !important;
+  /* Above task bar content (2), progress (1), resize handles (3), and hover state (100).
      Rendered last in DOM so overlays any status-* background colour. */
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .theme-dark .gantt-on-hold-period {
   background-color: #4a4a4a;
-  background-image: repeating-linear-gradient(
-    45deg,
-    transparent,
-    transparent 5px,
-    #5f6368 5px,
-    #5f6368 10px
-  );
+  background-image: repeating-linear-gradient(45deg,
+      transparent,
+      transparent 5px,
+      #5f6368 5px,
+      #5f6368 10px);
 }
 
 /* Modern Scrollbar Styling */
@@ -2267,7 +2263,9 @@ h6,
 }
 
 /* High DPI displays */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
   .gantt-grid,
   .gantt-timeline-container {
     border-width: 0.5px;
@@ -2296,6 +2294,7 @@ h6,
 
 /* Print styles */
 @media print {
+
   .gantt-toolbar,
   .gantt-filter-container {
     display: none;
@@ -2323,6 +2322,7 @@ h6,
 
 /* Accessibility: Reduced motion */
 @media (prefers-reduced-motion: reduce) {
+
   .gantt-grid,
   .gantt-toolbar button,
   .gantt-grid-row,
