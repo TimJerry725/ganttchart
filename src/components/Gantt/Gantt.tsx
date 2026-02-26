@@ -957,6 +957,10 @@ export const Gantt: React.FC<GanttProps> = ({
   // Baselines represent the original plan and should NOT change when tasks are moved/resized
   // Only create baselines for tasks that don't have one yet
   useEffect(() => {
+    if (externalBaselines && externalBaselines.size > 0) {
+      return; // Do not auto-generate if baselines are fully managed externally
+    }
+
     const newBaselines = new Map(baselines);
     let hasNewBaselines = false;
 
@@ -965,8 +969,8 @@ export const Gantt: React.FC<GanttProps> = ({
       if (!baselines.has(task.id)) {
         newBaselines.set(task.id, {
           taskId: task.id,
-          start: new Date(task.start), // Capture original start date
-          end: new Date(task.end), // Capture original end date
+          start: new Date(task.plannedStart ?? task.start), // Use planned dates if available
+          end: new Date(task.plannedEnd ?? task.end), // Use planned dates if available
         });
         hasNewBaselines = true;
       }
@@ -986,7 +990,7 @@ export const Gantt: React.FC<GanttProps> = ({
       setBaselines(newBaselines);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tasks]); // Only depend on tasks, not baselines to avoid loops
+  }, [tasks, externalBaselines]); // Only depend on tasks, not baselines to avoid loops
 
   // Keyboard shortcuts
   useEffect(() => {

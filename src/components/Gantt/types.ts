@@ -42,6 +42,7 @@ export interface Task {
   sequence_id?: number;
   stage_id?: string | null;
   tooltipConfig?: Partial<TaskTooltipConfig>;
+  hideBar?: boolean;
 }
 
 export interface TaskSegment {

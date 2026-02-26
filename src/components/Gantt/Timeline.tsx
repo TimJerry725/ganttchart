@@ -720,23 +720,25 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                     )}
 
                     {/* Main task bar */}
-                    <TaskBar
-                      task={task}
-                      baseline={baseline}
-                      dependencyRuleDescriptions={dependencyRulesByTargetId.get(task.id) || []}
-                      tooltipConfig={taskTooltipConfig}
-                      position={position}
-                      selected={selectedTask === task.id}
-                      dragging={dragState.taskId === task.id}
-                      dragDeltaX={dragState.dragDeltaX}
-                      dragType={dragState.type}
-                      onClick={() => onTaskClick(task.id)}
-                      onDragStart={(clientX, clientY, type) => {
-                        handleDragStart(task.id, clientX, clientY, type);
-                        onTaskDragStart(task.id, clientX, clientY);
-                      }}
-                      readonly={config.readonly}
-                    />
+                    {!task.hideBar && (
+                      <TaskBar
+                        task={task}
+                        baseline={baseline}
+                        dependencyRuleDescriptions={dependencyRulesByTargetId.get(task.id) || []}
+                        tooltipConfig={taskTooltipConfig}
+                        position={position}
+                        selected={selectedTask === task.id}
+                        dragging={dragState.taskId === task.id}
+                        dragDeltaX={dragState.dragDeltaX}
+                        dragType={dragState.type}
+                        onClick={() => onTaskClick(task.id)}
+                        onDragStart={(clientX, clientY, type) => {
+                          handleDragStart(task.id, clientX, clientY, type);
+                          onTaskDragStart(task.id, clientX, clientY);
+                        }}
+                        readonly={config.readonly}
+                      />
+                    )}
                   </div>
                 );
               })}

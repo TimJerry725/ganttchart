@@ -5,24 +5,28 @@ A comprehensive, production-ready Gantt chart component built with React and Typ
 ## 🆕 Version 1.4.10 (Latest)
 
 ### Bug Fixes
+
 - **OnHold grey lines now render with project API data** — Fixed a bug where on-hold grey bars were not visible when tasks used API field names (`workGroupName`, `plannedStartDate`, `plannedEndDate`). The normalizer now recognises these aliases, so dates are correctly resolved and the hold period overlap is detected.
 
 ### New API Field Aliases
+
 The `tasks` prop now accepts the following additional field names used by common project APIs:
 
-| New alias | Maps to |
-|---|---|
-| `workGroupName` | Task display name |
+| New alias          | Maps to             |
+| ------------------ | ------------------- |
+| `workGroupName`    | Task display name   |
 | `plannedStartDate` | Task bar start date |
-| `plannedEndDate` | Task bar end date |
+| `plannedEndDate`   | Task bar end date   |
 
 ## 🔖 Version 1.4.6
 
 ### Bug Fixes
+
 - **Baselines now show by default** — Fixed a critical bug where baselines were not rendering because the `config` spread was overriding the default `baselines: true` with `undefined`. Baselines are now always enabled unless you explicitly pass `config={{ baselines: false }}`.
 - **`on_hold_periods` snake_case prop supported** — The Gantt component now accepts both `onHoldPeriods` (camelCase) and `on_hold_periods` (snake_case) as a top-level prop for project-level on-hold periods. Previously only the camelCase variant was recognized, causing the feature to silently fail for API-style payloads.
 
 ### Improvements
+
 - **Project-level OnHold applied to all tasks** — The `onHoldPeriods` / `on_hold_periods` prop now propagates the grey hatched on-hold bar to **all** task rows including `project`-type tasks. Previously, only child/standalone tasks showed the hold bar; now the entire project hierarchy displays it consistently.
 - **Same-height on-hold bars** — The grey on-hold period bar is now the same height (28px) as the task bar.
 - **Tasks continue after hold period** — When a project resumes after an on-hold period, all affected tasks continue in sequence after the hold, and remaining days are extended automatically.
@@ -31,6 +35,7 @@ The `tasks` prop now accepts the following additional field names used by common
 ## 🔖 Version 1.4.2
 
 ### Included Changes
+
 - **Per-task tooltip config** — Each task can now carry its own `tooltipConfig` to override global tooltip settings (show/hide fields, labels, accessors, formatters).
 - **Unified `onTaskDragUpdate` callback** — Single callback for all drag operations: task bar move/resize AND row reorder (grip icon drag-and-drop).
 - **Row reorder API integration** — `onTaskDragUpdate` now fires with `dragType: 'reorder'` and `reorderMeta` (sequence IDs, stage ID) when tasks are reordered via grip icon.
@@ -51,6 +56,7 @@ The `tasks` prop now accepts the following additional field names used by common
 ## ✨ Features
 
 ### Core Features
+
 - ✅ Interactive task management
 - ✅ Drag & drop task bars
 - ✅ Task dependencies with 4 link types (end-to-start, start-to-start, end-to-end, start-to-end)
@@ -61,6 +67,7 @@ The `tasks` prop now accepts the following additional field names used by common
 - ✅ Light & dark themes
 
 ### Advanced Features
+
 - ✅ Auto-scheduling
 - ✅ Critical path analysis
 - ✅ **Baselines (always visible, automatically created)**
@@ -69,7 +76,8 @@ The `tasks` prop now accepts the following additional field names used by common
 - ✅ Filtering & search
 - ✅ Resource leveling
 - ✅ **Fully responsive** (desktop, tablet, mobile)
-- ✅ **Fully customizable** (all text, buttons, colors, fonts)
+- ✅ **Fully customizable** (all text, buttons, colors, fonts, icons)
+- ✅ **Vertical Marker Lines** (Today & Project Start)
 
 ## 📦 Installation
 
@@ -93,31 +101,31 @@ npm install @fortawesome/react-fontawesome@^3.1.0
 ## 🚀 Quick Start
 
 ```tsx
-import { Gantt } from 'iris-gantt'
-import 'iris-gantt/gantt.css'
+import { Gantt } from "iris-gantt";
+import "iris-gantt/gantt.css";
 
 function MyGantt() {
   const tasks = [
     {
-      id: '1',
-      text: 'Project Planning',
+      id: "1",
+      text: "Project Planning",
       start: new Date(2024, 0, 1),
       end: new Date(2024, 0, 15),
       duration: 14,
       progress: 100,
-      type: 'project',
+      type: "project",
     },
     {
-      id: '2',
-      text: 'Development',
+      id: "2",
+      text: "Development",
       start: new Date(2024, 0, 15),
       end: new Date(2024, 1, 15),
       duration: 31,
       progress: 60,
     },
-  ]
+  ];
 
-  return <Gantt tasks={tasks} />
+  return <Gantt tasks={tasks} />;
 }
 ```
 
@@ -133,19 +141,25 @@ function MyGantt() {
 
 ```tsx
 // Main component (named import - recommended)
-import { Gantt } from 'iris-gantt'
+import { Gantt } from "iris-gantt";
 
 // Main component (default import - also works)
-import Gantt from 'iris-gantt'
+import Gantt from "iris-gantt";
 
 // Types
 import type {
-  Task, Link, GanttConfig, GanttUIConfig, GanttStyleConfig,
-  TaskTooltipConfig, TaskDragUpdatePayload, TaskReorderMeta,
-} from 'iris-gantt'
+  Task,
+  Link,
+  GanttConfig,
+  GanttUIConfig,
+  GanttStyleConfig,
+  TaskTooltipConfig,
+  TaskDragUpdatePayload,
+  TaskReorderMeta,
+} from "iris-gantt";
 
 // CSS (required!)
-import 'iris-gantt/gantt.css'
+import "iris-gantt/gantt.css";
 ```
 
 ## 🔧 Basic Configuration
@@ -155,12 +169,68 @@ import 'iris-gantt/gantt.css'
   tasks={tasks}
   links={links}
   config={{
-    theme: 'light',
+    theme: "light",
     weekends: true,
-    containerHeight: '100%',
-    containerMinHeight: '400px',
+    containerHeight: "100%",
+    containerMinHeight: "400px",
   }}
-  onTaskUpdate={(task) => console.log('Updated:', task)}
+  onTaskUpdate={(task) => console.log("Updated:", task)}
+/>
+```
+
+## 📍 Vertical Marker Lines
+
+The Gantt chart supports vertical indicator lines for the current date (Today) and the project start date. Both are enabled by default and come with customizable markers and labels.
+
+```tsx
+<Gantt
+  tasks={tasks}
+  config={{
+    // Today Line
+    showTodayLine: true,
+    todayLineColor: "#ff4d4f",
+    todayLineLabel: "Today",
+    todayLineStyle: "solid", // 'solid' | 'dashed' | 'dotted'
+    todayLineWidth: 1,
+    todayLineOpacity: 1,
+    showTodayLineMarker: true, // Triangle marker at the top
+    todayLineMarkerStyle: "triangle", // 'triangle' | 'arrow' | 'dot'
+
+    // Project Start Line
+    showProjectStartLine: true,
+    projectStartDate: new Date(2024, 0, 1), // Optional: defaults to earliest task
+    projectStartLineColor: "#40a9ff",
+    projectStartLineLabel: "Kick-off",
+    projectStartLineStyle: "dashed",
+    showProjectStartLineMarker: true,
+  }}
+/>
+```
+
+## 🎨 Custom Icons
+
+You can replace any UI icon by passing a React component or a string (for font-icon classes) to the `iconConfig` prop. This allows you to match your project's icon library (e.g., Ant Design, Lucide, FontAwesome).
+
+```tsx
+<Gantt
+  tasks={tasks}
+  iconConfig={{
+    // Toolbar
+    addTask: <PlusCircleOutlined />, // React node
+    zoomIn: "fas fa-search-plus", // Font-icon string
+    zoomOut: "fas fa-search-minus",
+    exportPDF: <FilePdfOutlined />,
+
+    // Grid
+    gripVertical: <HolderOutlined />,
+    chevronRight: <RightOutlined />,
+    chevronDown: <DownOutlined />,
+
+    // Context Menu
+    edit: <EditOutlined />,
+    delete: <DeleteOutlined />,
+    copy: <CopyOutlined />,
+  }}
 />
 ```
 
@@ -178,17 +248,18 @@ All task hover fields are configurable via props and can be mapped from API valu
     showStatus: true,
     showDependencyRule: true,
     showProgress: true,
-    plannedLabel: 'Planned start/end',
-    actualLabel: 'Actual start/end',
-    statusLabel: 'Current status',
-    dependencyRuleLabel: 'Dependency rule',
-    progressLabel: 'Progress',
-    ownerLabel: 'Owner',
-    dateFormat: 'MMM D, YYYY',
+    plannedLabel: "Planned start/end",
+    actualLabel: "Actual start/end",
+    statusLabel: "Current status",
+    dependencyRuleLabel: "Dependency rule",
+    progressLabel: "Progress",
+    ownerLabel: "Owner",
+    dateFormat: "MMM D, YYYY",
     taskNameAccessor: (task) => task.text,
     statusAccessor: (task) => task.status,
     progressAccessor: (task) => task.progress,
-    dependencyRuleAccessor: (task, generatedRules) => task.dependencyRule || generatedRules,
+    dependencyRuleAccessor: (task, generatedRules) =>
+      task.dependencyRule || generatedRules,
   }}
 />
 ```
@@ -202,9 +273,9 @@ Each task can override the global `taskTooltipConfig` with its own `tooltipConfi
   tasks={[
     {
       id: 1,
-      text: 'Task with custom tooltip',
-      start: '2026-01-01',
-      end: '2026-01-10',
+      text: "Task with custom tooltip",
+      start: "2026-01-01",
+      end: "2026-01-10",
       duration: 9,
       progress: 50,
       tooltipConfig: {
@@ -212,7 +283,8 @@ Each task can override the global `taskTooltipConfig` with its own `tooltipConfi
         showDependencyRule: false,
         showProgress: true,
         showActualDates: true,
-        plannedStartAccessor: (task) => customDataMap.get(task.id)?.plannedStart,
+        plannedStartAccessor: (task) =>
+          customDataMap.get(task.id)?.plannedStart,
         plannedEndAccessor: (task) => customDataMap.get(task.id)?.plannedEnd,
         actualStartAccessor: (task) => customDataMap.get(task.id)?.actualStart,
         actualEndAccessor: (task) => customDataMap.get(task.id)?.actualEnd,
@@ -220,9 +292,9 @@ Each task can override the global `taskTooltipConfig` with its own `tooltipConfi
     },
     {
       id: 2,
-      text: 'Task using global tooltip config',
-      start: '2026-01-05',
-      end: '2026-01-15',
+      text: "Task using global tooltip config",
+      start: "2026-01-05",
+      end: "2026-01-15",
       duration: 10,
       progress: 30,
       // No tooltipConfig — uses global taskTooltipConfig
@@ -233,6 +305,7 @@ Each task can override the global `taskTooltipConfig` with its own `tooltipConfi
 ```
 
 API-friendly task aliases accepted in `tasks`:
+
 - Name: `text`, `name`, `title`, `taskName`, `task_name`, `workGroupName`
 - Drag/resize handles: `ShowHandle` (boolean), `showHandle` (boolean)
 - OnHold periods: `onHoldPeriods`, `on_hold_periods`, `onHold`, `on_hold`, `onhold`
@@ -248,11 +321,13 @@ API-friendly task aliases accepted in `tasks`:
 ## ⏸️ OnHold In `tasks` Props
 
 You can pass paused periods directly inside each task using either:
+
 - `onHoldPeriods` (camelCase)
 - `on_hold_periods` (snake_case API style)
 - `onHold`, `on_hold`, `onhold` (additional API aliases)
 
 Each alias accepts either:
+
 - An array of periods: `[{ start, end }, ...]`
 - A single period object: `{ start, end }`
 
@@ -263,14 +338,14 @@ Date values can be `Date`, ISO date string, or timestamp number.
   tasks={[
     {
       id: 1,
-      text: 'Development',
-      start: '2026-02-01',
-      end: '2026-02-20',
+      text: "Development",
+      start: "2026-02-01",
+      end: "2026-02-20",
       duration: 19,
       progress: 45,
       on_hold_periods: [
-        { start: '2026-02-06', end: '2026-02-09' },
-        { start: '2026-02-12', end: '2026-02-13' },
+        { start: "2026-02-06", end: "2026-02-09" },
+        { start: "2026-02-12", end: "2026-02-13" },
       ],
     },
   ]}
@@ -286,16 +361,16 @@ Date values can be `Date`, ISO date string, or timestamp number.
   tasks={tasks}
   uiConfig={{
     // Header
-    headerTitle: 'My Project Gantt',
+    headerTitle: "My Project Gantt",
     showHeader: true,
-    
+
     // Toolbar Buttons
     showAddTaskButton: true,
     showZoomButtons: true,
     showExportButtons: true,
     showFilterSearch: true,
-    addTaskButtonText: 'Add New Task',
-    
+    addTaskButtonText: "Add New Task",
+
     // All labels, placeholders, tooltips are configurable
     // See USAGE.md for complete list
   }}
@@ -309,17 +384,17 @@ Date values can be `Date`, ISO date string, or timestamp number.
   tasks={tasks}
   styleConfig={{
     // Colors - Match your brand
-    primary: '#37a9ef',
-    success: '#77d257',
-    warning: '#fcba2e',
-    danger: '#fe6158',
-    background: '#ffffff',
-    fontColor: '#333333',
-    
+    primary: "#37a9ef",
+    success: "#77d257",
+    warning: "#fcba2e",
+    danger: "#fe6158",
+    background: "#ffffff",
+    fontColor: "#333333",
+
     // Fonts - Use your project fonts
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '14px',
-    
+    fontFamily: "Inter, sans-serif",
+    fontSize: "14px",
+
     // See USAGE.md for complete list
   }}
 />
@@ -332,11 +407,11 @@ Date values can be `Date`, ISO date string, or timestamp number.
   tasks={tasks}
   config={{
     // Responsive container
-    containerHeight: '100%',
-    containerMinHeight: '400px',
-    
+    containerHeight: "100%",
+    containerMinHeight: "400px",
+
     // Responsive grid width
-    gridWidth: 'clamp(280px, 30vw, 720px)', // Adapts to viewport
+    gridWidth: "clamp(280px, 30vw, 720px)", // Adapts to viewport
   }}
 />
 ```
@@ -350,10 +425,10 @@ Date values can be `Date`, ISO date string, or timestamp number.
   --wx-gantt-primary: #your-brand-color;
   --wx-gantt-background: var(--your-bg-color);
   --wx-gantt-font-color: var(--your-text-color);
-  
+
   /* Use your project fonts */
-  --wx-gantt-font-family: 'Your Font', sans-serif;
-  
+  --wx-gantt-font-family: "Your Font", sans-serif;
+
   /* Responsive sizing */
   --gantt-grid-width: clamp(280px, 30vw, 720px);
 }
@@ -362,6 +437,7 @@ Date values can be `Date`, ISO date string, or timestamp number.
 ## 📱 Responsive
 
 The component is fully responsive and adapts to:
+
 - ✅ Desktop (1024px+)
 - ✅ Tablet (768px - 1024px)
 - ✅ Mobile Landscape (480px - 768px)
@@ -394,12 +470,12 @@ A single callback for **all** drag operations: task bar move/resize AND row reor
     // task.rawId preserves the original API ID (before string normalization)
     const taskId = task.rawId ?? task.id;
 
-    if (dragType === 'reorder' && reorderMeta) {
+    if (dragType === "reorder" && reorderMeta) {
       // Row reorder — task was dragged to a new position via grip icon
       await api.reorderTask(taskId, {
         current_sequence_id: reorderMeta.currentSequenceId,
         target_sequence_id: reorderMeta.targetSequenceId,
-        target_stage_id: reorderMeta.targetStageId,  // parent task ID or null for root
+        target_stage_id: reorderMeta.targetStageId, // parent task ID or null for root
       });
     } else {
       // Task bar drag — move or resize on the timeline
@@ -419,12 +495,12 @@ A single callback for **all** drag operations: task bar move/resize AND row reor
 
 **`TaskDragUpdatePayload` fields:**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `task` | `Task` | The updated task (after drag/reorder) |
-| `previousTask` | `Task` | The task state before the operation |
-| `dragType` | `'move' \| 'resize-left' \| 'resize-right' \| 'reorder'` | What kind of drag was performed |
-| `reorderMeta` | `TaskReorderMeta \| undefined` | Only present for `'reorder'` — contains `currentSequenceId`, `targetSequenceId`, `targetStageId` |
+| Field          | Type                                                     | Description                                                                                      |
+| -------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `task`         | `Task`                                                   | The updated task (after drag/reorder)                                                            |
+| `previousTask` | `Task`                                                   | The task state before the operation                                                              |
+| `dragType`     | `'move' \| 'resize-left' \| 'resize-right' \| 'reorder'` | What kind of drag was performed                                                                  |
+| `reorderMeta`  | `TaskReorderMeta \| undefined`                           | Only present for `'reorder'` — contains `currentSequenceId`, `targetSequenceId`, `targetStageId` |
 
 ### Other Event Handlers
 
@@ -456,10 +532,11 @@ A single callback for **all** drag operations: task bar move/resize AND row reor
 If you get: `Module not found: Error: Package path ./dist/gantt.css is not exported`
 
 **Solution:**
+
 ```tsx
-import 'iris-gantt/gantt.css'
+import "iris-gantt/gantt.css";
 // or
-import 'iris-gantt/dist/gantt.css'
+import "iris-gantt/dist/gantt.css";
 ```
 
 ### Default Import Error
@@ -467,9 +544,10 @@ import 'iris-gantt/dist/gantt.css'
 If you get: `export 'default' was not found`
 
 **Solution:**
+
 ```tsx
 // Use named import instead
-import { Gantt } from 'iris-gantt'
+import { Gantt } from "iris-gantt";
 ```
 
 ### Runtime Error: recentlyCreatedOwnerStacks
@@ -477,6 +555,7 @@ import { Gantt } from 'iris-gantt'
 This is a **cached code issue** in your project, not the package.
 
 **Solution:**
+
 ```bash
 # In your project directory
 rm -rf node_modules package-lock.json .next .cache dist build
@@ -488,69 +567,69 @@ npm start
 ## 📖 Complete Example
 
 ```tsx
-import React, { useState } from 'react'
-import { Gantt } from 'iris-gantt'
-import 'iris-gantt/gantt.css'
-import type { Task, Link } from 'iris-gantt'
+import React, { useState } from "react";
+import { Gantt } from "iris-gantt";
+import "iris-gantt/gantt.css";
+import type { Task, Link } from "iris-gantt";
 
 function ProjectGantt() {
   const [tasks, setTasks] = useState<Task[]>([
     {
-      id: '1',
-      text: 'Project Planning',
+      id: "1",
+      text: "Project Planning",
       start: new Date(2024, 0, 1),
       end: new Date(2024, 0, 15),
       duration: 14,
       progress: 100,
-      type: 'project',
+      type: "project",
     },
-  ])
+  ]);
 
   const [links, setLinks] = useState<Link[]>([
-    { id: 'l1', source: '1', target: '2', type: 'e2s' },
-  ])
+    { id: "l1", source: "1", target: "2", type: "e2s" },
+  ]);
 
   return (
-    <div style={{ width: '100%', height: '100vh' }}>
+    <div style={{ width: "100%", height: "100vh" }}>
       <Gantt
         tasks={tasks}
         links={links}
         config={{
-          theme: 'light',
+          theme: "light",
           weekends: true,
-          containerHeight: '100%',
-          containerMinHeight: '500px',
-          gridWidth: 'clamp(300px, 35vw, 800px)',
+          containerHeight: "100%",
+          containerMinHeight: "500px",
+          gridWidth: "clamp(300px, 35vw, 800px)",
         }}
         uiConfig={{
-          headerTitle: 'My Project Timeline',
-          addTaskButtonText: 'New Task',
+          headerTitle: "My Project Timeline",
+          addTaskButtonText: "New Task",
         }}
         styleConfig={{
-          primary: '#6366f1',
-          fontFamily: 'Inter, sans-serif',
+          primary: "#6366f1",
+          fontFamily: "Inter, sans-serif",
         }}
         onTaskUpdate={(task) => {
-          setTasks(tasks.map(t => t.id === task.id ? task : t))
+          setTasks(tasks.map((t) => (t.id === task.id ? task : t)));
         }}
         onTaskCreate={(task) => {
-          setTasks([...tasks, task])
+          setTasks([...tasks, task]);
         }}
         onTaskDelete={(taskId) => {
-          setTasks(tasks.filter(t => t.id !== taskId))
+          setTasks(tasks.filter((t) => t.id !== taskId));
         }}
         onLinkCreate={(link) => {
-          setLinks([...links, link])
+          setLinks([...links, link]);
         }}
         onLinkDelete={(linkId) => {
-          setLinks(links.filter(l => l.id !== linkId))
+          setLinks(links.filter((l) => l.id !== linkId));
         }}
       />
     </div>
-  )
+  );
 }
 
-export default ProjectGantt
+export default ProjectGantt;
 ```
 
 ## 📝 TypeScript Support
