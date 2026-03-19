@@ -10,6 +10,9 @@ A comprehensive, production-ready Gantt chart component built with React and Typ
 
 - **OnHold grey lines now render with project API data** — Fixed a bug where on-hold grey bars were not visible when tasks used API field names (`workGroupName`, `plannedStartDate`, `plannedEndDate`). The normalizer now recognises these aliases, so dates are correctly resolved and the hold period overlap is detected.
 
+### Improvements
+- **Prop-driven day/week/month timeline switcher** — You can now expose a calendar view switcher in the toolbar and control the available `day`, `week`, and `month` views through props.
+
 ### New API Field Aliases
 
 The `tasks` prop now accepts the following additional field names used by common project APIs:
@@ -175,8 +178,52 @@ import "iris-gantt/gantt.css";
     weekends: true,
     containerHeight: "100%",
     containerMinHeight: "400px",
+    timelineView: "day",
+    timelineViews: ["day", "week", "month"],
+  }}
+  uiConfig={{
+    timelineViewLabels: {
+      day: "Days",
+      week: "Weeks",
+      month: "Months",
+    },
   }}
   onTaskUpdate={(task) => console.log("Updated:", task)}
+/>
+```
+
+## View Switcher
+
+Use the toolbar switcher to toggle the calendar between day, week, and month views.
+
+```tsx
+<Gantt
+  tasks={tasks}
+  config={{
+    timelineView: "week",
+    timelineViews: ["day", "week", "month"],
+    timelineViewScales: {
+      day: [
+        { unit: "month", step: 1, format: "MMM YYYY" },
+        { unit: "day", step: 1, format: "D" },
+      ],
+      week: [
+        { unit: "month", step: 1, format: "MMM YYYY" },
+        { unit: "week", step: 1, format: "Week W" },
+      ],
+      month: [
+        { unit: "year", step: 1, format: "YYYY" },
+        { unit: "month", step: 1, format: "MMM" },
+      ],
+    },
+  }}
+  uiConfig={{
+    timelineViewLabels: {
+      day: "Days",
+      week: "Weeks",
+      month: "Months",
+    },
+  }}
 />
 ```
 

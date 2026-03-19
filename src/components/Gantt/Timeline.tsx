@@ -5,6 +5,76 @@ import { LinkRenderer } from './LinkRenderer';
 import { useDragDrop } from './DragDrop';
 import { addToDate, formatDate, isWeekend, isHoliday, getStartOfDay } from './utils/dateUtils';
 
+type TimelineHeaderCell = {
+  key: string;
+  label: string;
+  width: number;
+  date?: Date;
+};
+
+const getWeekOfMonth = (date: Date): number => {
+  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+  return Math.ceil((date.getDate() + firstDayOfMonth.getDay()) / 7);
+};
+
+const getQuarter = (date: Date): number => Math.floor(date.getMonth() / 3) + 1;
+
+const formatScaleLabel = (date: Date, scale: Scale, fallback: string): string => {
+  if (scale.unit === 'week') {
+    if (scale.format?.includes('W')) {
+      return scale.format.replace(/\bW\b/g, String(getWeekOfMonth(date)));
+    }
+    return `Week ${getWeekOfMonth(date)}`;
+  }
+
+  if (scale.unit === 'quarter') {
+    if (scale.format?.includes('Q')) {
+      return scale.format.replace(/\bQ\b/g, String(getQuarter(date)));
+    }
+    return `Q${getQuarter(date)}`;
+  }
+
+  return formatDate(date, scale.format || fallback);
+};
+
+const getScaleBucketStart = (date: Date, scale: Scale): Date => {
+  const normalized = new Date(date);
+  normalized.setMinutes(0, 0, 0);
+
+  switch (scale.unit) {
+    case 'hour': {
+      const hour = normalized.getHours() - (normalized.getHours() % scale.step);
+      normalized.setHours(hour);
+      return normalized;
+    }
+    case 'day': {
+      const dayStart = getStartOfDay(normalized);
+      const day = dayStart.getDate();
+      const bucketDay = day - ((day - 1) % scale.step);
+      return new Date(dayStart.getFullYear(), dayStart.getMonth(), bucketDay);
+    }
+    case 'week': {
+      const dayStart = getStartOfDay(normalized);
+      const weekStart = new Date(dayStart);
+      weekStart.setDate(dayStart.getDate() - dayStart.getDay());
+      return weekStart;
+    }
+    case 'month': {
+      return new Date(normalized.getFullYear(), normalized.getMonth() - (normalized.getMonth() % scale.step), 1);
+    }
+    case 'quarter': {
+      const quarterStartMonth = Math.floor(normalized.getMonth() / 3) * 3;
+      return new Date(normalized.getFullYear(), quarterStartMonth, 1);
+    }
+    case 'year': {
+      const year = normalized.getFullYear() - (normalized.getFullYear() % scale.step);
+      return new Date(year, 0, 1);
+    }
+    default:
+      return getStartOfDay(normalized);
+  }
+};
+
 interface TimelineProps {
   tasks: Task[];
   links: Link[];
@@ -92,8 +162,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       localTasks,
       onTaskUpdate,
       columnWidth,
-      scales[1].unit,
-      scales[1].step
+      (scales[1] || scales[0]).unit,
+      (scales[1] || scales[0]).step
     );
 
     // Update local tasks when props change - use shallow comparison for performance
@@ -120,7 +190,17 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       while (currentDate <= range.end) {
         cells.push({
           date: new Date(currentDate),
-          label: formatDate(currentDate, scale.format || 'D'),
+          label: formatScaleLabel(
+            currentDate,
+            scale,
+            scale.unit === 'year'
+              ? 'YYYY'
+              : scale.unit === 'month'
+                ? 'MMM'
+                : scale.unit === 'hour'
+                  ? 'HH'
+                  : 'D'
+          ),
         });
         currentDate = addToDate(currentDate, scale.step, scale.unit);
       }
@@ -128,24 +208,39 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       return cells;
     }, [range.start, range.end]);
 
+    const secondaryScale = scales[1] || scales[0];
+    const secondaryCells = React.useMemo(() => generateCells(secondaryScale), [generateCells, secondaryScale]);
+    const showBaselineOnlyRows = allowBaselineOnlyMode && localTasks.length === 0 && showBaselines;
+    const hasTimelineViewFeature = Boolean(config.timelineView) || Boolean(config.timelineViews?.length);
+    const headerLabelOffsetRows = hasTimelineViewFeature ? Math.max(scales.length - 1, 0) : 2;
+
     const getPixelPosition = React.useCallback((date: Date) => {
-      const scale = scales[1]; // secondary scale
-      const startMs = range.start.getTime();
+      if (secondaryCells.length === 0) return 0;
+
       const dateMs = date.getTime();
-      const diffMs = dateMs - startMs;
+      const lastIndex = secondaryCells.length - 1;
 
-      const unitMsMap: Record<string, number> = {
-        'hour': 3600000,
-        'day': 86400000,
-        'week': 604800000,
-        'month': 2592000000,
-        'quarter': 7776000000,
-        'year': 31536000000
-      };
+      for (let index = 0; index <= lastIndex; index++) {
+        const cell = secondaryCells[index];
+        const cellStart = cell.date.getTime();
+        const nextCellDate = index < lastIndex
+          ? secondaryCells[index + 1].date
+          : addToDate(cell.date, secondaryScale.step, secondaryScale.unit);
+        const cellEnd = nextCellDate.getTime();
+        const safeDuration = Math.max(cellEnd - cellStart, 1);
 
-      const unitMs = unitMsMap[scale.unit] || 86400000;
-      return (diffMs / (unitMs * scale.step)) * columnWidth;
-    }, [scales, range.start, columnWidth]);
+        if (dateMs < cellStart) {
+          return index * columnWidth;
+        }
+
+        if (dateMs <= cellEnd) {
+          const ratio = Math.max(0, Math.min((dateMs - cellStart) / safeDuration, 1));
+          return (index + ratio) * columnWidth;
+        }
+      }
+
+      return secondaryCells.length * columnWidth;
+    }, [secondaryCells, secondaryScale, columnWidth]);
 
     const getTaskPosition = (task: Task) => {
       const left = getPixelPosition(task.start);
@@ -219,9 +314,67 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       }
     }, [dragState, localTasks, handleDragEnd, onTaskDragEnd]);
 
-    const secondaryScale = scales[1];
-    const secondaryCells = React.useMemo(() => generateCells(secondaryScale), [generateCells, secondaryScale]);
-    const showBaselineOnlyRows = allowBaselineOnlyMode && localTasks.length === 0 && showBaselines;
+    const buildGroupedHeaderCells = React.useCallback((scale: Scale) => {
+      const cells: TimelineHeaderCell[] = [];
+      let currentKey = '';
+      let currentLabel = '';
+      let currentWidth = 0;
+
+      secondaryCells.forEach((cell) => {
+        const bucketStart = getScaleBucketStart(cell.date, scale);
+        const key = bucketStart.toISOString();
+        const fallback = scale.unit === 'year'
+          ? 'YYYY'
+          : scale.unit === 'month'
+            ? 'MMM YYYY'
+            : scale.unit === 'day'
+              ? 'MMM D'
+              : 'D';
+        const label = formatScaleLabel(bucketStart, scale, fallback);
+
+        if (key !== currentKey) {
+          if (currentKey) {
+            cells.push({ key: currentKey, label: currentLabel, width: currentWidth });
+          }
+          currentKey = key;
+          currentLabel = label;
+          currentWidth = columnWidth;
+        } else {
+          currentWidth += columnWidth;
+        }
+      });
+
+      if (currentKey) {
+        cells.push({ key: currentKey, label: currentLabel, width: currentWidth });
+      }
+
+      return cells;
+    }, [secondaryCells, columnWidth]);
+
+    const dynamicHeaderRows = React.useMemo(() => {
+      if (!hasTimelineViewFeature) return [] as TimelineHeaderCell[][];
+
+      const rows: TimelineHeaderCell[][] = [];
+      const primaryScales = scales.slice(0, -1);
+
+      primaryScales.forEach((scale) => {
+        const groupedCells = buildGroupedHeaderCells(scale);
+        if (groupedCells.length > 0) {
+          rows.push(groupedCells);
+        }
+      });
+
+      rows.push(
+        secondaryCells.map((cell, index) => ({
+          key: `secondary-${index}`,
+          label: cell.label,
+          width: columnWidth,
+          date: cell.date,
+        }))
+      );
+
+      return rows;
+    }, [buildGroupedHeaderCells, columnWidth, hasTimelineViewFeature, scales, secondaryCells]);
 
     // Group cells for the top header (Month/Year) - memoized
     const generateTopHeaderCells = React.useCallback(() => {
@@ -335,6 +488,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       }
       return null;
     }, [config.showProjectStartLine, projectStartDate, totalWidth, columnWidth, getPixelPosition]);
+    const labelTopOffset = `calc(var(--gantt-scale-height, 24px) * ${headerLabelOffsetRows})`;
 
     return (
       <div
@@ -351,7 +505,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
               className="gantt-today-line-label"
               style={{
                 position: 'absolute',
-                top: `calc(var(--gantt-scale-height, 24px) * 2)`, // Position at the start of the day row (after month and range rows)
+                top: labelTopOffset,
                 left: `${todayPosition}px`,
                 transform: 'translateX(-50%)',
                 backgroundColor: config.todayLineColor || '#ff4d4f',
@@ -377,7 +531,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
               className="gantt-project-start-line-label"
               style={{
                 position: 'absolute',
-                top: `calc(var(--gantt-scale-height, 24px) * 2)`, // Position at the start of the day row (after month and range rows)
+                top: labelTopOffset,
                 left: `${projectStartPosition}px`,
                 transform: 'translateX(-50%)',
                 backgroundColor: config.projectStartLineColor || '#40a9ff',
@@ -398,62 +552,103 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
             </div>
           )}
 
-          {/* Level 1: Month/Year */}
-          <div className="gantt-timeline-scale gantt-timeline-scale-month" style={{ width: totalWidth }}>
-            {topHeaderCells.map((cell, index) => (
-              <div
-                key={`top-${index}`}
-                className="gantt-timeline-cell"
-                style={{
-                  width: cell.width,
-                  minWidth: cell.width,
-                  maxWidth: cell.width,
-                  borderRight: index === topHeaderCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
-                }}
-              >
-                {cell.label}
-              </div>
-            ))}
-          </div>
-          {/* Level 2: 15-day range */}
-          <div className="gantt-timeline-scale gantt-timeline-scale-range" style={{ width: totalWidth }}>
-            {middleHeaderCells.map((cell, index) => (
-              <div
-                key={`mid-${index}`}
-                className="gantt-timeline-cell"
-                style={{
-                  width: cell.width,
-                  minWidth: cell.width,
-                  maxWidth: cell.width,
-                  borderRight: index === middleHeaderCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
-                }}
-              >
-                {cell.label}
-              </div>
-            ))}
-          </div>
-          {/* Level 3: Individual Days */}
-          <div className="gantt-timeline-scale gantt-timeline-scale-day" style={{ width: totalWidth }}>
-            {secondaryCells.map((cell, index) => {
-              const isWeekendDay = config.weekends && isWeekend(cell.date);
-              const isHolidayDay = config.holidays && isHoliday(cell.date, config.holidays);
+          {hasTimelineViewFeature ? (
+            dynamicHeaderRows.map((row, rowIndex) => {
+              const scaleClass = rowIndex === 0
+                ? 'gantt-timeline-scale-month'
+                : rowIndex === dynamicHeaderRows.length - 1
+                  ? 'gantt-timeline-scale-day'
+                  : 'gantt-timeline-scale-range';
 
               return (
                 <div
-                  key={`day-${index}`}
-                  className={`gantt-timeline-cell ${isWeekendDay ? 'weekend' : ''} ${isHolidayDay ? 'holiday' : ''}`}
-                  style={{
-                    width: columnWidth,
-                    minWidth: columnWidth,
-                    maxWidth: columnWidth,
-                    borderRight: index === secondaryCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
-                  }}
+                  key={`dynamic-row-${rowIndex}`}
+                  className={`gantt-timeline-scale ${scaleClass}`}
+                  style={{ width: totalWidth }}
                 >
-                  {cell.label}
+                  {row.map((cell, index) => {
+                    const isBottomRow = rowIndex === dynamicHeaderRows.length - 1;
+                    const isWeekendDay = isBottomRow && cell.date ? config.weekends && isWeekend(cell.date) : false;
+                    const isHolidayDay = isBottomRow && cell.date ? config.holidays && isHoliday(cell.date, config.holidays) : false;
+
+                    return (
+                      <div
+                        key={cell.key}
+                        className={`gantt-timeline-cell ${isWeekendDay ? 'weekend' : ''} ${isHolidayDay ? 'holiday' : ''}`}
+                        style={{
+                          width: cell.width,
+                          minWidth: cell.width,
+                          maxWidth: cell.width,
+                          borderRight: index === row.length - 1 ? 'none' : 'var(--wx-gantt-border)'
+                        }}
+                      >
+                        {cell.label}
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })}
-          </div>
+            })
+          ) : (
+            <>
+              {/* Level 1: Month/Year */}
+              <div className="gantt-timeline-scale gantt-timeline-scale-month" style={{ width: totalWidth }}>
+                {topHeaderCells.map((cell, index) => (
+                  <div
+                    key={`top-${index}`}
+                    className="gantt-timeline-cell"
+                    style={{
+                      width: cell.width,
+                      minWidth: cell.width,
+                      maxWidth: cell.width,
+                      borderRight: index === topHeaderCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
+                    }}
+                  >
+                    {cell.label}
+                  </div>
+                ))}
+              </div>
+              {/* Level 2: 15-day range */}
+              <div className="gantt-timeline-scale gantt-timeline-scale-range" style={{ width: totalWidth }}>
+                {middleHeaderCells.map((cell, index) => (
+                  <div
+                    key={`mid-${index}`}
+                    className="gantt-timeline-cell"
+                    style={{
+                      width: cell.width,
+                      minWidth: cell.width,
+                      maxWidth: cell.width,
+                      borderRight: index === middleHeaderCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
+                    }}
+                  >
+                    {cell.label}
+                  </div>
+                ))}
+              </div>
+              {/* Level 3: Individual Days */}
+              <div className="gantt-timeline-scale gantt-timeline-scale-day" style={{ width: totalWidth }}>
+                {secondaryCells.map((cell, index) => {
+                  const isWeekendDay = config.weekends && isWeekend(cell.date);
+                  const isHolidayDay = config.holidays && isHoliday(cell.date, config.holidays);
+
+                  return (
+                    <div
+                      key={`day-${index}`}
+                      className={`gantt-timeline-cell ${isWeekendDay ? 'weekend' : ''} ${isHolidayDay ? 'holiday' : ''}`}
+                      style={{
+                        width: columnWidth,
+                        minWidth: columnWidth,
+                        maxWidth: columnWidth,
+                        borderRight: index === secondaryCells.length - 1 ? 'none' : 'var(--wx-gantt-border)'
+                      }}
+                    >
+                      {cell.label}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="gantt-timeline-body" style={{ width: totalWidth, position: 'relative' }}>

@@ -100,7 +100,7 @@ const tasks: Task[] = [
  * - `D` - Day of month (1-31)
  * - `DD` - Padded day (01-31)
  * - `HH:mm` - 24-hour time (09:00)
- * - `Week W` - Week number
+ * - `Week W` - Week number within the month
  * - `[Q]Q` - Quarter (Q1, Q2, etc.)
  * 
  * **Common Combinations:**

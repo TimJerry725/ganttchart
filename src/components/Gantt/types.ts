@@ -171,6 +171,8 @@ export interface Scale {
   format?: string;
 }
 
+export type TimelineView = 'day' | 'week' | 'month';
+
 export interface Column {
   name: string;
   label: string;
@@ -184,6 +186,9 @@ export interface Column {
 export interface GanttConfig {
   columns?: Column[];
   scales?: Scale[];
+  timelineView?: TimelineView;
+  timelineViews?: TimelineView[];
+  timelineViewScales?: Partial<Record<TimelineView, Scale[]>>;
   readonly?: boolean;
   editable?: boolean;
   taskHeight?: number;
@@ -409,6 +414,7 @@ export interface GanttUIConfig {
   showZoomButtons?: boolean;
   showExportButtons?: boolean;
   showFilterSearch?: boolean;
+  showTimelineViewSwitcher?: boolean;
 
   // Toolbar Button Labels
   addTaskButtonText?: string;
@@ -423,6 +429,7 @@ export interface GanttUIConfig {
   exportPDFTooltip?: string;
   hideBaselinesTooltip?: string;
   showBaselinesTooltip?: string;
+  timelineViewLabels?: Partial<Record<TimelineView, string>>;
 
   // Task Creator Modal
   taskCreatorTitle?: string;

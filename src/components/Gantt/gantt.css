@@ -23,7 +23,7 @@
 
   /* Layout & Spacing — FIXED px values for stability across zoom levels and host projects.
      header-height MUST equal 3 × scale-height (month + range + day rows). */
-  --gantt-header-height: 84px;
+  --gantt-header-rows: 3;
   --gantt-row-height: 48px;
   --gantt-scale-height: 28px;
   --gantt-grid-width: clamp(280px, 30vw, 720px);
@@ -201,7 +201,7 @@
   position: sticky;
   top: 0;
   z-index: 110 !important;
-  height: var(--gantt-header-height);
+  height: calc(var(--gantt-scale-height, 28px) * var(--gantt-header-rows, 3));
   display: flex;
   border-bottom: var(--wx-gantt-border);
   background-color: #fafafa;
@@ -519,7 +519,7 @@ body.gantt-dragging {
   z-index: 30;
   background-color: var(--wx-gantt-background);
   border-bottom: var(--wx-gantt-border);
-  height: var(--gantt-header-height);
+  height: calc(var(--gantt-scale-height, 28px) * var(--gantt-header-rows, 3));
   box-shadow: none;
   overflow: visible;
 }
@@ -964,6 +964,10 @@ body.gantt-dragging {
 .gantt-toolbar-right {
   display: flex;
   align-items: center;
+}
+
+.gantt-toolbar-view-switcher {
+  min-width: 210px;
 }
 
 /* Tooltip Styles */
@@ -2144,7 +2148,6 @@ h6,
 @media (max-width: 768px) {
   :root {
     --gantt-grid-width: 100%;
-    --gantt-header-height: clamp(50px, 6vh, 70px);
     --gantt-row-height: clamp(36px, 4vh, 40px);
     --gantt-scale-height: clamp(22px, 2.5vh, 26px);
   }
@@ -2168,6 +2171,10 @@ h6,
   .gantt-toolbar button svg {
     font-size: 11px;
     margin-right: 2px;
+  }
+
+  .gantt-toolbar-view-switcher {
+    min-width: 100%;
   }
 
   /* Show only icons on very small screens */

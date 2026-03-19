@@ -6,7 +6,7 @@ import { TaskCreator } from './TaskCreator';
 import { TaskEditor } from './TaskEditor';
 import { DependencyEditor } from './DependencyEditor';
 import { ContextMenu } from './ContextMenu';
-import type { GanttConfig, DropIndicator, ZoomLevel, Baseline, Column, Scale, GanttUIConfig, GanttStyleConfig, GanttIconConfig } from './types';
+import type { GanttConfig, DropIndicator, ZoomLevel, Baseline, Column, Scale, GanttUIConfig, GanttStyleConfig, GanttIconConfig, TimelineView } from './types';
 import { addToDate, getStartOfDay } from './utils/dateUtils';
 import { useUndoRedo } from './UndoRedo';
 import * as AutoScheduler from './features/AutoScheduler';
@@ -47,6 +47,7 @@ export interface GanttProps {
   onTaskDelete?: (taskId: string) => void;
   onLinkCreate?: (link: Link) => void;
   onLinkDelete?: (linkId: string) => void;
+  onTimelineViewChange?: (view: TimelineView) => void;
 
   // Storybook helper props (ignored by component but required for build)
   cellWidth?: number;
@@ -362,6 +363,51 @@ const defaultScales: Scale[] = [
   { unit: 'day', step: 1, format: 'D' },
 ];
 
+const defaultTimelineViewScales: Record<TimelineView, Scale[]> = {
+  day: [
+    { unit: 'month', step: 1, format: 'MMM YYYY' },
+    { unit: 'day', step: 1, format: 'D' },
+  ],
+  week: [
+    { unit: 'month', step: 1, format: 'MMM YYYY' },
+    { unit: 'week', step: 1, format: 'Week W' },
+  ],
+  month: [
+    { unit: 'year', step: 1, format: 'YYYY' },
+    { unit: 'month', step: 1, format: 'MMM' },
+  ],
+};
+
+const defaultTimelineViews: TimelineView[] = ['day', 'week', 'month'];
+
+const alignRangeDateToScale = (date: Date, scale: Scale, direction: 'start' | 'end'): Date => {
+  const aligned = getStartOfDay(date);
+
+  switch (scale.unit) {
+    case 'week': {
+      const dayOfWeek = aligned.getDay();
+      const offset = direction === 'start' ? -dayOfWeek : 6 - dayOfWeek;
+      return getStartOfDay(addToDate(aligned, offset, 'day'));
+    }
+    case 'month':
+      return direction === 'start'
+        ? new Date(aligned.getFullYear(), aligned.getMonth(), 1)
+        : new Date(aligned.getFullYear(), aligned.getMonth() + 1, 0);
+    case 'quarter': {
+      const quarterStartMonth = Math.floor(aligned.getMonth() / 3) * 3;
+      return direction === 'start'
+        ? new Date(aligned.getFullYear(), quarterStartMonth, 1)
+        : new Date(aligned.getFullYear(), quarterStartMonth + 3, 0);
+    }
+    case 'year':
+      return direction === 'start'
+        ? new Date(aligned.getFullYear(), 0, 1)
+        : new Date(aligned.getFullYear(), 11, 31);
+    default:
+      return aligned;
+  }
+};
+
 const defaultTaskTooltipConfig: TaskTooltipConfig = {
   showTaskName: true,
   showPlannedDates: true,
@@ -392,6 +438,7 @@ const defaultUIConfig: GanttUIConfig = {
   showZoomButtons: true,
   showExportButtons: true,
   showFilterSearch: true,
+  showTimelineViewSwitcher: true,
   addTaskButtonText: 'New Task',
   baselineButtonText: 'Set Baseline',
   baselineButtonTextActive: 'Baselines',
@@ -404,6 +451,11 @@ const defaultUIConfig: GanttUIConfig = {
   exportPDFTooltip: 'Export to PDF',
   hideBaselinesTooltip: 'Hide Baselines',
   showBaselinesTooltip: 'Show Baselines',
+  timelineViewLabels: {
+    day: 'Days',
+    week: 'Weeks',
+    month: 'Months',
+  },
   taskCreatorTitle: 'Create New Task',
   taskCreatorOkText: 'Create Task',
   taskCreatorCancelText: 'Cancel',
@@ -482,11 +534,42 @@ export const Gantt: React.FC<GanttProps> = ({
   onTaskDelete,
   onLinkCreate,
   onLinkDelete,
+  onTimelineViewChange,
   baselines: externalBaselines,
 }) => {
   // Merge UI config with defaults
   const ui: GanttUIConfig = { ...defaultUIConfig, ...uiConfig };
   const mergedTaskTooltipConfig: TaskTooltipConfig = { ...defaultTaskTooltipConfig, ...taskTooltipConfig };
+  const hasTimelineViewFeature = Boolean(
+    config.timelineView ||
+    (Array.isArray(config.timelineViews) && config.timelineViews.length > 0) ||
+    config.timelineViewScales
+  );
+  const timelineViews = React.useMemo(() => {
+    if (!hasTimelineViewFeature) return [] as TimelineView[];
+
+    const sourceViews = Array.isArray(config.timelineViews) && config.timelineViews.length > 0
+      ? config.timelineViews
+      : defaultTimelineViews;
+
+    return Array.from(new Set(sourceViews.filter((view): view is TimelineView => defaultTimelineViews.includes(view))));
+  }, [config.timelineViews, hasTimelineViewFeature]);
+  const resolvedTimelineViewScales = React.useMemo(
+    () => ({
+      ...defaultTimelineViewScales,
+      ...config.timelineViewScales,
+    }),
+    [config.timelineViewScales]
+  );
+  const initialTimelineView = React.useMemo<TimelineView>(() => {
+    if (hasTimelineViewFeature && config.timelineView && timelineViews.includes(config.timelineView)) {
+      return config.timelineView;
+    }
+    if (hasTimelineViewFeature && timelineViews.length > 0) {
+      return timelineViews[0];
+    }
+    return 'day';
+  }, [config.timelineView, hasTimelineViewFeature, timelineViews]);
 
   // Apply style config via CSS variables
   const styleVariables: React.CSSProperties = React.useMemo(() => {
@@ -583,6 +666,7 @@ export const Gantt: React.FC<GanttProps> = ({
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(1);
+  const [timelineView, setTimelineView] = useState<TimelineView>(initialTimelineView);
   // Baselines are always visible - auto-created when tasks are first created
   // Baselines represent the original plan and remain fixed even when tasks are moved/resized
   const [baselines, setBaselines] = useState<Map<string, Baseline>>(() => {
@@ -605,6 +689,12 @@ export const Gantt: React.FC<GanttProps> = ({
     }
   }, [externalBaselines]);
 
+  useEffect(() => {
+    if (hasTimelineViewFeature) {
+      setTimelineView(initialTimelineView);
+    }
+  }, [hasTimelineViewFeature, initialTimelineView]);
+
   const [currentTheme] = useState<'light' | 'dark'>((config.theme as 'light' | 'dark') || 'light');
   const [filters, setFilters] = useState<FilterOptions>({
     searchText: '',
@@ -619,10 +709,23 @@ export const Gantt: React.FC<GanttProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef<string | null>(null);
   const scrollTimeoutRef = useRef<number | null>(null);
+  const activeTimelineView = hasTimelineViewFeature && timelineViews.includes(timelineView)
+    ? timelineView
+    : initialTimelineView;
+  const activeScales = hasTimelineViewFeature
+    ? (resolvedTimelineViewScales[activeTimelineView] || defaultTimelineViewScales[activeTimelineView])
+    : (config.scales || defaultScales);
+  const showTimelineViewSwitcher = hasTimelineViewFeature && ui.showTimelineViewSwitcher !== false && timelineViews.length > 1;
+  const timelineViewOptions = showTimelineViewSwitcher
+    ? timelineViews.map((view) => ({
+      value: view,
+      label: ui.timelineViewLabels?.[view] || `${view.charAt(0).toUpperCase()}${view.slice(1)}s`,
+    }))
+    : [];
+  const headerRowCount = hasTimelineViewFeature ? Math.max(activeScales.length, 1) : 3;
 
-  const ganttConfig: GanttConfig = {
+  const ganttConfigDefaults: GanttConfig = {
     columns: config.columns || getDefaultColumns(uiConfig),
-    scales: defaultScales,
     readonly: false,
     editable: true,
     taskHeight: 28,
@@ -658,7 +761,15 @@ export const Gantt: React.FC<GanttProps> = ({
     showProjectStartLineMarker: config.showProjectStartLineMarker !== false, // Default: true
     projectStartLineMarkerSize: config.projectStartLineMarkerSize || 8, // Marker size in pixels
     projectStartLineMarkerStyle: config.projectStartLineMarkerStyle || 'triangle', // Marker style
+  };
+
+  const ganttConfig: GanttConfig = {
+    ...ganttConfigDefaults,
     ...config,
+    scales: activeScales,
+    timelineView: hasTimelineViewFeature ? activeTimelineView : config.timelineView,
+    timelineViews: hasTimelineViewFeature ? timelineViews : config.timelineViews,
+    timelineViewScales: hasTimelineViewFeature ? resolvedTimelineViewScales : config.timelineViewScales,
     // IMPORTANT: Re-apply baselines after spread so undefined from config doesn't override the default.
     // baselines should always be true unless the user explicitly passes false.
     baselines: config.baselines !== false,
@@ -700,12 +811,13 @@ export const Gantt: React.FC<GanttProps> = ({
   }, [tasks]);
 
   const getTimelineRange = () => {
+    const timelineScale = activeScales[1] || activeScales[0];
     const activeTasks = filteredTasks.length > 0 ? filteredTasks : tasks;
     if (activeTasks.length === 0) {
       const today = new Date();
       return {
-        start: getStartOfDay(addToDate(today, -30, 'day')),
-        end: getStartOfDay(addToDate(today, 60, 'day')),
+        start: alignRangeDateToScale(addToDate(today, -30, 'day'), timelineScale, 'start'),
+        end: alignRangeDateToScale(addToDate(today, 60, 'day'), timelineScale, 'end'),
       };
     }
     const starts = activeTasks.map(t => t.start.getTime());
@@ -713,12 +825,18 @@ export const Gantt: React.FC<GanttProps> = ({
     const minStart = new Date(Math.min(...starts));
     const maxEnd = new Date(Math.max(...ends));
     return {
-      start: getStartOfDay(addToDate(minStart, -7, 'day')),
-      end: getStartOfDay(maxEnd),
+      start: alignRangeDateToScale(addToDate(minStart, -7, 'day'), timelineScale, 'start'),
+      end: alignRangeDateToScale(maxEnd, timelineScale, 'end'),
     };
   };
 
   const range = getTimelineRange();
+
+  const handleTimelineViewSelect = (view: TimelineView) => {
+    if (!timelineViews.includes(view) || view === activeTimelineView) return;
+    setTimelineView(view);
+    onTimelineViewChange?.(view);
+  };
 
   const handleTaskClick = (taskId: string) => {
     setSelectedTask(taskId);
@@ -1047,6 +1165,7 @@ export const Gantt: React.FC<GanttProps> = ({
   // Keep rendered row height in sync with all drag/link position calculations
   const layoutCssVars: React.CSSProperties = {
     '--gantt-row-height': `${ganttConfig.rowHeight || 48}px`,
+    '--gantt-header-rows': String(headerRowCount),
   } as React.CSSProperties;
 
   // Apply grid width if specified
@@ -1071,6 +1190,9 @@ export const Gantt: React.FC<GanttProps> = ({
         <Toolbar
           zoomLevel={zoomLevel}
           setZoomLevel={setZoomLevel}
+          timelineView={showTimelineViewSwitcher ? activeTimelineView : undefined}
+          timelineViewOptions={timelineViewOptions}
+          onTimelineViewChange={showTimelineViewSwitcher ? handleTimelineViewSelect : undefined}
           onExport={(type) => {
             if (type === 'csv') ExportUtils.exportToCSV(tasks);
             if (type === 'excel') ExportUtils.exportToExcel(tasks);

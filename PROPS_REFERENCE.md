@@ -15,7 +15,7 @@ Scope: Public props/types exported from:
 - `TaskSegment`, `TaskSegmentInput`
 - `Link`
 - `TaskTooltipConfig`
-- `Scale`, `Column`
+- `Scale`, `TimelineView`, `Column`
 - `GanttConfig`
 - `GanttIconConfig`
 - `GanttStyleConfig`
@@ -48,6 +48,7 @@ export interface GanttProps {
   onTaskDelete?: (taskId: string) => void;
   onLinkCreate?: (link: Link) => void;
   onLinkDelete?: (linkId: string) => void;
+  onTimelineViewChange?: (view: TimelineView) => void;
 
   // Storybook helper props (ignored by component but required for build)
   cellWidth?: number;
@@ -260,6 +261,8 @@ export interface Scale {
   format?: string;
 }
 
+export type TimelineView = 'day' | 'week' | 'month';
+
 export interface Column {
   name: string;
   label: string;
@@ -277,6 +280,9 @@ export interface Column {
 export interface GanttConfig {
   columns?: Column[];
   scales?: Scale[];
+  timelineView?: TimelineView;
+  timelineViews?: TimelineView[];
+  timelineViewScales?: Partial<Record<TimelineView, Scale[]>>;
   readonly?: boolean;
   editable?: boolean;
   taskHeight?: number;
@@ -474,6 +480,7 @@ export interface GanttUIConfig {
   showZoomButtons?: boolean;
   showExportButtons?: boolean;
   showFilterSearch?: boolean;
+  showTimelineViewSwitcher?: boolean;
   addTaskButtonText?: string;
   baselineButtonText?: string;
   baselineButtonTextActive?: string;
@@ -486,6 +493,7 @@ export interface GanttUIConfig {
   exportPDFTooltip?: string;
   hideBaselinesTooltip?: string;
   showBaselinesTooltip?: string;
+  timelineViewLabels?: Partial<Record<TimelineView, string>>;
   taskCreatorTitle?: string;
   taskCreatorOkText?: string;
   taskCreatorCancelText?: string;

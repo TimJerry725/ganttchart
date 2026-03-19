@@ -43,6 +43,8 @@ export const Default = {
   args: {
     tasks: tasks,
     config: {
+      timelineView: 'day',
+      timelineViews: ['day', 'week', 'month'],
       weekends: true,
       holidays: [
         new Date(2026, 3, 10),
@@ -50,6 +52,13 @@ export const Default = {
         new Date(2026, 4, 1),
       ],
       theme: 'light',
+    },
+    uiConfig: {
+      timelineViewLabels: {
+        day: 'Days',
+        week: 'Weeks',
+        month: 'Months',
+      },
     },
   },
 };

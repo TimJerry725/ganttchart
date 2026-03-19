@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Space, Tooltip, Divider } from 'antd';
+import { Button, Space, Tooltip, Divider, Segmented } from 'antd';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
     faSearchPlus,
@@ -13,7 +13,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FilterSearch } from './features/FilterSearch';
 import type { FilterOptions } from './features/filterUtils';
-import type { GanttUIConfig, GanttIconConfig, GanttStyleConfig } from './types';
+import type { GanttUIConfig, GanttIconConfig, GanttStyleConfig, TimelineView } from './types';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { applyStyleConfig } from './utils/styleUtils';
 
@@ -30,6 +30,9 @@ const renderIcon = (icon: React.ReactNode | string | undefined, defaultIcon: Ico
 interface ToolbarProps {
     zoomLevel: number;
     setZoomLevel: (zoom: number) => void;
+    timelineView?: TimelineView;
+    timelineViewOptions?: Array<{ value: TimelineView; label: string }>;
+    onTimelineViewChange?: (view: TimelineView) => void;
     onBaselineToggle?: () => void; // Optional, not used when baselines always visible
     showBaselines?: boolean; // Optional, not used when baselines always visible
     onExport: (type: 'csv' | 'excel' | 'json' | 'pdf') => void;
@@ -44,6 +47,9 @@ interface ToolbarProps {
 export const Toolbar: React.FC<ToolbarProps> = ({
     zoomLevel,
     setZoomLevel,
+    timelineView,
+    timelineViewOptions = [],
+    onTimelineViewChange,
     onExport,
     onFilterChange,
     owners,
@@ -55,6 +61,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
     const styles = applyStyleConfig(styleConfig);
     const showZoom = uiConfig.showZoomButtons !== false;
     const showExport = uiConfig.showExportButtons !== false;
+    const showTimelineViewSwitcher = timelineViewOptions.length > 1 && onTimelineViewChange;
     const showDivider = showZoom && showExport;
 
     return (
@@ -78,6 +85,18 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
                 <div className="gantt-toolbar-right">
                     <Space size={4}>
+                        {showTimelineViewSwitcher && timelineView && (
+                            <>
+                                <Segmented
+                                    className="gantt-toolbar-view-switcher"
+                                    options={timelineViewOptions}
+                                    value={timelineView}
+                                    onChange={(value) => onTimelineViewChange(value as TimelineView)}
+                                />
+                                {(showZoom || showExport) && <Divider type="vertical" style={{ height: 24, margin: '0 4px' }} />}
+                            </>
+                        )}
+
                         {showZoom && (
                             <>
                                 <Tooltip title={uiConfig.zoomOutTooltip || "Zoom Out"}>
