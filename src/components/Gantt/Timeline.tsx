@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Task, Link, Scale, GanttConfig, Baseline, TaskTooltipConfig, TaskDragUpdateMeta } from './types';
 import { TaskBar } from './TaskBar';
 import { LinkRenderer } from './LinkRenderer';
@@ -95,7 +95,7 @@ interface TimelineProps {
 }
 
 export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProps>(
-  ({ tasks, links, range, scales, config, selectedTask, draggedTask, onTaskClick, onTaskDragStart, onTaskDragEnd, onTaskUpdate, zoomLevel, baselines, allowBaselineOnlyMode, taskTooltipConfig, headerHeight }, ref) => {
+  ({ tasks, links, range, scales, config, selectedTask, onTaskClick, onTaskDragStart, onTaskDragEnd, onTaskUpdate, zoomLevel, baselines, allowBaselineOnlyMode, taskTooltipConfig, headerHeight }, ref) => {
     const timelineContainerRef = React.useRef<HTMLDivElement | null>(null);
     const setTimelineContainerRef = React.useCallback((node: HTMLDivElement | null) => {
       timelineContainerRef.current = node;
