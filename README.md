@@ -2,14 +2,12 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.5.6 (Latest)
+## 🆕 Version 1.5.7 (Latest)
 
-### Features
-- **Relative Day Numbering** — Track your timeline using sequential days (Day 1, Day 2, Day 3...) instead of calendar dates. Enable this by passing `relativeDayNumbering={true}`.
-- **Granular Header Visibility Controls** — Gain full control over the timeline header with three new flags to toggle specific rows on or off independently (`showTimelineHeader`, `showMonthHeading`, `showRangeHeading`).
-- **Dynamic Status Markers** — Vertical line labels (Today, Project Start) now automatically re-calculate their vertical position based on the number of active header rows, ensuring they never overlap or float incorrectly.
+### Improvements
+- **Automatic Grid Header Alignment** — Fixed an issue where the left grid columns ("Name", "Duration", etc.) were taller than the timeline header when the month or week heading rows were hidden. The grid header now dynamically shrinks to match the timeline height perfectly.
 
-## 🔖 Version 1.5.5
+## 🆕 Version 1.5.6
 
 ### Features
 - **Hide Month/Year Heading** — Added `showMonthHeading` to the top-level `<Gantt>` props and config. You can pass `showMonthHeading={false}` to specifically hide the topmost Month/Year row while leaving the calendar intact.

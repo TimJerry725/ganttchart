@@ -309,17 +309,12 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       if (config.showRangeHeading === false) {
         // If range heading is hidden, we remove the middle rows from the count.
         // Legacy has exactly 1 middle row (Level 2).
-        // Dynamic mode has (scales.length - 2) middle rows, but since 'scales.length - 1' is dynamicHeaderRows.length, middle rows implies any row that is not the top or bottom primary scale.
-        // The display logic hides all middle rows. Let's subtract them.
-        const middleRowsCount = hasTimelineViewFeature ? Math.max(0, scales.length - 3) : 1;
-        // Wait, if scales is month, day (length=2), primary is month (length=1). middleRows is 0.
-        // If scales is month, week, day (length=3), primary is month, week. Middle is 0.
-        // Wait! In dynamic mode:
-        // rowIndex === 0 is month.
+        // Dynamic mode has (scales.length - 2) total rows if we count the bottom row.
+        //rowIndex === 0 is month.
         // rowIndex === dynamicHeaderRows.length - 1 is 'day' (bottom primary).
         // Middle rows are those where rowIndex !== 0 && rowIndex !== dynamicHeaderRows.length - 1
-        // Length of dynamicHeaderRows is scales.length - 1.
-        // Number of middle rows is dynamicHeaderRows.length - 2 = scales.length - 3.
+        // Number of middle rows is scales.length - 2.
+        const middleRowsCount = hasTimelineViewFeature ? Math.max(0, scales.length - 2) : 1;
         rows = Math.max(0, rows - middleRowsCount);
       }
       return rows;

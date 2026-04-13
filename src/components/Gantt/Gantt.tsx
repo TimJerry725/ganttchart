@@ -617,8 +617,11 @@ export const Gantt: React.FC<GanttProps> = ({
       });
     }
 
+    // Header height synchronization
+    vars['--gantt-header-rows'] = String(headerRowCount);
+
     return vars as React.CSSProperties;
-  }, [styleConfig]);
+  }, [styleConfig, headerRowCount]);
   // Normalize project-level on-hold periods (supports both camelCase and snake_case props)
   const normalizedProjectHolds = React.useMemo(() => {
     const projectHoldPeriodsInput = getFirstOnHoldPeriods(
@@ -728,7 +731,22 @@ export const Gantt: React.FC<GanttProps> = ({
       label: ui.timelineViewLabels?.[view] || `${view.charAt(0).toUpperCase()}${view.slice(1)}s`,
     }))
     : [];
-  const headerRowCount = hasTimelineViewFeature ? Math.max(activeScales.length, 1) : 3;
+
+  // Calculate the total number of visible header rows for height synchronization
+  const headerRowCount = React.useMemo(() => {
+    if (config.showTimelineHeader === false) return 0;
+    
+    let rows = hasTimelineViewFeature ? Math.max(activeScales.length - 1, 0) : 2;
+    if (showMonthHeading === false || config.showMonthHeading === false) {
+      rows = Math.max(0, rows - 1);
+    }
+    if (showRangeHeading === false || config.showRangeHeading === false) {
+      const middleRowsCount = hasTimelineViewFeature ? Math.max(0, activeScales.length - 2) : 1;
+      rows = Math.max(0, rows - middleRowsCount);
+    }
+    // Number of header rows is derived from rows above + 1 for the base date column
+    return rows + 1;
+  }, [config.showTimelineHeader, config.showMonthHeading, showMonthHeading, config.showRangeHeading, showRangeHeading, hasTimelineViewFeature, activeScales.length]);
 
   const ganttConfigDefaults: GanttConfig = {
     columns: config.columns || getDefaultColumns(uiConfig),
