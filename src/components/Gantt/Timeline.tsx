@@ -585,12 +585,12 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
         return getStartOfDay(config.projectStartDate);
       }
       // Default to earliest task start
-      if (tasks.length > 0) {
-        const starts = tasks.map(t => t.start.getTime());
+      if (localTasks.length > 0) {
+        const starts = localTasks.map(t => t.start.getTime());
         return getStartOfDay(new Date(Math.min(...starts)));
       }
       return null;
-    }, [config.projectStartDate, tasks]);
+    }, [config.projectStartDate, localTasks]);
 
     const projectStartPosition = React.useMemo(() => {
       if (!config.showProjectStartLine || !projectStartDate) return null;
@@ -982,9 +982,9 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
           </div>
 
           {/* Dependency links */}
-          {links.length > 0 && (
+          {localLinks.length > 0 && (
             <LinkRenderer
-              links={links}
+              links={localLinks}
               tasks={localTasks}
               getTaskPosition={getTaskPositionForLinks}
             />
