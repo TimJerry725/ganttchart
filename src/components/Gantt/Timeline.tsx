@@ -230,9 +230,37 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       let currentDate = new Date(range.start);
 
       while (currentDate <= range.end) {
+        let label = formatScaleLabel(
+          currentDate,
+          scale,
+          scale.unit === 'year'
+            ? 'YYYY'
+            : scale.unit === 'month'
+              ? 'MMM'
+              : scale.unit === 'hour'
+                ? 'HH'
+                : 'D'
+        );
+
+        if (config.relativeDayNumbering && scale.unit === 'day') {
+          // Calculate day count from project/view start
+          const diffTime = currentDate.getTime() - range.start.getTime();
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+          label = String(diffDays);
+        }
+
         cells.push({
           date: new Date(currentDate),
-          label: formatScaleLabel(
+          label,
+        });
+        currentDate = addToDate(currentDate, scale.step, scale.unit);
+      }
+
+      // Extend to fill viewport width if needed, to avoid empty spaces or comically fat cells
+      if (timelineViewportWidth > 0) {
+        const requiredCells = Math.floor(timelineViewportWidth / baseColumnWidth);
+        while (cells.length < requiredCells) {
+          let label = formatScaleLabel(
             currentDate,
             scale,
             scale.unit === 'year'
@@ -242,28 +270,17 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                 : scale.unit === 'hour'
                   ? 'HH'
                   : 'D'
-          ),
-        });
-        currentDate = addToDate(currentDate, scale.step, scale.unit);
-      }
+          );
 
-      // Extend to fill viewport width if needed, to avoid empty spaces or comically fat cells
-      if (timelineViewportWidth > 0) {
-        const requiredCells = Math.floor(timelineViewportWidth / baseColumnWidth);
-        while (cells.length < requiredCells) {
+          if (config.relativeDayNumbering && scale.unit === 'day') {
+            const diffTime = currentDate.getTime() - range.start.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            label = String(diffDays);
+          }
+
           cells.push({
             date: new Date(currentDate),
-            label: formatScaleLabel(
-              currentDate,
-              scale,
-              scale.unit === 'year'
-                ? 'YYYY'
-                : scale.unit === 'month'
-                  ? 'MMM'
-                  : scale.unit === 'hour'
-                    ? 'HH'
-                    : 'D'
-            ),
+            label,
           });
           currentDate = addToDate(currentDate, scale.step, scale.unit);
         }
@@ -289,8 +306,24 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       if (config.showMonthHeading === false) {
         rows = Math.max(0, rows - 1);
       }
+      if (config.showRangeHeading === false) {
+        // If range heading is hidden, we remove the middle rows from the count.
+        // Legacy has exactly 1 middle row (Level 2).
+        // Dynamic mode has (scales.length - 2) middle rows, but since 'scales.length - 1' is dynamicHeaderRows.length, middle rows implies any row that is not the top or bottom primary scale.
+        // The display logic hides all middle rows. Let's subtract them.
+        const middleRowsCount = hasTimelineViewFeature ? Math.max(0, scales.length - 3) : 1;
+        // Wait, if scales is month, day (length=2), primary is month (length=1). middleRows is 0.
+        // If scales is month, week, day (length=3), primary is month, week. Middle is 0.
+        // Wait! In dynamic mode:
+        // rowIndex === 0 is month.
+        // rowIndex === dynamicHeaderRows.length - 1 is 'day' (bottom primary).
+        // Middle rows are those where rowIndex !== 0 && rowIndex !== dynamicHeaderRows.length - 1
+        // Length of dynamicHeaderRows is scales.length - 1.
+        // Number of middle rows is dynamicHeaderRows.length - 2 = scales.length - 3.
+        rows = Math.max(0, rows - middleRowsCount);
+      }
       return rows;
-    }, [config.showTimelineHeader, config.showMonthHeading, hasTimelineViewFeature, scales.length]);
+    }, [config.showTimelineHeader, config.showMonthHeading, config.showRangeHeading, hasTimelineViewFeature, scales.length]);
 
     const { dragState, handleDragStart, handleDrag, handleDragEnd } = useDragDrop(
       localTasks,
@@ -651,7 +684,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                 <div
                   key={`dynamic-row-${rowIndex}`}
                   className={`gantt-timeline-scale ${scaleClass}`}
-                  style={{ width: totalWidth, display: (rowIndex === 0 && config.showMonthHeading === false) ? 'none' : 'flex' }}
+                  style={{ width: totalWidth, display: (rowIndex === 0 && config.showMonthHeading === false) || (rowIndex !== 0 && rowIndex !== dynamicHeaderRows.length - 1 && config.showRangeHeading === false) ? 'none' : 'flex' }}
                 >
                   {row.map((cell, index) => {
                     const isBottomRow = rowIndex === dynamicHeaderRows.length - 1;
@@ -699,6 +732,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
               </div>
               )}
               {/* Level 2: 15-day range */}
+              {config.showRangeHeading !== false && (
               <div className="gantt-timeline-scale gantt-timeline-scale-range" style={{ width: totalWidth }}>
                 {middleHeaderCells.map((cell, index) => (
                   <div
@@ -715,6 +749,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                   </div>
                 ))}
               </div>
+              )}
               {/* Level 3: Individual Days */}
               <div className="gantt-timeline-scale gantt-timeline-scale-day" style={{ width: totalWidth }}>
                 {secondaryCells.map((cell, index) => {

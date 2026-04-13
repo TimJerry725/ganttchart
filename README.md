@@ -2,12 +2,13 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.5.5 (Latest)
+## 🆕 Version 1.5.6 (Latest)
 
 ### Features
-- **Hide Month/Year Heading** — Added `showMonthHeading` to the top-level `<Gantt>` props and config. You can pass `showMonthHeading={false}` to specifically hide the topmost Month/Year row while leaving the calendar intact, and the "Today" indicator line will proportionally shrink its height to match correctly.
+- **Relative Day Numbering** — Track your timeline using sequential days (Day 1, Day 2, Day 3...) instead of calendar dates. Enable this by passing `relativeDayNumbering={true}`.
+- **Improved Header Visibility Controls** — Added `showRangeHeading` to selectively hide the middle range/week header row.
 
-## 🔖 Version 1.5.4
+## 🔖 Version 1.5.5
 
 ### Features
 - **Configurable Timeline Header Visibility** — You can now explicitly show or hide the calendar headers (the months, weeks, and days row) via the new `showTimelineHeader: boolean` property in the `config` object. If `showTimelineHeader: false` is passed, the calendar header row is completely hidden (but you can preserve the vertical "Today" and project markers if needed).
@@ -266,6 +267,26 @@ If you just want to hide the topmost "Month/Year" heading row, but keep the days
 <Gantt
   tasks={tasks}
   showMonthHeading={false}
+/>
+```
+
+### Hiding the Middle Ranges Only
+Similarly, if you want to hide the middle ranges row (such as the Week strings in week mode or `Mar 16 - 31`, `Apr 1 - 15` in the legacy default UI), simply pass the `showRangeHeading={false}` flag.
+
+```tsx
+<Gantt
+  tasks={tasks}
+  showRangeHeading={false}
+/>
+```
+
+### Relative Day Numbering
+If you want to track time as "Day 1, Day 2, Day 3..." instead of using calendar dates (e.g. 12, 13, 14), you can enable `relativeDayNumbering`:
+
+```tsx
+<Gantt
+  tasks={tasks}
+  relativeDayNumbering={true}
 />
 ```
 

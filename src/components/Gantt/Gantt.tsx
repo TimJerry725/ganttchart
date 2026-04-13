@@ -49,6 +49,8 @@ export interface GanttProps {
   onLinkDelete?: (linkId: string) => void;
   onTimelineViewChange?: (view: TimelineView) => void;
   showMonthHeading?: boolean;
+  showRangeHeading?: boolean;
+  relativeDayNumbering?: boolean;
 
   // Storybook helper props (ignored by component but required for build)
   cellWidth?: number;
@@ -538,6 +540,8 @@ export const Gantt: React.FC<GanttProps> = ({
   onTimelineViewChange,
   baselines: externalBaselines,
   showMonthHeading,
+  showRangeHeading,
+  relativeDayNumbering,
 }) => {
   // Merge UI config with defaults
   const ui: GanttUIConfig = { ...defaultUIConfig, ...uiConfig };
@@ -776,6 +780,8 @@ export const Gantt: React.FC<GanttProps> = ({
     // baselines should always be true unless the user explicitly passes false.
     baselines: config.baselines !== false,
     showMonthHeading: showMonthHeading !== undefined ? showMonthHeading : config.showMonthHeading,
+    showRangeHeading: showRangeHeading !== undefined ? showRangeHeading : config.showRangeHeading,
+    relativeDayNumbering: relativeDayNumbering !== undefined ? relativeDayNumbering : config.relativeDayNumbering,
   };
 
   // Update filtered tasks when filters or tasks change
