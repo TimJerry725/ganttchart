@@ -91,25 +91,11 @@ interface TimelineProps {
   baselines?: Map<string, Baseline>;
   allowBaselineOnlyMode?: boolean;
   taskTooltipConfig?: TaskTooltipConfig;
+  headerHeight?: number;
 }
 
-export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
-  ({
-    tasks,
-    links,
-    range,
-    scales,
-    config,
-    selectedTask,
-    onTaskClick,
-    onTaskDragStart,
-    onTaskDragEnd,
-    onTaskUpdate,
-    zoomLevel,
-    baselines,
-    allowBaselineOnlyMode = false,
-    taskTooltipConfig,
-  }, ref) => {
+export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProps>(
+  ({ tasks, links, range, scales, config, selectedTask, draggedTask, onTaskClick, onTaskDragStart, onTaskDragEnd, onTaskUpdate, zoomLevel, baselines, allowBaselineOnlyMode, taskTooltipConfig, headerHeight }, ref) => {
     const timelineContainerRef = React.useRef<HTMLDivElement | null>(null);
     const setTimelineContainerRef = React.useCallback((node: HTMLDivElement | null) => {
       timelineContainerRef.current = node;
@@ -121,6 +107,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       }
     }, [ref]);
     const [localTasks, setLocalTasks] = useState(tasks);
+    const [localLinks, setLocalLinks] = useState(links);
     const [timelineViewportWidth, setTimelineViewportWidth] = useState(0);
     const baseColumnWidth = React.useMemo(
       () => Math.max((config.columnWidth || 60) * zoomLevel, config.minColumnWidth || 0),
@@ -156,7 +143,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         }
       });
 
-      links.forEach((link) => {
+      localLinks.forEach((link) => {
         const source = taskById.get(link.source);
         const target = taskById.get(link.target);
         const sourceName = source?.text || `Task ${link.source}`;
@@ -170,16 +157,15 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       });
 
       return map;
-    }, [links, localTasks, taskById]);
+    }, [localLinks, localTasks, taskById]);
 
     // Update local tasks when props change - use shallow comparison for performance
     React.useEffect(() => {
-      const tasksChanged = tasks.length !== localTasks.length ||
+      const tasksChanged =
+        tasks.length !== localTasks.length ||
         tasks.some((t, i) => {
-          const local = localTasks[i];
-          return !local || t.id !== local.id ||
-            t.start.getTime() !== local.start.getTime() ||
-            t.end.getTime() !== local.end.getTime();
+          const lt = localTasks[i];
+          return !lt || t.id !== lt.id || t.start.getTime() !== lt.start.getTime() || t.end.getTime() !== lt.end.getTime() || t.duration !== lt.duration;
         });
 
       if (tasksChanged) {
@@ -187,6 +173,20 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tasks]);
+
+    React.useEffect(() => {
+      const linksChanged =
+        links.length !== localLinks.length ||
+        links.some((l, i) => {
+          const ll = localLinks[i];
+          return !ll || l.id !== ll.id || l.source !== ll.source || l.target !== ll.target || l.type !== ll.type;
+        });
+
+      if (linksChanged) {
+        setLocalLinks(links);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [links]);
 
     React.useEffect(() => {
       const viewportElement = timelineContainerRef.current?.parentElement;
@@ -612,7 +612,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         onMouseUp={handleMouseUp}
         style={{ width: totalWidth, position: 'relative' }}
       >
-        <div className="gantt-timeline-header" style={{ width: totalWidth, minWidth: totalWidth, position: 'relative' }}>
+        <div className="gantt-timeline-header" style={{ width: totalWidth, minWidth: totalWidth, position: 'relative', height: headerHeight }}>
           {/* Today and Project Start line labels - visible by default, positioned at the day row (first calendar row with dates) */}
           {todayPosition !== null && config.showTodayLine && config.todayLineLabel && config.todayLineLabel !== '' && (
             <div

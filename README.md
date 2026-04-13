@@ -2,12 +2,12 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.5.7 (Latest)
+## 🆕 Version 1.5.8 (Latest)
 
 ### Improvements
-- **Automatic Grid Header Alignment** — Fixed an issue where the left grid columns ("Name", "Duration", etc.) were taller than the timeline header when the month or week heading rows were hidden. The grid header now dynamically shrinks to match the timeline height perfectly.
+- **Strict Header Height Synchronization** — Headers on both the left (Grid) and right (Timeline) are now explicitly tethered to the same pixel height. This ensures that even when rows are hidden (like Month/Year), the "day" labels and "Name" labels stay perfectly aligned and the overall header height reduces as expected.
 
-## 🆕 Version 1.5.6
+## 🆕 Version 1.5.7
 
 ### Features
 - **Hide Month/Year Heading** — Added `showMonthHeading` to the top-level `<Gantt>` props and config. You can pass `showMonthHeading={false}` to specifically hide the topmost Month/Year row while leaving the calendar intact.

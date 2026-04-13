@@ -1282,6 +1282,7 @@ export const Gantt: React.FC<GanttProps> = ({
             reorderTask={reorderTask}
             iconConfig={iconConfig}
             styleConfig={styleConfig}
+            headerHeight={(ganttConfig.scaleHeight || 28) * headerRowCount}
           />
           <Chart
             ref={timelineRef}
@@ -1314,6 +1315,7 @@ export const Gantt: React.FC<GanttProps> = ({
             zoomLevel={zoomLevel}
             baselines={baselines}
             taskTooltipConfig={mergedTaskTooltipConfig}
+            headerHeight={(ganttConfig.scaleHeight || 28) * headerRowCount}
           />
         </div>
 

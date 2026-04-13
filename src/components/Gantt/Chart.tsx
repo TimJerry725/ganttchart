@@ -18,6 +18,7 @@ interface ChartProps {
     baselines: Map<string, Baseline>;
     allowBaselineOnlyMode?: boolean;
     taskTooltipConfig?: TaskTooltipConfig;
+    headerHeight?: number;
 }
 
 export const Chart = forwardRef<HTMLDivElement, ChartProps>((props, ref) => {

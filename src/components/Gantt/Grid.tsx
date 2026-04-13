@@ -26,11 +26,12 @@ interface GridProps {
   reorderTask?: { id: string; initialIndex: number; currentX: number; currentY: number; descendantIds: string[] } | null;
   iconConfig?: Partial<import('./types').GanttIconConfig>;
   styleConfig?: Partial<import('./types').GanttStyleConfig>;
+  headerHeight?: number;
 }
 
 // Memoized Grid component for performance
 export const Grid = memo(forwardRef<HTMLDivElement, GridProps>(
-  ({ tasks, allTasks = [], columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, onAddDependency, onRemoveDependency, links = [], dropIndicator, reorderTask, styleConfig }, ref) => {
+  ({ tasks, allTasks = [], columns, selectedTask, onTaskClick, onTaskContextMenu, onTaskUpdate, onTaskDragStart, onAddTask, onAddDependency, onRemoveDependency, links = [], dropIndicator, reorderTask, styleConfig, headerHeight }, ref) => {
     const localRef = React.useRef<HTMLDivElement>(null);
 
     React.useImperativeHandle(ref, () => localRef.current!);
@@ -245,7 +246,7 @@ export const Grid = memo(forwardRef<HTMLDivElement, GridProps>(
 
     return (
       <div className="gantt-grid" ref={localRef}>
-        <div className="gantt-grid-header" style={{ display: 'flex', minWidth: '100%' }}>
+        <div className="gantt-grid-header" style={{ display: 'flex', minWidth: '100%', height: headerHeight }}>
           {columns.map((column) => (
             <div
               key={column.name}
