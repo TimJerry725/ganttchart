@@ -1061,7 +1061,7 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
         </div>
       </div>
     );
-  }
+  })
 );
 
 Timeline.displayName = 'Timeline';
