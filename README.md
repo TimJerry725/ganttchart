@@ -6,13 +6,19 @@ A comprehensive, production-ready Gantt chart component built with React and Typ
 
 ### Features
 - **Relative Day Numbering** — Track your timeline using sequential days (Day 1, Day 2, Day 3...) instead of calendar dates. Enable this by passing `relativeDayNumbering={true}`.
-- **Improved Header Visibility Controls** — Added `showRangeHeading` to selectively hide the middle range/week header row.
+- **Granular Header Visibility Controls** — Gain full control over the timeline header with three new flags to toggle specific rows on or off independently (`showTimelineHeader`, `showMonthHeading`, `showRangeHeading`).
+- **Dynamic Status Markers** — Vertical line labels (Today, Project Start) now automatically re-calculate their vertical position based on the number of active header rows, ensuring they never overlap or float incorrectly.
 
 ## 🔖 Version 1.5.5
 
 ### Features
-- **Configurable Timeline Header Visibility** — You can now explicitly show or hide the calendar headers (the months, weeks, and days row) via the new `showTimelineHeader: boolean` property in the `config` object. If `showTimelineHeader: false` is passed, the calendar header row is completely hidden (but you can preserve the vertical "Today" and project markers if needed).
-- **Prop-driven calendar view bounds** — The README now documents how to completely remove the month/week/day layers from the timeline scale header using `timelineViewScales` arrays.
+- **Hide Month/Year Heading** — Added `showMonthHeading` to the top-level `<Gantt>` props and config. You can pass `showMonthHeading={false}` to specifically hide the topmost Month/Year row while leaving the calendar intact.
+
+## 🔖 Version 1.5.4
+
+### Features
+- **Configurable Timeline Header Visibility** — Added `showTimelineHeader: boolean` to completely show or hide the calendar header row.
+- **Prop-driven calendar view bounds** — Documented how to completely remove month/week/day layers via `timelineViewScales` arrays.
 
 ## 🔖 Version 1.5.3
 
@@ -247,46 +253,50 @@ Use the toolbar switcher to toggle the calendar between day, week, and month vie
 />
 ```
 
-### Hiding / Removing Scale Headers
-If you want to completely hide the top calendar header scale (so that the days, weeks, and months do not show up at all), pass `showTimelineHeader: false` in the config:
+### 🛠️ Timeline Header Customization
 
+Version 1.5.6 introduces granular control over every row in the timeline header. You can hide specific layers or switch to relative numbering using these new props:
+
+#### 1. Hide the Entire Header
+To completely remove the calendar header rows while keeping the actual grid and tasks:
 ```tsx
 <Gantt
   tasks={tasks}
-  config={{
-    showTimelineHeader: false
-  }}
+  showTimelineHeader={false}
 />
 ```
-*Note: Doing this removes the calendar headers but preserves the "Today" vertical line marker.*
 
-### Hiding the Top Month/Year Heading Only
-If you just want to hide the topmost "Month/Year" heading row, but keep the days beneath it visible, you can pass `showMonthHeading={false}` directly as a prop, or inside `config`:
-
+#### 2. Hide Specific Rows
+You can independently toggle the top Month/Year heading or the middle Range/Week heading:
 ```tsx
 <Gantt
   tasks={tasks}
-  showMonthHeading={false}
+  showMonthHeading={false} // Hides the top Month/Year row
+  showRangeHeading={false} // Hides the middle Week/Range row
 />
 ```
 
-### Hiding the Middle Ranges Only
-Similarly, if you want to hide the middle ranges row (such as the Week strings in week mode or `Mar 16 - 31`, `Apr 1 - 15` in the legacy default UI), simply pass the `showRangeHeading={false}` flag.
-
-```tsx
-<Gantt
-  tasks={tasks}
-  showRangeHeading={false}
-/>
-```
-
-### Relative Day Numbering
-If you want to track time as "Day 1, Day 2, Day 3..." instead of using calendar dates (e.g. 12, 13, 14), you can enable `relativeDayNumbering`:
-
+#### 3. Relative Day Numbering ("Day 1, 2, 3...")
+Perfect for project templates or relative schedules. Replaces calendar dates (10, 11, 12) with sequential day numbers:
 ```tsx
 <Gantt
   tasks={tasks}
   relativeDayNumbering={true}
+/>
+```
+
+#### 4. Advanced: Custom Header Scales
+For complete control over the labels and time units in each row, use `timelineViewScales`:
+```tsx
+<Gantt
+  tasks={tasks}
+  config={{
+    timelineViewScales: {
+      day: [
+        { unit: "day", step: 1, format: "D" } // Only shows the day-of-month row
+      ]
+    }
+  }}
 />
 ```
 
