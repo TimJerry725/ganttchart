@@ -207,6 +207,8 @@ export interface GanttConfig {
   containerHeight?: string; // Responsive: e.g., '100%', '600px', '100vh'
   containerMinHeight?: string; // Responsive: e.g., '400px', '50vh'
   gridWidth?: string; // Responsive: e.g., '720px', '30vw', 'clamp(280px, 30vw, 720px)'
+  showTimelineHeader?: boolean; // Show/hide the entire timeline scale header (months, weeks, days)
+  showMonthHeading?: boolean; // Show/hide the month/year heading row inside the timeline scale header
   // Today and Project Start lines
   showTodayLine?: boolean; // Show vertical line for today's date
   todayLineColor?: string; // Color for today line (default: red)

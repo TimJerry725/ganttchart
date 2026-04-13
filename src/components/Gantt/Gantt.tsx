@@ -48,6 +48,7 @@ export interface GanttProps {
   onLinkCreate?: (link: Link) => void;
   onLinkDelete?: (linkId: string) => void;
   onTimelineViewChange?: (view: TimelineView) => void;
+  showMonthHeading?: boolean;
 
   // Storybook helper props (ignored by component but required for build)
   cellWidth?: number;
@@ -536,6 +537,7 @@ export const Gantt: React.FC<GanttProps> = ({
   onLinkDelete,
   onTimelineViewChange,
   baselines: externalBaselines,
+  showMonthHeading,
 }) => {
   // Merge UI config with defaults
   const ui: GanttUIConfig = { ...defaultUIConfig, ...uiConfig };
@@ -773,6 +775,7 @@ export const Gantt: React.FC<GanttProps> = ({
     // IMPORTANT: Re-apply baselines after spread so undefined from config doesn't override the default.
     // baselines should always be true unless the user explicitly passes false.
     baselines: config.baselines !== false,
+    showMonthHeading: showMonthHeading !== undefined ? showMonthHeading : config.showMonthHeading,
   };
 
   // Update filtered tasks when filters or tasks change

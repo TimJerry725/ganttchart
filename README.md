@@ -2,7 +2,23 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.5.2 (Latest)
+## 🆕 Version 1.5.5 (Latest)
+
+### Features
+- **Hide Month/Year Heading** — Added `showMonthHeading` to the top-level `<Gantt>` props and config. You can pass `showMonthHeading={false}` to specifically hide the topmost Month/Year row while leaving the calendar intact, and the "Today" indicator line will proportionally shrink its height to match correctly.
+
+## 🔖 Version 1.5.4
+
+### Features
+- **Configurable Timeline Header Visibility** — You can now explicitly show or hide the calendar headers (the months, weeks, and days row) via the new `showTimelineHeader: boolean` property in the `config` object. If `showTimelineHeader: false` is passed, the calendar header row is completely hidden (but you can preserve the vertical "Today" and project markers if needed).
+- **Prop-driven calendar view bounds** — The README now documents how to completely remove the month/week/day layers from the timeline scale header using `timelineViewScales` arrays.
+
+## 🔖 Version 1.5.3
+
+### Bug Fixes
+- **Responsive Timeline Viewport Scaling:** Fixed an issue where the timeline left empty white spaces or rendered comically fat cell columns on horizontally wide screens—especially when swapping down to 'Month' view. The chart now dynamically calculates its layout boundaries and pads the display timeframe organically to perfectly fill your viewport screen width while maintaining standard element ratios.
+
+## 🔖 Version 1.5.2
 
 ### Improvements
 - **Prop-driven day/week/month timeline switcher** — You can now expose a calendar view switcher in the toolbar and control the available `day`, `week`, and `month` views through props.
@@ -226,6 +242,47 @@ Use the toolbar switcher to toggle the calendar between day, week, and month vie
       week: "Weeks",
       month: "Months",
     },
+  }}
+/>
+```
+
+### Hiding / Removing Scale Headers
+If you want to completely hide the top calendar header scale (so that the days, weeks, and months do not show up at all), pass `showTimelineHeader: false` in the config:
+
+```tsx
+<Gantt
+  tasks={tasks}
+  config={{
+    showTimelineHeader: false
+  }}
+/>
+```
+*Note: Doing this removes the calendar headers but preserves the "Today" vertical line marker.*
+
+### Hiding the Top Month/Year Heading Only
+If you just want to hide the topmost "Month/Year" heading row, but keep the days beneath it visible, you can pass `showMonthHeading={false}` directly as a prop, or inside `config`:
+
+```tsx
+<Gantt
+  tasks={tasks}
+  showMonthHeading={false}
+/>
+```
+
+### Customizing the Header Levels
+If you want to show the headers, but completely remove specific layers like the "Month" or "Week" rows (for example, showing only the "Days" row), simply customize the `timelineViewScales` arrays arrays:
+
+```tsx
+<Gantt
+  tasks={tasks}
+  config={{
+    timelineView: "day",
+    // This only shows the 'day' row, effectively hiding the 'month' row
+    timelineViewScales: {
+      day: [
+        { unit: "day", step: 1, format: "D" }
+      ]
+    }
   }}
 />
 ```

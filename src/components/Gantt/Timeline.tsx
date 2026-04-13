@@ -110,8 +110,22 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     allowBaselineOnlyMode = false,
     taskTooltipConfig,
   }, ref) => {
+    const timelineContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const setTimelineContainerRef = React.useCallback((node: HTMLDivElement | null) => {
+      timelineContainerRef.current = node;
+
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref) {
+        ref.current = node;
+      }
+    }, [ref]);
     const [localTasks, setLocalTasks] = useState(tasks);
-    const columnWidth = (config.columnWidth || 60) * zoomLevel;
+    const [timelineViewportWidth, setTimelineViewportWidth] = useState(0);
+    const baseColumnWidth = React.useMemo(
+      () => Math.max((config.columnWidth || 60) * zoomLevel, config.minColumnWidth || 0),
+      [config.columnWidth, config.minColumnWidth, zoomLevel]
+    );
     const showBaselines = config.baselines && baselines && baselines.size > 0;
     const taskById = React.useMemo(() => {
       const map = new Map<string, Task>();
@@ -158,14 +172,6 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       return map;
     }, [links, localTasks, taskById]);
 
-    const { dragState, handleDragStart, handleDrag, handleDragEnd } = useDragDrop(
-      localTasks,
-      onTaskUpdate,
-      columnWidth,
-      (scales[1] || scales[0]).unit,
-      (scales[1] || scales[0]).step
-    );
-
     // Update local tasks when props change - use shallow comparison for performance
     React.useEffect(() => {
       const tasksChanged = tasks.length !== localTasks.length ||
@@ -181,6 +187,42 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tasks]);
+
+    React.useEffect(() => {
+      const viewportElement = timelineContainerRef.current?.parentElement;
+      if (!viewportElement) return undefined;
+
+      const updateViewportWidth = () => {
+        let nextWidth = viewportElement.clientWidth;
+        const layoutElement = viewportElement.closest('.gantt-layout') as HTMLElement;
+        const gridElement = layoutElement?.querySelector('.gantt-grid') as HTMLElement;
+        
+        if (layoutElement && gridElement) {
+          nextWidth = Math.max(0, layoutElement.clientWidth - gridElement.offsetWidth);
+        }
+        
+        setTimelineViewportWidth((currentWidth) => (
+          currentWidth === nextWidth ? currentWidth : nextWidth
+        ));
+      };
+
+      updateViewportWidth();
+
+      const observerTarget = viewportElement.closest('.gantt-layout') || viewportElement;
+
+      if (typeof ResizeObserver === 'undefined') {
+        window.addEventListener('resize', updateViewportWidth);
+        return () => window.removeEventListener('resize', updateViewportWidth);
+      }
+
+      const resizeObserver = new ResizeObserver(() => {
+        updateViewportWidth();
+      });
+
+      resizeObserver.observe(observerTarget);
+
+      return () => resizeObserver.disconnect();
+    }, []);
 
     // Generate timeline cells - memoized for performance
     const generateCells = React.useCallback((scale: Scale) => {
@@ -205,14 +247,58 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         currentDate = addToDate(currentDate, scale.step, scale.unit);
       }
 
+      // Extend to fill viewport width if needed, to avoid empty spaces or comically fat cells
+      if (timelineViewportWidth > 0) {
+        const requiredCells = Math.floor(timelineViewportWidth / baseColumnWidth);
+        while (cells.length < requiredCells) {
+          cells.push({
+            date: new Date(currentDate),
+            label: formatScaleLabel(
+              currentDate,
+              scale,
+              scale.unit === 'year'
+                ? 'YYYY'
+                : scale.unit === 'month'
+                  ? 'MMM'
+                  : scale.unit === 'hour'
+                    ? 'HH'
+                    : 'D'
+            ),
+          });
+          currentDate = addToDate(currentDate, scale.step, scale.unit);
+        }
+      }
+
       return cells;
-    }, [range.start, range.end]);
+    }, [range.start, range.end, timelineViewportWidth, baseColumnWidth]);
 
     const secondaryScale = scales[1] || scales[0];
     const secondaryCells = React.useMemo(() => generateCells(secondaryScale), [generateCells, secondaryScale]);
+    const columnWidth = React.useMemo(() => {
+      if (secondaryCells.length === 0 || timelineViewportWidth <= 0) {
+        return baseColumnWidth;
+      }
+
+      return Math.max(baseColumnWidth, timelineViewportWidth / secondaryCells.length);
+    }, [baseColumnWidth, secondaryCells.length, timelineViewportWidth]);
     const showBaselineOnlyRows = allowBaselineOnlyMode && localTasks.length === 0 && showBaselines;
     const hasTimelineViewFeature = Boolean(config.timelineView) || Boolean(config.timelineViews?.length);
-    const headerLabelOffsetRows = hasTimelineViewFeature ? Math.max(scales.length - 1, 0) : 2;
+    const headerLabelOffsetRows = React.useMemo(() => {
+      if (config.showTimelineHeader === false) return 0;
+      let rows = hasTimelineViewFeature ? Math.max(scales.length - 1, 0) : 2;
+      if (config.showMonthHeading === false) {
+        rows = Math.max(0, rows - 1);
+      }
+      return rows;
+    }, [config.showTimelineHeader, config.showMonthHeading, hasTimelineViewFeature, scales.length]);
+
+    const { dragState, handleDragStart, handleDrag, handleDragEnd } = useDragDrop(
+      localTasks,
+      onTaskUpdate,
+      columnWidth,
+      secondaryScale.unit,
+      secondaryScale.step
+    );
 
     const getPixelPosition = React.useCallback((date: Date) => {
       if (secondaryCells.length === 0) return 0;
@@ -269,8 +355,8 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
       // Read the actual row height from the CSS variable on the container element,
       // so the arrow positions stay correct regardless of host-project overrides.
       let rowHeight = config.rowHeight || 48;
-      if (ref && typeof ref === 'object' && ref.current) {
-        const cssVal = getComputedStyle(ref.current).getPropertyValue('--gantt-row-height');
+      if (timelineContainerRef.current) {
+        const cssVal = getComputedStyle(timelineContainerRef.current).getPropertyValue('--gantt-row-height');
         if (cssVal) {
           const parsed = parseFloat(cssVal);
           if (!isNaN(parsed) && parsed > 0) rowHeight = parsed;
@@ -286,7 +372,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
         top: index * rowHeight + topPadding,
         height: taskHeight,
       };
-    }, [getTaskPosition, localTasks, config.rowHeight, config.taskHeight, ref]);
+    }, [getTaskPosition, localTasks, config.rowHeight, config.taskHeight]);
 
     const mouseMoveTimeoutRef = React.useRef<number | null>(null);
     const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -493,7 +579,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
     return (
       <div
         className="gantt-timeline-container"
-        ref={ref}
+        ref={setTimelineContainerRef}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         style={{ width: totalWidth, position: 'relative' }}
@@ -552,8 +638,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
             </div>
           )}
 
-          {hasTimelineViewFeature ? (
-            dynamicHeaderRows.map((row, rowIndex) => {
+          {config.showTimelineHeader !== false && (
+            hasTimelineViewFeature ? (
+              dynamicHeaderRows.map((row, rowIndex) => {
               const scaleClass = rowIndex === 0
                 ? 'gantt-timeline-scale-month'
                 : rowIndex === dynamicHeaderRows.length - 1
@@ -564,7 +651,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                 <div
                   key={`dynamic-row-${rowIndex}`}
                   className={`gantt-timeline-scale ${scaleClass}`}
-                  style={{ width: totalWidth }}
+                  style={{ width: totalWidth, display: (rowIndex === 0 && config.showMonthHeading === false) ? 'none' : 'flex' }}
                 >
                   {row.map((cell, index) => {
                     const isBottomRow = rowIndex === dynamicHeaderRows.length - 1;
@@ -592,7 +679,9 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
           ) : (
             <>
               {/* Level 1: Month/Year */}
-              <div className="gantt-timeline-scale gantt-timeline-scale-month" style={{ width: totalWidth }}>
+              {config.showMonthHeading !== false && (
+                <div className="gantt-timeline-scale gantt-timeline-scale-month" style={{ width: totalWidth }}>
+
                 {topHeaderCells.map((cell, index) => (
                   <div
                     key={`top-${index}`}
@@ -608,6 +697,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                   </div>
                 ))}
               </div>
+              )}
               {/* Level 2: 15-day range */}
               <div className="gantt-timeline-scale gantt-timeline-scale-range" style={{ width: totalWidth }}>
                 {middleHeaderCells.map((cell, index) => (
@@ -648,7 +738,7 @@ export const Timeline = forwardRef<HTMLDivElement, TimelineProps>(
                 })}
               </div>
             </>
-          )}
+          ))}
         </div>
 
         <div className="gantt-timeline-body" style={{ width: totalWidth, position: 'relative' }}>
