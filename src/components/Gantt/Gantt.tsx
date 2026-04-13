@@ -577,6 +577,38 @@ export const Gantt: React.FC<GanttProps> = ({
     return 'day';
   }, [config.timelineView, hasTimelineViewFeature, timelineViews]);
 
+  const [timelineView, setTimelineView] = useState<TimelineView>(initialTimelineView);
+
+  const activeTimelineView = hasTimelineViewFeature && timelineViews.includes(timelineView)
+    ? timelineView
+    : initialTimelineView;
+  const activeScales = hasTimelineViewFeature
+    ? (resolvedTimelineViewScales[activeTimelineView] || defaultTimelineViewScales[activeTimelineView])
+    : (config.scales || defaultScales);
+  const showTimelineViewSwitcher = hasTimelineViewFeature && ui.showTimelineViewSwitcher !== false && timelineViews.length > 1;
+  const timelineViewOptions = showTimelineViewSwitcher
+    ? timelineViews.map((view) => ({
+      value: view,
+      label: ui.timelineViewLabels?.[view] || `${view.charAt(0).toUpperCase()}${view.slice(1)}s`,
+    }))
+    : [];
+
+  // Calculate the total number of visible header rows for height synchronization
+  const headerRowCount = React.useMemo(() => {
+    if (config.showTimelineHeader === false) return 0;
+    
+    let rows = hasTimelineViewFeature ? Math.max(activeScales.length - 1, 0) : 2;
+    if (showMonthHeading === false || config.showMonthHeading === false) {
+      rows = Math.max(0, rows - 1);
+    }
+    if (showRangeHeading === false || config.showRangeHeading === false) {
+      const middleRowsCount = hasTimelineViewFeature ? Math.max(0, activeScales.length - 2) : 1;
+      rows = Math.max(0, rows - middleRowsCount);
+    }
+    // Number of header rows is derived from rows above + 1 for the base date column
+    return rows + 1;
+  }, [config.showTimelineHeader, config.showMonthHeading, showMonthHeading, config.showRangeHeading, showRangeHeading, hasTimelineViewFeature, activeScales.length]);
+
   // Apply style config via CSS variables
   const styleVariables: React.CSSProperties = React.useMemo(() => {
     const vars: Record<string, string> = {};
@@ -675,7 +707,6 @@ export const Gantt: React.FC<GanttProps> = ({
   const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; task: Task | null } | null>(null);
   const [zoomLevel, setZoomLevel] = useState<ZoomLevel>(1);
-  const [timelineView, setTimelineView] = useState<TimelineView>(initialTimelineView);
   // Baselines are always visible - auto-created when tasks are first created
   // Baselines represent the original plan and remain fixed even when tasks are moved/resized
   const [baselines, setBaselines] = useState<Map<string, Baseline>>(() => {
@@ -718,35 +749,6 @@ export const Gantt: React.FC<GanttProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const isScrollingRef = useRef<string | null>(null);
   const scrollTimeoutRef = useRef<number | null>(null);
-  const activeTimelineView = hasTimelineViewFeature && timelineViews.includes(timelineView)
-    ? timelineView
-    : initialTimelineView;
-  const activeScales = hasTimelineViewFeature
-    ? (resolvedTimelineViewScales[activeTimelineView] || defaultTimelineViewScales[activeTimelineView])
-    : (config.scales || defaultScales);
-  const showTimelineViewSwitcher = hasTimelineViewFeature && ui.showTimelineViewSwitcher !== false && timelineViews.length > 1;
-  const timelineViewOptions = showTimelineViewSwitcher
-    ? timelineViews.map((view) => ({
-      value: view,
-      label: ui.timelineViewLabels?.[view] || `${view.charAt(0).toUpperCase()}${view.slice(1)}s`,
-    }))
-    : [];
-
-  // Calculate the total number of visible header rows for height synchronization
-  const headerRowCount = React.useMemo(() => {
-    if (config.showTimelineHeader === false) return 0;
-    
-    let rows = hasTimelineViewFeature ? Math.max(activeScales.length - 1, 0) : 2;
-    if (showMonthHeading === false || config.showMonthHeading === false) {
-      rows = Math.max(0, rows - 1);
-    }
-    if (showRangeHeading === false || config.showRangeHeading === false) {
-      const middleRowsCount = hasTimelineViewFeature ? Math.max(0, activeScales.length - 2) : 1;
-      rows = Math.max(0, rows - middleRowsCount);
-    }
-    // Number of header rows is derived from rows above + 1 for the base date column
-    return rows + 1;
-  }, [config.showTimelineHeader, config.showMonthHeading, showMonthHeading, config.showRangeHeading, showRangeHeading, hasTimelineViewFeature, activeScales.length]);
 
   const ganttConfigDefaults: GanttConfig = {
     columns: config.columns || getDefaultColumns(uiConfig),
