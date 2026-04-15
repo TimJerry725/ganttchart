@@ -128,6 +128,8 @@ import 'iris-gantt/gantt.css'
 - **[README.md](./README.md)** - Main documentation
 - **[USAGE.md](./USAGE.md)** - Complete usage guide with all props
 - **[QUICK_START.md](./QUICK_START.md)** - Quick start guide
+- **[PROPS_REFERENCE.md](./PROPS_REFERENCE.md)** - Exported props and TypeScript types
+- **[DATE_FORMATTING_GUIDE.md](./DATE_FORMATTING_GUIDE.md)** - Timeline header date tokens and formatting examples
 - **[RESPONSIVE_STYLING.md](./RESPONSIVE_STYLING.md)** - Responsive design guide
 - **[CUSTOMIZATION_GUIDE.md](./CUSTOMIZATION_GUIDE.md)** - Advanced customization
 
@@ -194,4 +196,5 @@ The package is now:
 
 1. Build the package: `npm run build`
 2. Test locally: `npm link` in package, `npm link iris-gantt` in your project
-3. Publish to npm: `npm publish`
+3. Review packaged docs including `DATE_FORMATTING_GUIDE.md` and `PROPS_REFERENCE.md`
+4. Publish to npm: `npm publish`

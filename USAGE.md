@@ -111,6 +111,9 @@ function MyGantt() {
   iconConfig={GanttIconConfig}
   taskTooltipConfig={TaskTooltipConfig}
   onHoldPeriods={OnHoldPeriodInput[]}
+  showMonthHeading={true}
+  showRangeHeading={true}
+  relativeDayNumbering={false}
   
   // Event Handlers
   onTaskUpdate={(task: Task) => void}
@@ -119,6 +122,7 @@ function MyGantt() {
   onTaskDelete={(taskId: string) => void}
   onLinkCreate={(link: Link) => void}
   onLinkDelete={(linkId: string) => void}
+  onTimelineViewChange={(view: 'day' | 'week' | 'month') => void}
 />
 ```
 
@@ -341,6 +345,13 @@ import { faPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
     // Layout
     columns: Column[], // Custom columns
     scales: Scale[], // Timeline scales
+    timelineView: 'day', // Default visible calendar view
+    timelineViews: ['day', 'week', 'month'], // Allowed switcher views
+    timelineViewScales: {
+      day: Scale[],
+      week: Scale[],
+      month: Scale[],
+    }, // Per-view header formats
     readonly: false,
     editable: true,
     
@@ -361,6 +372,12 @@ import { faPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
     // Theme
     theme: 'light' | 'dark',
     locale: 'en',
+
+    // Timeline header controls
+    showTimelineHeader: true,
+    showMonthHeading: true,
+    showRangeHeading: true,
+    relativeDayNumbering: false,
     
     // Responsive
     containerHeight: '100%', // or '600px', '50vh', etc.
@@ -369,6 +386,8 @@ import { faPlus, faSearch } from '@fortawesome/free-solid-svg-icons'
   }}
 />
 ```
+
+For date tokens, custom header labels, and `timelineViewScales` examples, see [DATE_FORMATTING_GUIDE.md](./DATE_FORMATTING_GUIDE.md).
 
 ## Responsive Design
 

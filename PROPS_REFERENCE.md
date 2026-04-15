@@ -1,6 +1,6 @@
 # Iris Gantt Props and Types Reference
 
-Version: `1.5.0`  
+Version: `1.5.9`  
 Scope: Public props/types exported from:
 - `src/components/Gantt/Gantt.tsx`
 - `src/components/Gantt/types.ts`
@@ -49,6 +49,9 @@ export interface GanttProps {
   onLinkCreate?: (link: Link) => void;
   onLinkDelete?: (linkId: string) => void;
   onTimelineViewChange?: (view: TimelineView) => void;
+  showMonthHeading?: boolean;
+  showRangeHeading?: boolean;
+  relativeDayNumbering?: boolean;
 
   // Storybook helper props (ignored by component but required for build)
   cellWidth?: number;
@@ -301,6 +304,10 @@ export interface GanttConfig {
   containerHeight?: string;
   containerMinHeight?: string;
   gridWidth?: string;
+  showTimelineHeader?: boolean;
+  showMonthHeading?: boolean;
+  showRangeHeading?: boolean;
+  relativeDayNumbering?: boolean;
   showTodayLine?: boolean;
   todayLineColor?: string;
   todayLineLabel?: string;
@@ -424,6 +431,8 @@ export interface GanttStyleConfig {
   customCSSVariables?: Record<string, string>;
 }
 ```
+
+For supported date tokens and `timelineViewScales` examples, see [DATE_FORMATTING_GUIDE.md](./DATE_FORMATTING_GUIDE.md).
 
 ## Interaction and Payload Types
 

@@ -289,7 +289,10 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
       return cells;
     }, [range.start, range.end, timelineViewportWidth, baseColumnWidth]);
 
-    const secondaryScale = scales[1] || scales[0];
+    // Always position tasks against the lowest visible scale row.
+    // Some calendar views provide more than two scale rows, and using
+    // `scales[1]` makes task widths snap to the wrong unit.
+    const secondaryScale = scales[scales.length - 1] || scales[0];
     const secondaryCells = React.useMemo(() => generateCells(secondaryScale), [generateCells, secondaryScale]);
     const columnWidth = React.useMemo(() => {
       if (secondaryCells.length === 0 || timelineViewportWidth <= 0) {

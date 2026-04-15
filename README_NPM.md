@@ -110,6 +110,10 @@ interface GanttProps {
   onTaskDelete?: (taskId: string) => void
   onLinkCreate?: (link: Link) => void
   onLinkDelete?: (linkId: string) => void
+  onTimelineViewChange?: (view: 'day' | 'week' | 'month') => void
+  showMonthHeading?: boolean
+  showRangeHeading?: boolean
+  relativeDayNumbering?: boolean
 }
 ```
 
@@ -154,6 +158,9 @@ interface Link {
 interface GanttConfig {
   columns?: Column[]
   scales?: Scale[]
+  timelineView?: 'day' | 'week' | 'month'
+  timelineViews?: Array<'day' | 'week' | 'month'>
+  timelineViewScales?: Partial<Record<'day' | 'week' | 'month', Scale[]>>
   readonly?: boolean
   editable?: boolean
   taskHeight?: number
@@ -169,8 +176,37 @@ interface GanttConfig {
   holidays?: Date[]
   theme?: 'light' | 'dark'
   locale?: string
+  containerHeight?: string
+  containerMinHeight?: string
+  gridWidth?: string
+  showTimelineHeader?: boolean
+  showMonthHeading?: boolean
+  showRangeHeading?: boolean
+  relativeDayNumbering?: boolean
 }
 ```
+
+### Date Formatting
+
+```tsx
+<Gantt
+  tasks={tasks}
+  config={{
+    timelineViewScales: {
+      day: [
+        { unit: 'month', step: 1, format: 'MMMM YYYY' },
+        { unit: 'day', step: 1, format: 'D' },
+      ],
+      week: [
+        { unit: 'month', step: 1, format: 'MMM YYYY' },
+        { unit: 'week', step: 1, format: 'Week W' },
+      ],
+    },
+  }}
+/>
+```
+
+See [DATE_FORMATTING_GUIDE.md](./DATE_FORMATTING_GUIDE.md) for the full list of supported date tokens and examples.
 
 ## Exports
 
@@ -243,3 +279,4 @@ MIT
 
 - [GitHub Repository](https://github.com/TimJerry725/ganttchart)
 - [Documentation](./README.md)
+- [Date Formatting Guide](./DATE_FORMATTING_GUIDE.md)

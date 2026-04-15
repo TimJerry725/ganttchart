@@ -840,7 +840,9 @@ export const Gantt: React.FC<GanttProps> = ({
   }, [tasks]);
 
   const getTimelineRange = () => {
-    const timelineScale = activeScales[1] || activeScales[0];
+    // Align the visible range to the lowest active scale so switching
+    // between multi-row calendar views does not distort task placement.
+    const timelineScale = activeScales[activeScales.length - 1] || activeScales[0];
     const activeTasks = filteredTasks.length > 0 ? filteredTasks : tasks;
     if (activeTasks.length === 0) {
       const today = new Date();

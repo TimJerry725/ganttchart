@@ -2,6 +2,13 @@
 
 You can customize the date formats in the timeline header (calendar header) using the `scales` property within the `config` object.
 
+For multi-view calendars, use `config.timelineViewScales` to define separate formats for `day`, `week`, and `month` views.
+
+Related header controls:
+- `config.showTimelineHeader` hides the entire timeline header.
+- `showMonthHeading` and `showRangeHeading` can be passed as top-level props or inside `config`.
+- `relativeDayNumbering` can be passed as a top-level prop or inside `config`.
+
 ## Available Date Tokens
 These tokens can be used in your format strings:
 
@@ -89,6 +96,25 @@ If you are using the Timeline View Switcher, you can customize formats for each 
         { unit: 'year', step: 1, format: 'YYYY' },
         { unit: 'month', step: 1, format: 'MMM' }
       ]
+    }
+  }}
+/>
+```
+
+### 5. Hiding Header Rows
+If you want to keep custom date formats but hide specific header rows:
+
+```tsx
+<Gantt
+  tasks={tasks}
+  showMonthHeading={false}
+  showRangeHeading={false}
+  config={{
+    showTimelineHeader: true,
+    timelineViewScales: {
+      day: [{ unit: 'day', step: 1, format: 'D' }],
+      week: [{ unit: 'week', step: 1, format: 'Week W' }],
+      month: [{ unit: 'month', step: 1, format: 'MMM YYYY' }]
     }
   }}
 />

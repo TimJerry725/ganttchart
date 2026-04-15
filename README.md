@@ -2,7 +2,16 @@
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.5.8 (Latest)
+## 🆕 Version 1.5.9 (Latest)
+
+### Bug Fixes
+- **Accurate task-bar sizing across calendar views** — Task bars now keep the correct real duration when switching between `day`, `week`, and `month` views. A 2-day task will stay visually proportional instead of appearing stretched in broader views.
+- **Timeline positioning now follows the active bottom scale** — Range alignment and task placement now use the lowest active timeline scale row, which prevents width distortion when a view uses multiple header rows.
+
+### Documentation
+- **Release notes now clearly show the latest updates** — The README now highlights what changed in `1.5.9` so the newest fixes are visible at the top of the project documentation.
+
+## 🆕 Version 1.5.8
 
 ### Improvements
 - **Strict Header Height Synchronization** — Headers on both the left (Grid) and right (Timeline) are now explicitly tethered to the same pixel height. This ensures that even when rows are hidden (like Month/Year), the "day" labels and "Name" labels stay perfectly aligned and the overall header height reduces as expected.
@@ -163,6 +172,7 @@ function MyGantt() {
 - **[Complete Usage Guide](./USAGE.md)** - Comprehensive documentation with all props and examples
 - **[API Reference](./USAGE.md#api-reference)** - Full TypeScript API
 - **[Props and Types Reference](./PROPS_REFERENCE.md)** - Complete prop/type list from exported interfaces
+- **[Date Formatting Guide](./DATE_FORMATTING_GUIDE.md)** - Supported date tokens and timeline header examples
 - **[Responsive Design Guide](./RESPONSIVE_STYLING.md)** - How to make it responsive and match your project styles
 - **[Customization Guide](./CUSTOMIZATION_GUIDE.md)** - Advanced customization options
 
@@ -255,12 +265,16 @@ Use the toolbar switcher to toggle the calendar between day, week, and month vie
 
 Version 1.5.6 introduces granular control over every row in the timeline header. You can hide specific layers or switch to relative numbering using these new props:
 
+Need custom month/day labels or `timelineViewScales` formats like `MMMM YYYY`, `MM/YYYY`, or `Week W`? See the dedicated [Date Formatting Guide](./DATE_FORMATTING_GUIDE.md).
+
 #### 1. Hide the Entire Header
 To completely remove the calendar header rows while keeping the actual grid and tasks:
 ```tsx
 <Gantt
   tasks={tasks}
-  showTimelineHeader={false}
+  config={{
+    showTimelineHeader: false,
+  }}
 />
 ```
 
@@ -299,7 +313,7 @@ For complete control over the labels and time units in each row, use `timelineVi
 ```
 
 ### Customizing the Header Levels
-If you want to show the headers, but completely remove specific layers like the "Month" or "Week" rows (for example, showing only the "Days" row), simply customize the `timelineViewScales` arrays arrays:
+If you want to show the headers, but completely remove specific layers like the "Month" or "Week" rows (for example, showing only the "Days" row), simply customize the `timelineViewScales` arrays:
 
 ```tsx
 <Gantt
@@ -799,6 +813,7 @@ const styleConfig: GanttStyleConfig = {...}
 ## 📚 More Documentation
 
 - **[USAGE.md](./USAGE.md)** - Complete usage guide with all props
+- **[DATE_FORMATTING_GUIDE.md](./DATE_FORMATTING_GUIDE.md)** - Date tokens and timeline header formatting examples
 - **[RESPONSIVE_STYLING.md](./RESPONSIVE_STYLING.md)** - Responsive design guide
 - **[CUSTOMIZATION_GUIDE.md](./CUSTOMIZATION_GUIDE.md)** - Advanced customization
 

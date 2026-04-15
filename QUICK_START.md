@@ -157,6 +157,34 @@ export default ProjectGantt
 />
 ```
 
+### Customize Date Formats
+
+```tsx
+<Gantt
+  tasks={tasks}
+  config={{
+    timelineView: 'week',
+    timelineViewScales: {
+      day: [
+        { unit: 'month', step: 1, format: 'MMMM YYYY' },
+        { unit: 'day', step: 1, format: 'D' },
+      ],
+      week: [
+        { unit: 'month', step: 1, format: 'MMM YYYY' },
+        { unit: 'week', step: 1, format: 'Week W' },
+      ],
+      month: [
+        { unit: 'year', step: 1, format: 'YYYY' },
+        { unit: 'month', step: 1, format: 'MMM' },
+      ],
+    },
+    relativeDayNumbering: false,
+  }}
+/>
+```
+
+For all supported date tokens and more examples, see [DATE_FORMATTING_GUIDE.md](./DATE_FORMATTING_GUIDE.md).
+
 ## Troubleshooting
 
 ### CSS Import Error
@@ -184,5 +212,6 @@ npm install
 ## Next Steps
 
 - Read [USAGE.md](./USAGE.md) for complete documentation
+- Read [DATE_FORMATTING_GUIDE.md](./DATE_FORMATTING_GUIDE.md) for timeline header date formats
 - Read [RESPONSIVE_STYLING.md](./RESPONSIVE_STYLING.md) for responsive design
 - Read [CUSTOMIZATION_GUIDE.md](./CUSTOMIZATION_GUIDE.md) for advanced customization
