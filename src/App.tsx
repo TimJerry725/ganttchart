@@ -11,7 +11,23 @@ function App() {
         links={basicLinks}
         config={{
           theme: 'light',
-          weekends: true
+          weekends: true,
+          timelineView: 'day',
+          timelineViews: ['day', 'week', 'month'],
+          timelineViewScales: {
+            day: [
+              { unit: 'month', step: 1, format: 'MM YYYY' },
+              { unit: 'day', step: 2, format: 'D' },
+            ],
+            week: [
+              { unit: 'month', step: 1, format: 'MM YYYY' },
+              { unit: 'week', step: 2, format: 'Week W' },
+            ],
+            month: [
+              { unit: 'year', step: 1, format: 'YYYY' },
+              { unit: 'month', step: 2, format: 'MM' },
+            ],
+          },
         }}
       />
     </div>

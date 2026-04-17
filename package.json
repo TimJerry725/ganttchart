@@ -1,6 +1,6 @@
 {
   "name": "iris-gantt",
-  "version": "1.5.9",
+  "version": "1.6.1",
   "description": "A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use.",
   "keywords": [
     "gantt",
@@ -113,11 +113,11 @@
     "@types/react": "18.3.5",
     "@types/react-beautiful-dnd": "13.1.8",
     "@types/react-dom": "18.3.0",
-    "@vitejs/plugin-react": "4.3.1",
+    "@vitejs/plugin-react": "^5.2.0",
     "@vitest/browser-playwright": "^4.0.17",
     "@vitest/coverage-v8": "^4.0.17",
     "eslint": "^9.39.1",
-    "eslint-plugin-react-hooks": "4.6.2",
+    "eslint-plugin-react-hooks": "^7.1.0",
     "eslint-plugin-react-refresh": "0.4.7",
     "antd": "5.19.2",
     "dayjs": "^1.11.0",

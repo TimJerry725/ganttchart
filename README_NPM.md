@@ -2,6 +2,12 @@
 
 A comprehensive, production-ready Gantt chart component for React with TypeScript support.
 
+## Version 1.6.1
+
+### Updated / Changed
+- Day filter now shows a grouped month header row above the day columns.
+- Month labels in Day view now use relative format: `Month 0`, `Month 1`, `Month 2`, ...
+
 ## 🚀 Quick Install
 
 Install everything in one command:

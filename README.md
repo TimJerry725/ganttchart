@@ -1,8 +1,17 @@
 # Iris Gantt
 
+## Version 1.6.1 (Latest)
+
+In Day view, the top month header is shown with relative labels like `Month 0`, `Month 1`, `Month 2`, ...
+
+### Updated / Changed
+- Day filter now shows a grouped header row above day cells.
+- Month labels in Day view are now relative (`Month 0`, `Month 1`, ...).
+- Timeline examples/docs were updated to reflect this header labeling behavior.
+
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
 
-## 🆕 Version 1.5.9 (Latest)
+## 🆕 Version 1.5.9 
 
 ### Bug Fixes
 - **Accurate task-bar sizing across calendar views** — Task bars now keep the correct real duration when switching between `day`, `week`, and `month` views. A 2-day task will stay visually proportional instead of appearing stretched in broader views.
