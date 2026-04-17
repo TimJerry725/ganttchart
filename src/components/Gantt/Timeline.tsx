@@ -19,6 +19,10 @@ const getWeekOfMonth = (date: Date): number => {
 
 const getQuarter = (date: Date): number => Math.floor(date.getMonth() / 3) + 1;
 
+const getMonthOffset = (start: Date, end: Date): number => (
+  (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth())
+);
+
 const formatScaleLabel = (date: Date, scale: Scale, fallback: string): string => {
   if (scale.unit === 'week') {
     if (scale.format?.includes('W')) {
@@ -431,6 +435,11 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
       }
     }, [dragState, localTasks, handleDragEnd, onTaskDragEnd]);
 
+    const firstVisibleMonthStart = React.useMemo(() => {
+      const firstCellDate = secondaryCells[0]?.date ?? range.start;
+      return new Date(firstCellDate.getFullYear(), firstCellDate.getMonth(), 1);
+    }, [secondaryCells, range.start]);
+
     const buildGroupedHeaderCells = React.useCallback((scale: Scale) => {
       const cells: TimelineHeaderCell[] = [];
       let currentKey = '';
@@ -447,7 +456,9 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
             : scale.unit === 'day'
               ? 'MMM D'
               : 'D';
-        const label = formatScaleLabel(bucketStart, scale, fallback);
+        const label = config.timelineView === 'day' && scale.unit === 'month'
+          ? `Month ${Math.max(0, getMonthOffset(firstVisibleMonthStart, bucketStart))}`
+          : formatScaleLabel(bucketStart, scale, fallback);
 
         if (key !== currentKey) {
           if (currentKey) {
@@ -466,7 +477,7 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
       }
 
       return cells;
-    }, [secondaryCells, columnWidth]);
+    }, [secondaryCells, columnWidth, config.timelineView, firstVisibleMonthStart]);
 
     const dynamicHeaderRows = React.useMemo(() => {
       if (!hasTimelineViewFeature) return [] as TimelineHeaderCell[][];
@@ -480,6 +491,13 @@ export const Timeline = React.memo(React.forwardRef<HTMLDivElement, TimelineProp
           rows.push(groupedCells);
         }
       });
+
+      if (config.timelineView === 'day' && rows.length === 0) {
+        const groupedMonthCells = buildGroupedHeaderCells({ unit: 'month', step: 1, format: 'MMM YYYY' });
+        if (groupedMonthCells.length > 0) {
+          rows.push(groupedMonthCells);
+        }
+      }
 
       rows.push(
         secondaryCells.map((cell, index) => ({
