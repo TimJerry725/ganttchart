@@ -58,7 +58,17 @@ export const formatDate = (date: Date, format: string): string => {
     'm': String(date.getMinutes()),
   };
 
-  return format.replace(/YYYY|YY|MMMM|MMM|MM|M|DD|D|dddd|HH|H|mm|m/g, (matched) => map[matched]);
+  const tokenPattern = /YYYY|YY|MMMM|MMM|MM|M|DD|D|dddd|HH|H|mm|m/g;
+
+  const literals: string[] = [];
+  const withPlaceholders = format.replace(/\[([^\]]*)\]/g, (_full, inner) => {
+    literals.push(inner);
+    return `\uE000${literals.length - 1}\uE001`;
+  });
+
+  const expanded = withPlaceholders.replace(tokenPattern, (matched) => map[matched]);
+
+  return expanded.replace(/\uE000(\d+)\uE001/g, (_full, index) => literals[Number(index)]);
 };
 
 export const isWeekend = (date: Date): boolean => {

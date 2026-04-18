@@ -26,6 +26,10 @@ These tokens can be used in your format strings:
 | `HH` | Padded Hour (24h) | 09, 13... |
 | `mm` | Padded Minutes | 05, 30... |
 
+### Literal text
+
+Wrap fixed text in square brackets `[...]` so letters are not parsed as tokens. For example, `[Month]-MM` prints the word **Month** plus the padded month number (`Month-04`). Writing `Month-MM` without brackets treats the leading `M` as the month token and produces corrupted output (`4onth-04`).
+
 ---
 
 ## Implementation Examples

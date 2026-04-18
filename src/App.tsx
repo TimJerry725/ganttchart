@@ -16,16 +16,16 @@ function App() {
           timelineViews: ['day', 'week', 'month'],
           timelineViewScales: {
             day: [
-              { unit: 'month', step: 1, format: 'MM YYYY' },
-              { unit: 'day', step: 2, format: 'D' },
+              { unit: 'month', step: 1, format: '[Month]-MM' },
+              { unit: 'day', step: 1, format: 'D' },
             ],
             week: [
               { unit: 'month', step: 1, format: 'MM YYYY' },
-              { unit: 'week', step: 2, format: 'Week W' },
+              { unit: 'week', step: 1, format: 'Week W' },
             ],
             month: [
               { unit: 'year', step: 1, format: 'YYYY' },
-              { unit: 'month', step: 2, format: 'MM' },
+              { unit: 'month', step: 1, format: 'MM' },
             ],
           },
         }}
