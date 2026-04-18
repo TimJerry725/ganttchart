@@ -1,15 +1,16 @@
 # Iris Gantt
 
-## Version 1.6.1 (Latest)
-
-In Day view, the top month header is shown with relative labels like `Month 0`, `Month 1`, `Month 2`, ...
+## Version 1.6.2 (Latest)
 
 ### Updated / Changed
-- Day filter now shows a grouped header row above day cells.
-- Month labels in Day view are now relative (`Month 0`, `Month 1`, ...).
-- Timeline examples/docs were updated to reflect this header labeling behavior.
+- **Day view month header** — The grouped month row in Day timeline view respects each scale’s `format` in `timelineViewScales` (for example `MMM YYYY`, `[Month]-MM`). Labels are no longer overridden with fixed `Month-0` / `Month-1`-style text.
+- **Literal text in format strings** — Plain words that contain token letters (such as `M`) can be wrapped in square brackets so they are not parsed as date tokens. Example: `[Month]-MM` → `Month-04` for April; `Month-MM` without brackets incorrectly becomes `4onth-04` because the first `M` is treated as month number. Bracket literals work anywhere `formatDate` is used (including scale `format` fields). See also [Date Formatting Guide](./DATE_FORMATTING_GUIDE.md).
 
 A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use, fully customizable, and responsive.
+
+## Version 1.6.1
+
+- Prior release. Use **1.6.2** for the timeline header formatting and bracket-literal behavior described above.
 
 ## 🆕 Version 1.5.9 
 

@@ -1,6 +1,6 @@
 {
   "name": "iris-gantt",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "A comprehensive, production-ready Gantt chart component built with React and TypeScript. Easy to install, simple to use.",
   "keywords": [
     "gantt",
